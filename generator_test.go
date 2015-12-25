@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 24. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2015-12-25 00:12:06 krylon>
+// Time-stamp: <2015-12-25 00:19:23 krylon>
 
 package guang
 
@@ -36,7 +36,6 @@ func TestCreateGenerator(t *testing.T) {
 
 func TestReceiveHosts(t *testing.T) {
 	var host Host
-	//var err error
 
 	host = <-gen.HostQueue
 

@@ -2,11 +2,24 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 23. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2015-12-23 16:45:26 krylon>
+// Time-stamp: <2015-12-25 22:03:50 krylon>
 
 package guang
 
-import "sync"
+import (
+	"database/sql"
+	"errors"
+	"fmt"
+	"krylib"
+	"log"
+	"net"
+	"os"
+	"regexp"
+	"sync"
+	"time"
+
+	_ "github.com/mxk/go-sqlite/sqlite3"
+)
 
 var open_lock sync.Mutex
 
@@ -16,8 +29,7 @@ CREATE TABLE host (id INTEGER PRIMARY KEY,
                    addr TEXT UNIQUE NOT NULL,
                    name TEXT NOT NULL,
                    source INTEGER NOT NULL,
-                   add_stamp INTEGER NOT NULL)
-`,
+                   add_stamp INTEGER NOT NULL)`,
 
 	`
 CREATE TABLE port (id INTEGER PRIMARY KEY,
@@ -26,6 +38,596 @@ CREATE TABLE port (id INTEGER PRIMARY KEY,
                    timestamp INTEGER NOT NULL,
                    reply TEXT,
                    UNIQUE (host_id, port),
-                   FOREIGN KEY (host_id) REFERENCES host (id))
+                   FOREIGN KEY (host_id) REFERENCES host (id))`,
+
+	`
+CREATE TABLE xfr (id INTEGER PRIMARY KEY,
+                  zone TEXT UNIQUE NOT NULL,
+                  start INTEGER NOT NULL,
+                  end INTEGER,
+                  status INTEGER NOT NULL DEFAULT 0,
+                  CHECK (end >= start))`,
+
+	"CREATE INDEX host_addr_idx ON host (addr)",
+	"CREATE INDEX host_name_idx ON host (name)",
+
+	"CREATE INDEX port_host_idx ON port (host_id)",
+	"CREATE INDEX port_port_idx ON port (port)",
+
+	"CREATE INDEX xfr_zone_idx ON xfr (zone)",
+	"CREATE INDEX xfr_status_idx ON xfr (status)",
+}
+
+const (
+	STMT_HOST_ADD = iota
+	STMT_HOST_GET_BY_ID
+	STMT_PORT_ADD
+	STMT_PORT_GET_BY_HOST
+	STMT_XFR_ADD
+	STMT_XFR_GET_BY_ZONE
+	STMT_XFR_FINISH
+	STMT_XFR_GET_UNFINISHED
+)
+
+type QueryID int
+
+var stmt_table map[QueryID]string = map[QueryID]string{
+	STMT_HOST_ADD: `
+INSERT INTO host (addr, name, source, add_stamp)
+          VALUES (   ?,    ?,      ?,         ?)
+`,
+	STMT_HOST_GET_BY_ID: "SELECT addr, name, source, add_stamp FROM host WHERE id = ?",
+
+	STMT_PORT_ADD: `
+INSERT INTO port (host_id, port, timestamp, reply)
+          VALUES (      ?,    ?          ?,     ?)
+`,
+
+	STMT_PORT_GET_BY_HOST: "SELECT id, port, timestamp, reply FROM port WHERE host_id = ?",
+
+	STMT_XFR_ADD:         "INSERT INTO xfr (zone, start, status) VALUES (?, ?, 0)",
+	STMT_XFR_GET_BY_ZONE: "SELECT id, start, end, status FROM xfr WHERE zone = ?",
+	STMT_XFR_FINISH:      "UPDATE xfr SET end = ?, status = ? WHERE id = ?",
+	STMT_XFR_GET_UNFINISHED: `
+SELECT id, 
+       zone, 
+       start, 
+       end, 
+       status
+FROM xfr
+WHERE status = 0
 `,
 }
+
+var retry_pat *regexp.Regexp = regexp.MustCompile("(?i)(database is locked|busy)")
+
+const RETRY_DELAY = 10 * time.Millisecond
+
+type HostDB struct {
+	db         *sql.DB
+	stmt_table map[QueryID]*sql.Stmt
+	tx         *sql.Tx
+	log        *log.Logger
+	path       string
+}
+
+func OpenDB(path string) (*HostDB, error) {
+	var err error
+	var msg string
+	var db_exists bool
+
+	db := &HostDB{
+		path:       path,
+		stmt_table: make(map[QueryID]*sql.Stmt),
+	}
+
+	if db.log, err = GetLogger("HostDB"); err != nil {
+		msg = fmt.Sprintf("Error creating logger for HostDB: %s", err.Error())
+		fmt.Println(msg)
+		return nil, errors.New(msg)
+	}
+
+	open_lock.Lock()
+	defer open_lock.Unlock()
+
+	if db_exists, err = krylib.Fexists(path); err != nil {
+		msg = fmt.Sprintf("Error checking if HostDB exists at %s: %s", path, err.Error())
+		db.log.Println(msg)
+		return nil, errors.New(msg)
+	} else if db.db, err = sql.Open("sqlite3", path); err != nil {
+		msg = fmt.Sprintf("Error opening database at %s: %s", path, err.Error())
+		db.log.Println(msg)
+		return nil, errors.New(msg)
+	} else {
+		db.db.Exec("PRAGMA foreign_keys = on")
+		db.db.Exec("PRAGMA journal_mode = wal")
+	}
+
+	if !db_exists {
+		db.log.Printf("Initializing fresh database at %s...\n", path)
+		if err = db.initialize(); err != nil {
+			msg = fmt.Sprintf("Error initializing database at %s: %s",
+				path, err.Error())
+			db.log.Println(msg)
+			db.db.Close()
+			os.Remove(path)
+			return nil, errors.New(msg)
+		}
+	}
+
+	return db, nil
+} // func OpenDB(path string) (*HostDB, error)
+
+func (self *HostDB) worth_a_retry(err error) bool {
+	return retry_pat.MatchString(err.Error())
+} // func (self *HostDB) worth_a_retry(err error) bool
+
+func (self *HostDB) getStatement(stmt_id QueryID) (*sql.Stmt, error) {
+	if stmt := self.stmt_table[stmt_id]; stmt != nil {
+		return stmt, nil
+	}
+
+	var stmt *sql.Stmt
+	var err error
+	var msg string
+
+PREPARE_QUERY:
+	if stmt, err = self.db.Prepare(stmt_table[stmt_id]); err != nil {
+		if self.worth_a_retry(err) {
+			time.Sleep(RETRY_DELAY)
+			goto PREPARE_QUERY
+		} else {
+			msg = fmt.Sprintf("Error preparing query %s: %s",
+				stmt_table[stmt_id], err.Error())
+			self.log.Println(msg)
+			return nil, errors.New(msg)
+		}
+	} else {
+		self.stmt_table[stmt_id] = stmt
+		return stmt, nil
+	}
+} // func (self *HostDB) getStatement(stmt_id QueryID) (*sql.Stmt, error)
+
+func (self *HostDB) Begin() error {
+	var err error
+	var msg string
+	var tx *sql.Tx
+
+	if self.tx != nil {
+		msg = "Cannot start transaction: A transaction is already in progress!"
+		self.log.Println(msg)
+		return errors.New(msg)
+	}
+
+BEGIN:
+	if tx, err = self.db.Begin(); err != nil {
+		if self.worth_a_retry(err) {
+			time.Sleep(RETRY_DELAY)
+			goto BEGIN
+		} else {
+			msg = fmt.Sprintf("Cannot start transaction: %s", err.Error())
+			self.log.Println(msg)
+			return errors.New(msg)
+		}
+	} else {
+		self.tx = tx
+		return nil
+	}
+} // func (self *HostDB) Begin() error
+
+func (self *HostDB) Rollback() error {
+	var err error
+	var msg string
+
+	if self.tx == nil {
+		msg = "Cannot roll back transaction: No transaction is active!"
+		self.log.Println(msg)
+		return errors.New(msg)
+	} else if err = self.tx.Rollback(); err != nil {
+		msg = fmt.Sprintf("Cannot roll back transaction: %s", err.Error())
+		self.log.Println(msg)
+		return errors.New(msg)
+	} else {
+		self.tx = nil
+		return nil
+	}
+} // func (self *HostDB) Rollback() error
+
+func (self *HostDB) Commit() error {
+	var err error
+	var msg string
+
+	if self.tx == nil {
+		msg = "Cannot commit transaction: No transaction is active!"
+		self.log.Println(msg)
+		return errors.New(msg)
+	} else if err = self.tx.Commit(); err != nil {
+		msg = fmt.Sprintf("Cannot commit transaction: %s", err.Error())
+		self.log.Println(msg)
+		return errors.New(msg)
+	} else {
+		self.tx = nil
+		return nil
+	}
+} // func (self *HostDB) Commit() error
+
+// Initialize a fresh database, i.e. create all the tables and indices.
+// Commit if everythings works as planned, otherwise, roll back, close
+// the database, delete the database file, and return an error.
+func (self *HostDB) initialize() error {
+	var err error
+
+	err = self.Begin()
+	if err != nil {
+		msg := fmt.Sprintf("Error starting transaction to initialize database: %s",
+			err.Error())
+		self.log.Println(msg)
+		return errors.New(msg)
+	}
+
+	for _, query := range init_query {
+		if _, err = self.tx.Exec(query); err != nil {
+			msg := fmt.Sprintf("Error executing query %s: %s",
+				query, err.Error())
+			self.log.Println(msg)
+			self.db.Close()
+			self.db = nil
+			os.Remove(self.path)
+			return errors.New(msg)
+		}
+	}
+
+	self.Commit()
+	return nil
+} // func (self *HostDB) initialize() error
+
+func (self *HostDB) Close() {
+	for _, stmt := range self.stmt_table {
+		stmt.Close()
+	}
+
+	self.stmt_table = nil
+
+	if self.tx != nil {
+		self.tx.Rollback()
+		self.tx = nil
+	}
+
+	self.db.Close()
+} // func (self *HostDB) Close()
+
+func (self *HostDB) HostAdd(host *Host) error {
+	var err error
+	var msg string
+	var stmt *sql.Stmt
+	var tx *sql.Tx
+	var ad_hoc bool
+
+GET_QUERY:
+	if stmt, err = self.getStatement(STMT_HOST_ADD); err != nil {
+		if self.worth_a_retry(err) {
+			time.Sleep(RETRY_DELAY)
+			goto GET_QUERY
+		} else {
+			msg = fmt.Sprintf("Error getting query STMT_HOST_ADD: %s", err.Error())
+			self.log.Println(msg)
+			return errors.New(msg)
+		}
+	} else if self.tx != nil {
+		tx = self.tx
+	} else {
+		ad_hoc = true
+	START_AD_HOC_TX:
+		if tx, err = self.db.Begin(); err != nil {
+			if self.worth_a_retry(err) {
+				time.Sleep(RETRY_DELAY)
+				goto START_AD_HOC_TX
+			} else {
+				msg = fmt.Sprintf("Error starting ad-hoc transaction: %s", err.Error())
+				self.log.Println(msg)
+				return errors.New(msg)
+			}
+		}
+	}
+
+	stmt = tx.Stmt(stmt)
+	now := time.Now()
+
+	var res sql.Result
+	var id int64
+
+EXEC_QUERY:
+	res, err = stmt.Exec(
+		host.Address.String(),
+		host.Name,
+		host.Source,
+		now)
+	if err != nil {
+		if self.worth_a_retry(err) {
+			time.Sleep(RETRY_DELAY)
+			goto EXEC_QUERY
+		} else {
+			msg = fmt.Sprintf("Error add host %s (%s) to database: %s",
+				host.Name, host.Address.String(), err.Error())
+			self.log.Println(msg)
+
+			if ad_hoc {
+				tx.Rollback()
+			}
+
+			return errors.New(msg)
+		}
+	}
+
+	host.Added = now
+	if id, err = res.LastInsertId(); err != nil {
+		msg = fmt.Sprintf("Error getting ID of freshly added host %s (%s): %s",
+			host.Name, host.Address.String(), err.Error())
+		self.log.Println(msg)
+		if ad_hoc {
+			tx.Rollback()
+		}
+		return errors.New(msg)
+	} else {
+		host.ID = krylib.ID(id)
+	}
+
+	if ad_hoc {
+		tx.Commit()
+	}
+
+	return nil
+} // func (self *HostDB) HostAdd(host *Host) error
+
+func (self *HostDB) HostGetByID(id krylib.ID) (*Host, error) {
+	var msg string
+	var err error
+	var stmt *sql.Stmt
+
+GET_QUERY:
+	if stmt, err = self.getStatement(STMT_HOST_GET_BY_ID); err != nil {
+		if self.worth_a_retry(err) {
+			time.Sleep(RETRY_DELAY)
+			goto GET_QUERY
+		} else {
+			msg = fmt.Sprintf("Error getting query STMT_HOST_GET_BY_ID: %s", err.Error())
+			self.log.Println(msg)
+			return nil, errors.New(msg)
+		}
+	} else if self.tx != nil {
+		stmt = self.tx.Stmt(stmt)
+	}
+
+	var rows *sql.Rows
+
+EXEC_QUERY:
+	if rows, err = stmt.Query(id); err != nil {
+		if self.worth_a_retry(err) {
+			time.Sleep(RETRY_DELAY)
+			goto EXEC_QUERY
+		} else {
+			msg = fmt.Sprintf("Error querying host by ID %d: %s",
+				id, err.Error())
+			self.log.Println(msg)
+			return nil, errors.New(msg)
+		}
+	} else {
+		defer rows.Close()
+	}
+
+	if rows.Next() {
+		var host *Host = &Host{ID: id}
+		var addr string
+		var stamp int64
+
+		if err = rows.Scan(&addr, &host.Name, &host.Source, &stamp); err != nil {
+			msg = fmt.Sprintf("Error scanning Host from row: %s",
+				err.Error())
+			self.log.Println(msg)
+			return nil, errors.New(msg)
+		} else {
+			host.Address = net.ParseIP(addr)
+			host.Added = time.Unix(stamp, 0)
+			return host, nil
+		}
+	} else {
+		return nil, nil
+	}
+} // func (self *HostDB) HostGetByID(id krylib.ID) (*Host, error)
+
+func (self *HostDB) XfrAdd(xfr *XFR) error {
+	var err error
+	var msg string
+	var stmt *sql.Stmt
+	var tx *sql.Tx
+	var ad_hoc bool
+
+GET_STATEMENT:
+	if stmt, err = self.getStatement(STMT_XFR_ADD); err != nil {
+		if self.worth_a_retry(err) {
+			time.Sleep(RETRY_DELAY)
+			goto GET_STATEMENT
+		} else {
+			msg = fmt.Sprintf("Error getting query STMT_XFR_ADD: %s", err.Error())
+			self.log.Println(msg)
+			return errors.New(msg)
+		}
+	} else if self.tx == nil {
+		ad_hoc = true
+	BEGIN_AD_HOC:
+		if tx, err = self.db.Begin(); err != nil {
+			if self.worth_a_retry(err) {
+				time.Sleep(RETRY_DELAY)
+				goto BEGIN_AD_HOC
+			} else {
+				msg = fmt.Sprintf("Error starting ad-hoc transaction for adding XFR of %s: %s",
+					xfr.Zone, err.Error())
+				self.log.Println(msg)
+				return errors.New(msg)
+			}
+		}
+	} else {
+		tx = self.tx
+	}
+
+	stmt = tx.Stmt(stmt)
+
+	var result sql.Result
+
+EXEC_QUERY:
+	if result, err = stmt.Exec(xfr.Zone, xfr.Start); err != nil {
+		if self.worth_a_retry(err) {
+			time.Sleep(RETRY_DELAY)
+			goto EXEC_QUERY
+		} else {
+			msg = fmt.Sprintf("Error adding XFR for %s: %s",
+				xfr.Zone, err.Error())
+			self.log.Println(msg)
+
+			if ad_hoc {
+				tx.Rollback()
+			}
+
+			return errors.New(msg)
+		}
+	} else {
+		var id int64
+
+		if id, err = result.LastInsertId(); err != nil {
+			msg = fmt.Sprintf("Error getting ID of freshly added XFR (%s): %s",
+				xfr.Zone, err.Error())
+			self.log.Println(msg)
+
+			if ad_hoc {
+				tx.Rollback()
+			}
+
+			return errors.New(msg)
+		} else {
+			xfr.ID = krylib.ID(id)
+			if ad_hoc {
+				tx.Commit()
+			}
+			return nil
+		}
+	}
+} // func (self *HostDB) XfrAdd(xfr *XFR) error
+
+func (self *HostDB) XfrFinish(xfr *XFR, status XfrStatus) error {
+	var msg string
+	var err error
+	var stmt *sql.Stmt
+	var tx *sql.Tx
+	var ad_hoc bool
+
+GET_QUERY:
+	if stmt, err = self.getStatement(STMT_XFR_FINISH); err != nil {
+		if self.worth_a_retry(err) {
+			time.Sleep(RETRY_DELAY)
+			goto GET_QUERY
+		} else {
+			msg = fmt.Sprintf("Error getting query STMT_XFR_FINISH: %s", err.Error())
+			self.log.Println(msg)
+			return errors.New(msg)
+		}
+	} else if self.tx == nil {
+		ad_hoc = true
+	BEGIN_AD_HOC:
+		if tx, err = self.db.Begin(); err != nil {
+			if self.worth_a_retry(err) {
+				time.Sleep(RETRY_DELAY)
+				goto BEGIN_AD_HOC
+			} else {
+				msg = fmt.Sprintf("Error starting ad-hoc transaction for finishing XFR of %s: %s",
+					xfr.Zone, err.Error())
+				self.log.Println(msg)
+				return errors.New(msg)
+			}
+		}
+	} else {
+		tx = self.tx
+	}
+
+	stmt = tx.Stmt(stmt)
+
+	// var result sql.Result
+	// var rows_affected int64
+	var now time.Time = time.Now()
+
+EXEC_QUERY:
+	if _, err = stmt.Exec(now, status, xfr.ID); err != nil {
+		if self.worth_a_retry(err) {
+			time.Sleep(RETRY_DELAY)
+			goto EXEC_QUERY
+		} else {
+			msg = fmt.Sprintf("Error finishing XFR of %s (%d): %s",
+				xfr.Zone, xfr.ID, err.Error())
+			self.log.Println(msg)
+			if ad_hoc {
+				tx.Rollback()
+			}
+			return errors.New(msg)
+		}
+	} else if ad_hoc {
+		tx.Commit()
+	}
+
+	xfr.End = now
+	return nil
+} // func (self *HostDB) XfrFinish(xfr *XFR, status XfrStatus) error
+
+func (self *HostDB) XfrGetByZone(zone string) (*XFR, error) {
+	var msg string
+	var err error
+	var stmt *sql.Stmt
+
+GET_QUERY:
+	if stmt, err = self.getStatement(STMT_XFR_GET_BY_ZONE); err != nil {
+		if self.worth_a_retry(err) {
+			time.Sleep(RETRY_DELAY)
+			goto GET_QUERY
+		} else {
+			msg = fmt.Sprintf("Error getting query STMT_XFR_GET_BY_ZONE: %s", err.Error())
+			self.log.Println(msg)
+			return nil, errors.New(msg)
+		}
+	} else if self.tx != nil {
+		stmt = self.tx.Stmt(stmt)
+	}
+
+	var rows *sql.Rows
+
+EXEC_QUERY:
+	if rows, err = stmt.Query(zone); err != nil {
+		if self.worth_a_retry(err) {
+			time.Sleep(RETRY_DELAY)
+			goto EXEC_QUERY
+		} else {
+			msg = fmt.Sprintf("Error querying XFR for %s: %s",
+				zone, err.Error())
+			self.log.Println(msg)
+		}
+	} else {
+		defer rows.Close()
+	}
+
+	if rows.Next() {
+		xfr := &XFR{Zone: zone}
+		var id, start, end, status int64
+
+		if err = rows.Scan(&id, &start, &end, &status); err != nil {
+			msg = fmt.Sprintf("Error scanning row into result: %s", err.Error())
+			self.log.Println(msg)
+			return nil, errors.New(msg)
+		} else {
+			xfr.ID = krylib.ID(id)
+			xfr.Start = time.Unix(start, 0)
+			xfr.End = time.Unix(end, 0)
+			xfr.Status = XfrStatus(status)
+			return xfr, nil
+		}
+	} else {
+		self.log.Printf("No XFR found for %s\n", zone)
+		return nil, nil
+	}
+} // func (self *HostDB) XfrGetByZone(zone string) (*XFR, error)

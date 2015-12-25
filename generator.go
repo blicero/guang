@@ -2,7 +2,13 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 23. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2015-12-25 00:10:37 krylon>
+// Time-stamp: <2015-12-25 09:06:31 krylon>
+//
+// IIRC, throughput never was much of an issue with this part of the program.
+// But if it were, there are a few tricks on could pull here.
+// Especially, right now, there is one of each blacklist type shared across
+// all workers. If each had its own blacklist, it would probably improve
+// parallelism. OTOH, the main problem here is probably DNS lookups.
 
 package guang
 
@@ -15,14 +21,14 @@ import (
 	"sync"
 	"time"
 
-	"bitbucket.org/ww/cabinet"
+	"github.com/fsouza/gokabinet/kc"
 )
 
 type HostGenerator struct {
 	HostQueue  chan Host
 	name_bl    *NameBlacklist
 	addr_bl    *IPBlacklist
-	cache      *cabinet.KCDB
+	cache      *kc.DB
 	lock       sync.Mutex
 	running    bool
 	worker_cnt int
@@ -37,25 +43,22 @@ func CreateGenerator(worker_cnt int) (*HostGenerator, error) {
 		HostQueue:  make(chan Host, worker_cnt*2),
 		running:    true,
 		worker_cnt: worker_cnt,
-		cache:      cabinet.New(),
-		name_bl:    DefaultNameBlacklist(),
-		addr_bl:    DefaultIPBlacklist(),
+		//cache:      cabinet.New(),
+		name_bl: DefaultNameBlacklist(),
+		addr_bl: DefaultIPBlacklist(),
 	}
 
 	if gen.log, err = GetLogger("Generator"); err != nil {
 		fmt.Printf("Error getting Logger instance for host generator: %s\n",
 			err.Error())
 		return nil, err
-	} else if err = gen.cache.Open(HOST_CACHE_PATH, cabinet.KCOWRITER|cabinet.KCOCREATE|cabinet.KCOAUTOTRAN|cabinet.KCOAUTOSYNC); err != nil {
+		//} else if err = gen.cache.Open(HOST_CACHE_PATH, cabinet.KCOWRITER|cabinet.KCOCREATE|cabinet.KCOAUTOTRAN|cabinet.KCOAUTOSYNC); err != nil {
+	} else if gen.cache, err = kc.Open(HOST_CACHE_PATH, kc.WRITE); err != nil {
 		msg = fmt.Sprintf("Error opening Host cache at %s: %s",
 			HOST_CACHE_PATH, err.Error())
 		gen.log.Println(msg)
 		return nil, errors.New(msg)
 	}
-
-	// for i := 0; i < worker_cnt; i++ {
-	// 	go gen.worker()
-	// }
 
 	return gen, nil
 } // func CreateGenerator(worker_cnt int) (*HostGenerator, error)
@@ -95,13 +98,14 @@ MAIN_LOOP:
 
 		astr = addr.String()
 
-		if res, err := self.cache.Get([]byte(astr)); err != nil {
+		if res, err := self.cache.GetInt(astr); err != nil {
 			msg = fmt.Sprintf("Error looking for %s in cache: %s",
 				astr, err.Error())
-		} else if res != nil {
+		} else if res != 0 {
 			continue MAIN_LOOP
 		} else {
-			self.cache.Set([]byte(astr), []byte("1"))
+			self.cache.SetInt(astr, 1)
+			self.cache.Commit()
 		}
 
 		if namelist, err = net.LookupAddr(astr); err != nil {
