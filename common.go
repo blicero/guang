@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 23. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2015-12-24 23:52:55 krylon>
+// Time-stamp: <2015-12-26 00:54:18 krylon>
 
 package guang
 
@@ -29,22 +29,20 @@ var BASE_DIR string = filepath.Join(os.Getenv("HOME"), ".guang")
 var LOG_PATH = filepath.Join(BASE_DIR, "guang.log")
 var DB_PATH = filepath.Join(BASE_DIR, "guang.db")
 var HOST_CACHE_PATH = filepath.Join(BASE_DIR, "ip_cache.kch")
+var XFR_DBG_PATH = filepath.Join(BASE_DIR, "xfr")
 
 func SetBaseDir(path string) {
-	// if isdir, _ := krylib.IsDir(path); !isdir {
-	// 	fmt.Printf("Error setting BASE_DIR to %s - folder does not exist!\n",
-	// 		path)
-	// 	return
-	// }
-
 	fmt.Printf("Setting BASE_DIR to %s\n", path)
 
 	BASE_DIR = path
 	LOG_PATH = filepath.Join(BASE_DIR, "guang.log")
 	DB_PATH = filepath.Join(BASE_DIR, "guang.db")
 	HOST_CACHE_PATH = filepath.Join(BASE_DIR, "ip_cache.kch")
+	XFR_DBG_PATH = filepath.Join(BASE_DIR, "xfr")
 
-	InitApp()
+	if err := InitApp(); err != nil {
+		fmt.Printf("Error initializing application environment: %s\n", err.Error())
+	}
 } // func SetBaseDir(path string)
 
 var log_cache map[string]*log.Logger
@@ -95,6 +93,12 @@ func InitApp() error {
 	if err != nil {
 		if !os.IsExist(err) {
 			msg := fmt.Sprintf("Error creating BASE_DIR %s: %s", BASE_DIR, err.Error())
+			return errors.New(msg)
+		}
+	} else if err = os.Mkdir(XFR_DBG_PATH, 0755); err != nil {
+		if !os.IsExist(err) {
+			msg := fmt.Sprintf("Error creating XFR_DBG_PATH %s: %s",
+				XFR_DBG_PATH, err.Error())
 			return errors.New(msg)
 		}
 	}

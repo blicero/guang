@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 23. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2015-12-25 14:23:20 krylon>
+// Time-stamp: <2015-12-26 00:30:07 krylon>
 
 package guang
 
@@ -15,6 +15,7 @@ import (
 const (
 	HOST_SOURCE_USER = iota
 	HOST_SOURCE_GEN
+	HOST_SOURCE_A
 	HOST_SOURCE_MX
 	HOST_SOURCE_NS
 )
