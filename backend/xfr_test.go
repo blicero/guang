@@ -2,9 +2,9 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 26. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2015-12-26 00:59:49 krylon>
+// Time-stamp: <2015-12-28 15:05:32 krylon>
 
-package guang
+package backend
 
 import (
 	"fmt"
@@ -17,6 +17,8 @@ var xfr_client *XFRClient
 var req_queue chan string
 
 const REQ_ZONE = "krylon.net."
+
+const REQ_ZONE_FAIL = "example.com."
 
 func TestCreateClient(t *testing.T) {
 	var rng *rand.Rand = rand.New(rand.NewSource(time.Now().Unix()))
@@ -36,9 +38,29 @@ func TestCreateClient(t *testing.T) {
 
 func TestXFR(t *testing.T) {
 	var err error
+	var db *HostDB
 
-	if err = xfr_client.perform_xfr(REQ_ZONE); err != nil {
+	if db, err = OpenDB(DB_PATH); err != nil {
+		t.Fatalf("Error opening database: %s", err.Error())
+	} else {
+		defer db.Close()
+	}
+
+	if err = xfr_client.perform_xfr(REQ_ZONE, db); err != nil {
 		t.Fatalf("Error performing XFR of %s: %s",
 			REQ_ZONE, err.Error())
 	}
 } // func TestXFR(t *testing.T)
+
+func TestXFRFail(t *testing.T) {
+	var err error
+	var db *HostDB
+
+	if db, err = OpenDB(DB_PATH); err != nil {
+		t.Fatalf("Error opening HostDB at %s: %s",
+			DB_PATH, err.Error())
+	} else if err = xfr_client.perform_xfr(REQ_ZONE_FAIL, db); err == nil {
+		t.Fatalf("Well THAT was unexpected: XFR of %s should have failed, but apparently it did not.",
+			REQ_ZONE_FAIL)
+	}
+} // func TestXFRFail(t *testing.T)

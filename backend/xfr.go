@@ -2,18 +2,20 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 25. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2015-12-26 00:53:57 krylon>
+// Time-stamp: <2015-12-28 15:03:07 krylon>
 
-package guang
+package backend
 
 import (
 	"errors"
 	"fmt"
+	"krylib"
 	"log"
 	"net"
 	"os"
 	"path/filepath"
 	"regexp"
+	"time"
 
 	//"github.com/miekg/dns"
 	"github.com/tonnerre/golang-dns"
@@ -27,7 +29,6 @@ var v6_addr_pat = regexp.MustCompile("[0-9a-f:]+")
 
 type XFRClient struct {
 	res           *dns.Client
-	db            *HostDB
 	request_queue chan string
 	log           *log.Logger
 	host_re       *regexp.Regexp
@@ -37,7 +38,6 @@ type XFRClient struct {
 
 func MakeXFRClient(queue chan string) (*XFRClient, error) {
 	var err error
-	var msg string
 	var client *XFRClient = &XFRClient{
 		request_queue: queue,
 		host_re:       regexp.MustCompile(HOST_RE_PAT),
@@ -51,20 +51,95 @@ func MakeXFRClient(queue chan string) (*XFRClient, error) {
 	if client.log, err = GetLogger("XFRClient"); err != nil {
 		fmt.Printf("Error getting Logger instance for XFRClient: %s\n", err.Error())
 		return nil, err
-	} else if client.db, err = OpenDB(DB_PATH); err != nil {
-		msg = fmt.Sprintf("Error opening database at %s: %s",
-			DB_PATH, err.Error())
-		client.log.Println(msg)
-		return nil, errors.New(msg)
 	} else {
 		return client, nil
 	}
 } // func MakeXFRClient(queue chan string) (*XFRClient, error)
 
-func (self *XFRClient) perform_xfr(zone string) error {
+func (self *XFRClient) Start(cnt int) {
+	for i := 0; i < cnt; i++ {
+		go self.Worker(i)
+	}
+} // func (self *XFRClient) Start(cnt int)
+
+func (self *XFRClient) Worker(worker_id int) {
+	var hostname, zone, msg string
+	var err error
+	var xfr *XFR
+	var submatch []string
+	var db *HostDB
+
+	if db, err = OpenDB(DB_PATH); err != nil {
+		msg = fmt.Sprintf("Error opening database at %s: %s",
+			DB_PATH, err.Error())
+		self.log.Println(msg)
+		return
+	} else {
+		defer db.Close()
+	}
+
+LOOP:
+	for {
+		hostname = <-self.request_queue
+		if submatch = self.host_re.FindStringSubmatch(hostname); submatch == nil {
+			msg = fmt.Sprintf("Error extracting zone from hostname %s", hostname)
+			self.log.Println(msg)
+			continue LOOP
+		} else if len(submatch) == 0 {
+			msg = fmt.Sprintf("CANTHAPPEN: Did not find zone in hostname: %s", hostname)
+			self.log.Println(msg)
+			continue LOOP
+		}
+
+		zone = submatch[1]
+		if xfr, err = db.XfrGetByZone(zone); err != nil {
+			msg = fmt.Sprintf("Error looking up XFR of %s: %s",
+				zone, err.Error())
+			self.log.Println(msg)
+			continue LOOP
+		} else if xfr != nil {
+			// Looks like we've been down that road before...
+			continue LOOP
+		}
+
+		xfr = &XFR{
+			ID:     krylib.INVALID_ID,
+			Zone:   zone,
+			Start:  time.Now(),
+			Status: XFR_STATUS_UNFINISHED,
+		}
+
+		if err = db.XfrAdd(xfr); err != nil {
+			msg = fmt.Sprintf("Error adding XFR of %s to database: %s",
+				zone, err.Error())
+			self.log.Println(msg)
+			continue LOOP
+		} else if xfr.ID == krylib.INVALID_ID {
+			self.log.Printf("I added the XFR of %s to the database, but the ID was not set!\n",
+				zone)
+			continue LOOP
+		}
+
+		var status XfrStatus
+
+		if err = self.perform_xfr(zone, db); err != nil {
+			status = XFR_STATUS_REFUSED
+		} else {
+			status = XFR_STATUS_SUCCESS
+		}
+
+		if err = db.XfrFinish(xfr, status); err != nil {
+			msg = fmt.Sprintf("Error finishing XFR of %s with status %s: %s",
+				zone, status.String(), err.Error())
+		}
+	}
+} // func (self *XFRClient) Worker()
+
+func (self *XFRClient) perform_xfr(zone string, db *HostDB) error {
 	var err error
 	var msg string
 	var ns_records []*net.NS
+	var res bool
 
 	// First, need to get the nameservers for the zone:
 	if ns_records, err = net.LookupNS(zone); err != nil {
@@ -95,7 +170,7 @@ func (self *XFRClient) perform_xfr(zone string) error {
 	}
 
 	for _, srv := range servers {
-		if res, err := self.attempt_xfr(zone, srv); err != nil {
+		if res, err = self.attempt_xfr(zone, srv, db); err != nil {
 			msg = fmt.Sprintf("Error asking %s for XFR of %s: %s",
 				srv.String(), zone, err.Error())
 			self.log.Println(msg)
@@ -112,13 +187,14 @@ func (self *XFRClient) perform_xfr(zone string) error {
 
 // Samstag, 26. 12. 2015, 00:44
 // Maybe I should factor this method into yet more sub-methods. It's rather long...
-func (self *XFRClient) attempt_xfr(zone string, srv net.IP) (bool, error) {
+func (self *XFRClient) attempt_xfr(zone string, srv net.IP, db *HostDB) (bool, error) {
 	var msg string
 	var err error
 	var rr_cnt int64
 	var xfr_msg dns.Msg
 	var env_chan chan *dns.Envelope
 	var addr_list []string
+	var xfr_error bool
 
 	xfr_msg.SetAxfr(zone)
 
@@ -152,7 +228,10 @@ func (self *XFRClient) attempt_xfr(zone string, srv net.IP) (bool, error) {
 	}
 
 	for envelope := range env_chan {
+		xfr_error = false
 		if envelope.Error != nil {
+			err = envelope.Error
+			xfr_error = true
 			msg = fmt.Sprintf("Error during AXFR of %s: %s",
 				zone, envelope.Error.Error())
 			self.log.Println(msg)
@@ -176,7 +255,7 @@ func (self *XFRClient) attempt_xfr(zone string, srv net.IP) (bool, error) {
 					continue RR_LOOP
 				}
 
-				if err = self.db.HostAdd(&host); err != nil {
+				if err = db.HostAdd(&host); err != nil {
 					msg = fmt.Sprintf("Error adding host %s/%s to database: %s",
 						host.Address.String(), host.Name, err.Error())
 					self.log.Println(msg)
@@ -203,7 +282,7 @@ func (self *XFRClient) attempt_xfr(zone string, srv net.IP) (bool, error) {
 
 						if self.addr_bl.MatchesIP(ns_host.Address) {
 							continue ADDR_LOOP
-						} else if err = self.db.HostAdd(&ns_host); err != nil {
+						} else if err = db.HostAdd(&ns_host); err != nil {
 							msg = fmt.Sprintf("Error adding Nameserver %s to database: %s",
 								ns_host.Name, err.Error())
 							self.log.Println(msg)
@@ -229,7 +308,7 @@ func (self *XFRClient) attempt_xfr(zone string, srv net.IP) (bool, error) {
 						Source:  HOST_SOURCE_MX,
 					}
 
-					if err = self.db.HostAdd(&mx_host); err != nil {
+					if err = db.HostAdd(&mx_host); err != nil {
 						msg = fmt.Sprintf("Error adding MX %s/%s to database: %s",
 							mx_host.Name,
 							mx_host.Address.String(),
@@ -245,7 +324,7 @@ func (self *XFRClient) attempt_xfr(zone string, srv net.IP) (bool, error) {
 
 				if self.name_bl.Matches(host.Name) || self.addr_bl.MatchesIP(host.Address) {
 					continue RR_LOOP
-				} else if err = self.db.HostAdd(&host); err != nil {
+				} else if err = db.HostAdd(&host); err != nil {
 					msg = fmt.Sprintf("Error adding host %s/%s to database: %s",
 						host.Name, host.Address.String(), err.Error())
 					self.log.Println(msg)
@@ -255,5 +334,9 @@ func (self *XFRClient) attempt_xfr(zone string, srv net.IP) (bool, error) {
 		}
 	}
 
+	if xfr_error {
+		return false, err
+	}
+
 	return true, nil
-} // func (self *XFRClient) attempt_xfr(zone string, srv net.IP) (bool, error)
+} // func (self *XFRClient) attempt_xfr(zone string, srv net.IP, db *HostDB) (bool, error)

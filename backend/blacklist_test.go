@@ -2,9 +2,9 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 21. 06. 2014 by Benjamin Walkenhorst
 // (c) 2014 Benjamin Walkenhorst
-// Time-stamp: <2015-12-23 16:47:06 krylon>
+// Time-stamp: <2015-12-27 16:30:41 krylon>
 
-package guang
+package backend
 
 import (
 	"fmt"

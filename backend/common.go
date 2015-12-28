@@ -2,9 +2,9 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 23. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2015-12-26 00:54:18 krylon>
+// Time-stamp: <2015-12-27 16:30:49 krylon>
 
-package guang
+package backend
 
 import (
 	"errors"

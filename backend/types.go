@@ -2,9 +2,9 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 23. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2015-12-26 00:30:07 krylon>
+// Time-stamp: <2015-12-27 16:32:03 krylon>
 
-package guang
+package backend
 
 import (
 	"krylib"
@@ -46,6 +46,21 @@ const (
 )
 
 type XfrStatus int
+
+func (self XfrStatus) String() string {
+	switch self {
+	case XFR_STATUS_UNFINISHED:
+		return "Unfinished"
+	case XFR_STATUS_SUCCESS:
+		return "Finished/Success"
+	case XFR_STATUS_REFUSED:
+		return "Finished/Refused"
+	case XFR_STATUS_ABORT:
+		return "Finished/Aborted"
+	default:
+		return "INVALID STATUS!!!"
+	}
+} // func (XfrStatus self) String() string
 
 type XFR struct {
 	ID     krylib.ID

@@ -2,9 +2,9 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 23. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2015-12-25 22:03:50 krylon>
+// Time-stamp: <2015-12-27 17:20:37 krylon>
 
-package guang
+package backend
 
 import (
 	"database/sql"
@@ -163,7 +163,7 @@ func (self *HostDB) worth_a_retry(err error) bool {
 } // func (self *HostDB) worth_a_retry(err error) bool
 
 func (self *HostDB) getStatement(stmt_id QueryID) (*sql.Stmt, error) {
-	if stmt := self.stmt_table[stmt_id]; stmt != nil {
+	if stmt, ok := self.stmt_table[stmt_id]; ok {
 		return stmt, nil
 	}
 
