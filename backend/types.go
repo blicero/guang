@@ -2,11 +2,12 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 23. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2015-12-27 16:32:03 krylon>
+// Time-stamp: <2016-01-09 20:38:53 krylon>
 
 package backend
 
 import (
+	"fmt"
 	"krylib"
 	"net"
 	"time"
@@ -35,7 +36,12 @@ type Port struct {
 	HostID    krylib.ID
 	Port      uint16
 	Timestamp time.Time
-	Reply     string
+	Reply     *string
+}
+
+type HostWithPorts struct {
+	Host  *Host
+	Ports []Port
 }
 
 const (
@@ -82,3 +88,34 @@ func XfrNew(zone string) *XFR {
 func (self *XFR) IsFinished() bool {
 	return self.Status != XFR_STATUS_UNFINISHED
 } // func (self *XFR) IsFinished() bool
+
+type ScanRequest struct {
+	Host Host
+	Port uint16
+}
+
+type ScanResult struct {
+	Host  Host
+	Port  uint16
+	Reply *string
+	Stamp time.Time
+	Err   error
+}
+
+const (
+	CTL_MSG_STOP = iota
+	CTL_MSG_STATUS
+)
+
+type ControlMessage int
+
+func (self ControlMessage) String() string {
+	switch self {
+	case CTL_MSG_STOP:
+		return "Control Message STOP"
+	case CTL_MSG_STATUS:
+		return "Control Message STATUS"
+	default:
+		return fmt.Sprintf("INVALID CONTROL MESSAGE (%d)", self)
+	}
+} // func (self ControlMessage) String() string

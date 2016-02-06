@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 25. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2015-12-28 15:03:07 krylon>
+// Time-stamp: <2016-01-09 02:22:04 krylon>
 
 package backend
 
@@ -57,7 +57,10 @@ func MakeXFRClient(queue chan string) (*XFRClient, error) {
 } // func MakeXFRClient(queue chan string) (*XFRClient, error)
 
 func (self *XFRClient) Start(cnt int) {
-	for i := 0; i < cnt; i++ {
+	for i := 1; i <= cnt; i++ {
+		if DEBUG {
+			self.log.Printf("Starting XFR Worker #%d\n", i)
+		}
 		go self.Worker(i)
 	}
 } // func (self *XFRClient) Start(cnt int)
@@ -81,6 +84,12 @@ func (self *XFRClient) Worker(worker_id int) {
 LOOP:
 	for {
 		hostname = <-self.request_queue
+
+		if DEBUG {
+			self.log.Printf("XFR Worker #%d got request for host %s\n",
+				worker_id, hostname)
+		}
+
 		if submatch = self.host_re.FindStringSubmatch(hostname); submatch == nil {
 			msg = fmt.Sprintf("Error extracting zone from hostname %s", hostname)
 			self.log.Println(msg)
@@ -89,6 +98,9 @@ LOOP:
 			msg = fmt.Sprintf("CANTHAPPEN: Did not find zone in hostname: %s", hostname)
 			self.log.Println(msg)
 			continue LOOP
+		} else if DEBUG {
+			self.log.Printf("XFR#%d - extracted zone %s from hostname %s\n",
+				worker_id, submatch[1], hostname)
 		}
 
 		zone = submatch[1]
@@ -238,6 +250,8 @@ func (self *XFRClient) attempt_xfr(zone string, srv net.IP, db *HostDB) (bool, e
 			continue
 		}
 
+		var host_exists bool
+
 	RR_LOOP:
 		for _, rr := range envelope.RR {
 			var host Host
@@ -255,7 +269,13 @@ func (self *XFRClient) attempt_xfr(zone string, srv net.IP, db *HostDB) (bool, e
 					continue RR_LOOP
 				}
 
-				if err = db.HostAdd(&host); err != nil {
+				if host_exists, err = db.HostExists(host.Address.String()); err != nil {
+					msg = fmt.Sprintf("Error checking if %s is already in database: %s",
+						host.Address.String(), err.Error())
+					self.log.Println(msg)
+				} else if host_exists {
+					continue RR_LOOP
+				} else if err = db.HostAdd(&host); err != nil {
 					msg = fmt.Sprintf("Error adding host %s/%s to database: %s",
 						host.Address.String(), host.Name, err.Error())
 					self.log.Println(msg)
@@ -282,6 +302,12 @@ func (self *XFRClient) attempt_xfr(zone string, srv net.IP, db *HostDB) (bool, e
 
 						if self.addr_bl.MatchesIP(ns_host.Address) {
 							continue ADDR_LOOP
+						} else if host_exists, err = db.HostExists(ns_host.Address.String()); err != nil {
+							msg = fmt.Sprintf("Error checking if %s is already in database: %s",
+								ns_host.Address.String(), err.Error())
+							self.log.Println(msg)
+						} else if host_exists {
+							continue ADDR_LOOP
 						} else if err = db.HostAdd(&ns_host); err != nil {
 							msg = fmt.Sprintf("Error adding Nameserver %s to database: %s",
 								ns_host.Name, err.Error())
@@ -301,6 +327,7 @@ func (self *XFRClient) attempt_xfr(zone string, srv net.IP, db *HostDB) (bool, e
 					continue RR_LOOP
 				}
 
+			MX_HOST:
 				for _, addr := range addr_list {
 					var mx_host Host = Host{
 						Name:    host.Name,
@@ -308,7 +335,13 @@ func (self *XFRClient) attempt_xfr(zone string, srv net.IP, db *HostDB) (bool, e
 						Source:  HOST_SOURCE_MX,
 					}
 
-					if err = db.HostAdd(&mx_host); err != nil {
+					if host_exists, err = db.HostExists(mx_host.Address.String()); err != nil {
+						msg = fmt.Sprintf("Error checking if %s is already in database: %s",
+							mx_host.Address.String(), err.Error())
+						self.log.Println(msg)
+					} else if host_exists {
+						continue MX_HOST
+					} else if err = db.HostAdd(&mx_host); err != nil {
 						msg = fmt.Sprintf("Error adding MX %s/%s to database: %s",
 							mx_host.Name,
 							mx_host.Address.String(),
@@ -323,6 +356,12 @@ func (self *XFRClient) attempt_xfr(zone string, srv net.IP, db *HostDB) (bool, e
 				host.Source = HOST_SOURCE_A
 
 				if self.name_bl.Matches(host.Name) || self.addr_bl.MatchesIP(host.Address) {
+					continue RR_LOOP
+				} else if host_exists, err = db.HostExists(host.Address.String()); err != nil {
+					msg = fmt.Sprintf("Error checking if %s exists in database: %s",
+						host.Address.String(), err.Error())
+					self.log.Println(msg)
+				} else if host_exists {
 					continue RR_LOOP
 				} else if err = db.HostAdd(&host); err != nil {
 					msg = fmt.Sprintf("Error adding host %s/%s to database: %s",

@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 23. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2015-12-27 17:20:37 krylon>
+// Time-stamp: <2016-01-09 02:24:15 krylon>
 
 package backend
 
@@ -18,6 +18,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/muesli/cache2go"
 	_ "github.com/mxk/go-sqlite/sqlite3"
 )
 
@@ -61,6 +62,8 @@ CREATE TABLE xfr (id INTEGER PRIMARY KEY,
 const (
 	STMT_HOST_ADD = iota
 	STMT_HOST_GET_BY_ID
+	STMT_HOST_GET_RANDOM
+	STMT_HOST_EXISTS
 	STMT_PORT_ADD
 	STMT_PORT_GET_BY_HOST
 	STMT_XFR_ADD
@@ -78,9 +81,13 @@ INSERT INTO host (addr, name, source, add_stamp)
 `,
 	STMT_HOST_GET_BY_ID: "SELECT addr, name, source, add_stamp FROM host WHERE id = ?",
 
+	STMT_HOST_GET_RANDOM: "SELECT id, addr, name, source, add_stamp FROM host WHERE RANDOM() > 8301034833169298432 LIMIT ?",
+
+	STMT_HOST_EXISTS: "SELECT COUNT(id) FROM host WHERE addr = ?",
+
 	STMT_PORT_ADD: `
 INSERT INTO port (host_id, port, timestamp, reply)
-          VALUES (      ?,    ?          ?,     ?)
+          VALUES (      ?,    ?,         ?,     ?)
 `,
 
 	STMT_PORT_GET_BY_HOST: "SELECT id, port, timestamp, reply FROM port WHERE host_id = ?",
@@ -103,12 +110,15 @@ var retry_pat *regexp.Regexp = regexp.MustCompile("(?i)(database is locked|busy)
 
 const RETRY_DELAY = 10 * time.Millisecond
 
+const cache_timeout = time.Second * 1200
+
 type HostDB struct {
 	db         *sql.DB
 	stmt_table map[QueryID]*sql.Stmt
 	tx         *sql.Tx
 	log        *log.Logger
 	path       string
+	host_cache *cache2go.CacheTable
 }
 
 func OpenDB(path string) (*HostDB, error) {
@@ -119,13 +129,16 @@ func OpenDB(path string) (*HostDB, error) {
 	db := &HostDB{
 		path:       path,
 		stmt_table: make(map[QueryID]*sql.Stmt),
+		host_cache: cache2go.Cache("host"),
 	}
 
 	if db.log, err = GetLogger("HostDB"); err != nil {
 		msg = fmt.Sprintf("Error creating logger for HostDB: %s", err.Error())
 		fmt.Println(msg)
 		return nil, errors.New(msg)
-	}
+	} /*else {
+		db.host_cache.SetLogger(db.log)
+	}*/
 
 	open_lock.Lock()
 	defer open_lock.Unlock()
@@ -370,6 +383,7 @@ EXEC_QUERY:
 		return errors.New(msg)
 	} else {
 		host.ID = krylib.ID(id)
+		self.host_cache.Add(host.Address.String(), cache_timeout, true)
 	}
 
 	if ad_hoc {
@@ -434,6 +448,151 @@ EXEC_QUERY:
 		return nil, nil
 	}
 } // func (self *HostDB) HostGetByID(id krylib.ID) (*Host, error)
+
+func (self *HostDB) HostGetRandom(max int) ([]Host, error) {
+	var err error
+	var msg string
+	var stmt *sql.Stmt
+	var hosts []Host
+
+GET_QUERY:
+	if stmt, err = self.getStatement(STMT_HOST_GET_RANDOM); err != nil {
+		if self.worth_a_retry(err) {
+			time.Sleep(RETRY_DELAY)
+			goto GET_QUERY
+		} else {
+			msg = fmt.Sprintf("Error getting query STMT_HOST_GET_RANDOM: %s",
+				err.Error())
+			self.log.Println(msg)
+		}
+	} else if self.tx != nil {
+		stmt = self.tx.Stmt(stmt)
+	}
+
+	var rows *sql.Rows
+
+EXEC_QUERY:
+	if rows, err = stmt.Query(max); err != nil {
+		if self.worth_a_retry(err) {
+			time.Sleep(RETRY_DELAY)
+			goto EXEC_QUERY
+		} else {
+			msg = fmt.Sprintf("Error querying %d random hosts: %s",
+				max, err.Error())
+			self.log.Println(msg)
+			return nil, errors.New(msg)
+		}
+	} else {
+		defer rows.Close()
+	}
+
+	hosts = make([]Host, max)
+	idx := 0
+
+	for rows.Next() {
+		var id, stamp, source int64
+		var host Host
+		var addr_str string
+
+	SCAN_ROW:
+		err = rows.Scan(
+			&id,
+			&addr_str,
+			&host.Name,
+			&source,
+			&stamp)
+		if err != nil {
+			if self.worth_a_retry(err) {
+				time.Sleep(RETRY_DELAY)
+				goto SCAN_ROW
+			} else {
+				msg = fmt.Sprintf("Error scanning row: %s", err.Error())
+				self.log.Println(msg)
+				return nil, errors.New(msg)
+			}
+		} else {
+			host.ID = krylib.ID(id)
+			host.Source = HostSource(source)
+			host.Address = net.ParseIP(addr_str)
+			host.Added = time.Unix(stamp, 0)
+			hosts[idx] = host
+			idx++
+		}
+	}
+
+	if idx < max {
+		return hosts[0:idx], nil
+	} else {
+		return hosts, nil
+	}
+} // func (self *HostDB) HostGetRandom(max int) ([]Host, error)
+
+func (self *HostDB) HostExists(addr string) (bool, error) {
+	var err error
+	var msg string
+	var stmt *sql.Stmt
+	//var cache_item *cache2go.CacheItem
+
+	if _, err = self.host_cache.Value(addr); err == nil {
+		return true, nil
+	} /* else {
+		msg = fmt.Sprintf("Error looking up %s in host cache: %s",
+			addr, err.Error())
+		self.log.Println(msg)
+		return false, errors.New(msg)
+	} */
+
+GET_QUERY:
+	if stmt, err = self.getStatement(STMT_HOST_EXISTS); err != nil {
+		if self.worth_a_retry(err) {
+			time.Sleep(RETRY_DELAY)
+			goto GET_QUERY
+		} else {
+			msg = fmt.Sprintf("Error getting query STMT_HOST_EXISTS: %s",
+				err.Error())
+			self.log.Println(msg)
+			return false, errors.New(msg)
+		}
+	}
+
+	var rows *sql.Rows
+
+EXEC_QUERY:
+	if rows, err = stmt.Query(addr); err != nil {
+		if self.worth_a_retry(err) {
+			time.Sleep(RETRY_DELAY)
+			goto EXEC_QUERY
+		} else {
+			msg = fmt.Sprintf("Error querying if host %s is already in the database: %s",
+				addr, err.Error())
+			self.log.Println(msg)
+			return false, errors.New(msg)
+		}
+	} else {
+		defer rows.Close()
+	}
+
+	if rows.Next() {
+		var cnt int64
+
+		if err = rows.Scan(&cnt); err != nil {
+			msg = fmt.Sprintf("Error scanning row: %s",
+				err.Error())
+			self.log.Println(msg)
+			return false, errors.New(msg)
+		} else if cnt > 0 {
+			self.host_cache.Add(addr, cache_timeout, true)
+			return true, nil
+		} else {
+			return false, nil
+		}
+	} else {
+		msg = fmt.Sprintf("CANTHAPPEN: No result rows looking for presence of host %s!",
+			addr)
+		self.log.Println(msg)
+		return false, errors.New(msg)
+	}
+} // func (self *HostDB) HostExists(addr string) (bool, error)
 
 func (self *HostDB) XfrAdd(xfr *XFR) error {
 	var err error
@@ -631,3 +790,127 @@ EXEC_QUERY:
 		return nil, nil
 	}
 } // func (self *HostDB) XfrGetByZone(zone string) (*XFR, error)
+
+func (self *HostDB) PortAdd(res *ScanResult) error {
+	var err error
+	var msg string
+	var stmt *sql.Stmt
+	var tx *sql.Tx
+	var ad_hoc bool
+
+GET_QUERY:
+	if stmt, err = self.getStatement(STMT_PORT_ADD); err != nil {
+		if self.worth_a_retry(err) {
+			time.Sleep(RETRY_DELAY)
+			goto GET_QUERY
+		} else {
+			msg = fmt.Sprintf("Error getting query STMT_PORT_ADD: %s",
+				err.Error())
+			self.log.Println(msg)
+			return errors.New(msg)
+		}
+	} else if self.tx != nil {
+		tx = self.tx
+	} else {
+		ad_hoc = true
+	BEGIN_AD_HOC:
+		if tx, err = self.db.Begin(); err != nil {
+			if self.worth_a_retry(err) {
+				time.Sleep(RETRY_DELAY)
+				goto BEGIN_AD_HOC
+			} else {
+				msg = fmt.Sprintf("Error starting ad-hoc TX for adding Port: %s",
+					err.Error())
+				self.log.Println(msg)
+				return errors.New(msg)
+			}
+		}
+	}
+
+	stmt = tx.Stmt(stmt)
+
+EXEC_QUERY:
+	if _, err = stmt.Exec(res.Host.ID, res.Port, res.Stamp, res.Reply); err != nil {
+		if self.worth_a_retry(err) {
+			time.Sleep(RETRY_DELAY)
+			goto EXEC_QUERY
+		} else {
+			msg = fmt.Sprintf("Error adding ScanResult to database: %s",
+				err.Error())
+			self.log.Println(msg)
+			if ad_hoc {
+				tx.Rollback()
+			}
+			return errors.New(msg)
+		}
+	} else if ad_hoc {
+		tx.Commit()
+	}
+
+	return nil
+} // func (self *HostDB) PortAdd(res *ScanResult) error
+
+func (self *HostDB) PortGetByHost(host_id krylib.ID) ([]Port, error) {
+	var err error
+	var msg string
+	var stmt *sql.Stmt
+	var rows *sql.Rows
+	var ports []Port
+
+GET_QUERY:
+	if stmt, err = self.getStatement(STMT_PORT_GET_BY_HOST); err != nil {
+		if self.worth_a_retry(err) {
+			time.Sleep(RETRY_DELAY)
+			goto GET_QUERY
+		} else {
+			msg = fmt.Sprintf("Error getting query STMT_PORT_GET_BY_HOST: %s",
+				err.Error())
+			self.log.Println(msg)
+			return nil, errors.New(msg)
+		}
+	} else if self.tx != nil {
+		stmt = self.tx.Stmt(stmt)
+	}
+
+EXEC_QUERY:
+	if rows, err = stmt.Query(host_id); err != nil {
+		if self.worth_a_retry(err) {
+			time.Sleep(RETRY_DELAY)
+			goto EXEC_QUERY
+		} else {
+			msg = fmt.Sprintf("Error querying ports for Host #%d: %s",
+				host_id, err.Error())
+			self.log.Println(msg)
+			return nil, errors.New(msg)
+		}
+	} else {
+		defer rows.Close()
+		ports = make([]Port, 0)
+	}
+
+	for rows.Next() {
+		var port_id, stamp int64
+		var port Port = Port{
+			HostID: host_id,
+		}
+
+	SCAN_ROW:
+		if err = rows.Scan(&port_id, &port.Port, &stamp, &port.Reply); err != nil {
+			if self.worth_a_retry(err) {
+				time.Sleep(RETRY_DELAY)
+				goto SCAN_ROW
+			} else {
+				msg = fmt.Sprintf("Error scanning result row into Port: %s",
+					err.Error())
+				self.log.Println(msg)
+				return nil, errors.New(msg)
+			}
+		} else {
+			port.ID = krylib.ID(port_id)
+			port.Timestamp = time.Unix(stamp, 0)
+			ports = append(ports, port)
+		}
+	}
+
+	return ports, nil
+} // func (self *HostDB) PortGetByHost(id krylib.ID) ([]Port, error)

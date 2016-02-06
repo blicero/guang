@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 25. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2015-12-27 16:31:14 krylon>
+// Time-stamp: <2015-12-30 10:27:51 krylon>
 
 package backend
 
@@ -120,3 +120,18 @@ func TestFinishXFR(t *testing.T) {
 		t.Fatalf("Error finishing XFR: %s", err.Error())
 	}
 } // func TestFinishXFR(t *testing.T)
+
+func TestPortAdd(t *testing.T) {
+	var err error
+	var test_reply string = "Wer das liest, ist doof."
+	var res ScanResult = ScanResult{
+		Host:  hosts[0],
+		Port:  22,
+		Reply: &test_reply,
+		Stamp: time.Now(),
+	}
+
+	if err = db.PortAdd(&res); err != nil {
+		t.Fatalf("Error adding ScanResult: %s", err.Error())
+	}
+} // func TestPortAdd(t *testing.T)

@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 23. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2015-12-27 16:30:49 krylon>
+// Time-stamp: <2016-02-05 20:50:22 krylon>
 
 package backend
 
@@ -13,7 +13,6 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"sync"
 )
 
 //var DEBUG bool = true
@@ -45,9 +44,6 @@ func SetBaseDir(path string) {
 	}
 } // func SetBaseDir(path string)
 
-var log_cache map[string]*log.Logger
-var log_lock sync.Mutex
-
 // Try to create a named logger instance and return it.
 // If the directory to hold the log file does not exist, try to create it.
 func GetLogger(name string) (*log.Logger, error) {
@@ -61,12 +57,6 @@ func GetLogger(name string) (*log.Logger, error) {
 		APP_NAME,
 		name)
 
-	log_lock.Lock()
-	defer log_lock.Unlock()
-	if logger, ok := log_cache[log_name]; ok {
-		return logger, nil
-	}
-
 	var logfile *os.File
 	logfile, err = os.OpenFile(LOG_PATH, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0644)
 	if err != nil {
@@ -78,17 +68,12 @@ func GetLogger(name string) (*log.Logger, error) {
 	writer := io.MultiWriter(os.Stdout, logfile)
 
 	logger := log.New(writer, log_name, log.Ldate|log.Ltime|log.Lshortfile)
-	log_cache[log_name] = logger
 	return logger, nil
 } // func GetLogger(name string) (*log.logger, error)
 
 // Perform some basic preparations for the application to run.
 // Currently, this means creating the BASE_DIR folder.
 func InitApp() error {
-	if log_cache == nil {
-		log_cache = make(map[string]*log.Logger)
-	}
-
 	err := os.Mkdir(BASE_DIR, 0755)
 	if err != nil {
 		if !os.IsExist(err) {
