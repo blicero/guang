@@ -1,0 +1,63 @@
+{{define "index"}}
+{{/* -*- mode: web; coding: utf-8; -*- */}}
+{{/* Time-stamp: <2016-02-06 17:04:49 krylon> */}}
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>{{.Title}}</title>
+    <link rel="stylesheet" type="text/css" href="/static/style.css" />
+    <script type="text/javascript" src="/static/jquery-1.11.3.min.js">
+    </script>
+
+    <script type="text/javascript" src="/static/underscore.js">
+    </script>
+
+    <script type="text/javascript" src="/static/interact.js">
+    </script>
+  </head>
+
+  <body>
+    <h1>{{.Title}}</h1>
+    <hr />
+    
+    {{if (gt (len .Error)) 0}}
+    <div class="error">
+      {{range .Error}}
+      {{.}}<br />
+      {{end}}
+    </div>
+    <hr />
+    {{end}}
+
+    Current state of Guang:
+    <table>
+      <tr>
+        <th>Host generators</th>
+        <td>{{.HostGenCnt}}</td>
+      </tr>
+
+      <tr>
+        <th>XFR workers</th>
+        <td>{{.XFRCnt}}</td>
+      </tr>
+
+      <tr>
+        <th>Scanners</th>
+        <td>{{.ScanCnt}}</td>
+      </tr>
+
+      <tr>
+        <th>Hosts in database</th>
+        <td>{{.HostCnt}}</td>
+      </tr>
+
+      <tr>
+        <th>Ports successfully scanned</th>
+        <td>{{.PortReplyCnt}}</td>
+      </tr>
+    </table>
+
+    {{template "footer"}}
+  </body>
+</html>
+{{end}}

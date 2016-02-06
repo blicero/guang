@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 23. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2016-01-09 02:24:15 krylon>
+// Time-stamp: <2016-02-06 17:50:11 krylon>
 
 package backend
 
@@ -531,16 +531,10 @@ func (self *HostDB) HostExists(addr string) (bool, error) {
 	var err error
 	var msg string
 	var stmt *sql.Stmt
-	//var cache_item *cache2go.CacheItem
 
 	if _, err = self.host_cache.Value(addr); err == nil {
 		return true, nil
-	} /* else {
-		msg = fmt.Sprintf("Error looking up %s in host cache: %s",
-			addr, err.Error())
-		self.log.Println(msg)
-		return false, errors.New(msg)
-	} */
+	}
 
 GET_QUERY:
 	if stmt, err = self.getStatement(STMT_HOST_EXISTS); err != nil {
