@@ -3,7 +3,7 @@
 # /Users/krylon/go/src/videostore/build_templates_go.pl
 # created at 05. 09. 2015 by Benjamin Walkenhorst
 # (c) 2015 Benjamin Walkenhorst <krylon@gmx.net>
-# Time-stamp: <2016-02-06 18:32:33 krylon>
+# Time-stamp: <2016-02-13 10:55:38 krylon>
 #  Redistribution and use in source and binary forms, with or without
 #  modification, are permitted provided that the following conditions
 #  are met:
@@ -67,6 +67,7 @@ while (readdir $static) {
   next if /~$/;
   open(my $fh, '<:encoding(UTF-8)', "$html_root/static/$_")
     or croak "Error opening static/$_ - $OS_ERROR";
+  say "Processing static/$_";
 
   local $/;
 
@@ -95,6 +96,7 @@ while (readdir $templates) {
   next if /~$/;
   open(my $fh, '<:encoding(UTF-8)', "$html_root/templates/$_")
     or croak "Error opening $_: $OS_ERROR";
+  say "Processing templates/$_";
 
   local $/;
   my $content = <$fh>;

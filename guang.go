@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 27. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2016-01-09 14:37:34 krylon>
+// Time-stamp: <2016-02-13 15:01:04 krylon>
 
 package main
 
@@ -10,9 +10,9 @@ import (
 	"flag"
 	"fmt"
 	"guang/backend"
+	"guang/frontend"
 	"log"
 	"os"
-	"path/filepath"
 	"time"
 
 	"net/http"
@@ -32,17 +32,26 @@ func main() {
 	var db *backend.HostDB
 	var do_xfr bool
 	var scanner *backend.Scanner
+	var webserver *frontend.WebFrontend
+	var port int = 4711
+	var nexus *backend.Nexus
+	var base_dir string = backend.BASE_DIR
 
 	flag.IntVar(&gen_cnt, "generators", gen_cnt, "Number of Host Generators to run")
 	flag.IntVar(&xfr_worker_cnt, "xfr", xfr_worker_cnt, "Number of XFR workers to run")
 	flag.IntVar(&scanner_cnt, "scanner", scanner_cnt, "Number of scanner workers to run")
 	flag.BoolVar(&do_profile, "profile", do_profile, "Run the builtin profiling server")
+	flag.IntVar(&port, "port", port, "Port for the web server to listen on")
+	flag.StringVar(&base_dir, "basedir", backend.BASE_DIR, "Base directory for application-specific files")
 
 	flag.Parse()
 
 	if gen_cnt == 0 && xfr_worker_cnt == 0 && scanner_cnt == 0 {
 		fmt.Println("Alrighty then!")
 		os.Exit(0)
+	} else if port < 0 || port > 65535 {
+		fmt.Printf("Port for web server is not in the valid range (0 - 65535): %d\n", port)
+		os.Exit(1)
 	}
 
 	// Freitag, 08. 01. 2016, 22:39
@@ -54,8 +63,10 @@ func main() {
 		}()
 	}
 
-	base_dir := filepath.Join(os.Getenv("HOME"), ".guang")
-	backend.SetBaseDir(base_dir)
+	//base_dir := filepath.Join(os.Getenv("HOME"), "guang.d")
+	if base_dir != backend.BASE_DIR {
+		backend.SetBaseDir(base_dir)
+	}
 
 	if mlog, err = backend.GetLogger("MAIN"); err != nil {
 		fmt.Printf("Error creating Logger instance: %s\n",
@@ -133,10 +144,18 @@ func main() {
 		}
 	}
 
-	// Once I got the web frontend more or less working, I am going to run
-	// the web server here.
-	for {
-		time.Sleep(time.Second * 10)
+	if port == 0 {
+		// Once I got the web frontend more or less working, I am going to run
+		// the web server here.
+		for {
+			time.Sleep(time.Second * 10)
+		}
+	} else if nexus, err = backend.CreateNexus(gen, scanner, xfr); err != nil {
+		fmt.Printf("Error creating Nexus: %s\n", err.Error())
+		os.Exit(1)
+	} else {
+		webserver, err = frontend.CreateFrontend("0.0.0.0", uint16(port), nexus)
+		webserver.Serve()
 	}
 
 } // func main()

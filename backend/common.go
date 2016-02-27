@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 23. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2016-02-05 20:50:22 krylon>
+// Time-stamp: <2016-02-13 14:47:23 krylon>
 
 package backend
 
@@ -23,7 +23,7 @@ const (
 	APP_NAME      = "Guang"
 )
 
-var BASE_DIR string = filepath.Join(os.Getenv("HOME"), ".guang")
+var BASE_DIR string = filepath.Join(os.Getenv("HOME"), "guang.d")
 
 var LOG_PATH = filepath.Join(BASE_DIR, "guang.log")
 var DB_PATH = filepath.Join(BASE_DIR, "guang.db")

@@ -1,6 +1,6 @@
 {{define "index"}}
 {{/* -*- mode: web; coding: utf-8; -*- */}}
-{{/* Time-stamp: <2016-02-06 17:04:49 krylon> */}}
+{{/* Time-stamp: <2016-02-13 20:40:01 krylon> */}}
 <!DOCTYPE html>
 <html>
   <head>
@@ -19,8 +19,12 @@
   <body>
     <h1>{{.Title}}</h1>
     <hr />
+
+    {{if .Debug}}
+    Page was rendered on {{now}} 
+    {{end}}
     
-    {{if (gt (len .Error)) 0}}
+    {{if (gt (len .Error) 0)}}
     <div class="error">
       {{range .Error}}
       {{.}}<br />
@@ -30,7 +34,7 @@
     {{end}}
 
     Current state of Guang:
-    <table>
+    <table class="horizontal">
       <tr>
         <th>Host generators</th>
         <td>{{.HostGenCnt}}</td>

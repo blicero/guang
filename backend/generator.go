@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 23. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2015-12-27 16:31:32 krylon>
+// Time-stamp: <2016-02-13 10:45:49 krylon>
 //
 // IIRC, throughput never was much of an issue with this part of the program.
 // But if it were, there are a few tricks on could pull here.
@@ -43,9 +43,8 @@ func CreateGenerator(worker_cnt int) (*HostGenerator, error) {
 		HostQueue:  make(chan Host, worker_cnt*2),
 		running:    true,
 		worker_cnt: worker_cnt,
-		//cache:      cabinet.New(),
-		name_bl: DefaultNameBlacklist(),
-		addr_bl: DefaultIPBlacklist(),
+		name_bl:    DefaultNameBlacklist(),
+		addr_bl:    DefaultIPBlacklist(),
 	}
 
 	if gen.log, err = GetLogger("Generator"); err != nil {
@@ -82,6 +81,12 @@ func (self *HostGenerator) Stop() {
 } // func (self *HostGenerator) Stop()
 
 func (self *HostGenerator) worker(id int) {
+	defer func() {
+		self.lock.Lock()
+		self.worker_cnt--
+		self.lock.Unlock()
+	}()
+
 	var msg, astr string
 	var err error
 	var rng *rand.Rand = rand.New(rand.NewSource(time.Now().UnixNano()))
@@ -120,6 +125,7 @@ MAIN_LOOP:
 		} else {
 			host.Address = addr
 			host.Name = namelist[0]
+
 			host.Source = HOST_SOURCE_GEN
 			host.Added = time.Now()
 			self.HostQueue <- host

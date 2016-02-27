@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 23. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2016-02-06 17:50:11 krylon>
+// Time-stamp: <2016-02-20 19:58:52 krylon>
 
 package backend
 
@@ -63,9 +63,12 @@ const (
 	STMT_HOST_ADD = iota
 	STMT_HOST_GET_BY_ID
 	STMT_HOST_GET_RANDOM
+	STMT_HOST_GET_CNT
 	STMT_HOST_EXISTS
 	STMT_PORT_ADD
 	STMT_PORT_GET_BY_HOST
+	STMT_PORT_GET_REPLY_CNT
+	STMT_PORT_GET_OPEN
 	STMT_XFR_ADD
 	STMT_XFR_GET_BY_ZONE
 	STMT_XFR_FINISH
@@ -81,7 +84,19 @@ INSERT INTO host (addr, name, source, add_stamp)
 `,
 	STMT_HOST_GET_BY_ID: "SELECT addr, name, source, add_stamp FROM host WHERE id = ?",
 
-	STMT_HOST_GET_RANDOM: "SELECT id, addr, name, source, add_stamp FROM host WHERE RANDOM() > 8301034833169298432 LIMIT ?",
+	//STMT_HOST_GET_RANDOM: "SELECT id, addr, name, source, add_stamp FROM host WHERE RANDOM() > 8301034833169298432 LIMIT ?",
+	STMT_HOST_GET_RANDOM: `
+SELECT id,
+       addr,
+       name,
+       source,
+       add_stamp
+FROM host
+LIMIT ?
+OFFSET ABS(RANDOM()) % MAX((SELECT COUNT(*) FROM host), 1)
+`,
+
+	STMT_HOST_GET_CNT: "SELECT COUNT(id) FROM host",
 
 	STMT_HOST_EXISTS: "SELECT COUNT(id) FROM host WHERE addr = ?",
 
@@ -104,6 +119,18 @@ SELECT id,
 FROM xfr
 WHERE status = 0
 `,
+	STMT_PORT_GET_REPLY_CNT: "SELECT COUNT(id) FROM port WHERE reply IS NOT NULL",
+
+	STMT_PORT_GET_OPEN: `
+SELECT 
+  id, 
+  host_id, 
+  port, 
+  timestamp, 
+  reply
+FROM port
+WHERE reply IS NOT NULL
+ORDER BY port`,
 }
 
 var retry_pat *regexp.Regexp = regexp.MustCompile("(?i)(database is locked|busy)")
@@ -136,9 +163,7 @@ func OpenDB(path string) (*HostDB, error) {
 		msg = fmt.Sprintf("Error creating logger for HostDB: %s", err.Error())
 		fmt.Println(msg)
 		return nil, errors.New(msg)
-	} /*else {
-		db.host_cache.SetLogger(db.log)
-	}*/
+	}
 
 	open_lock.Lock()
 	defer open_lock.Unlock()
@@ -908,3 +933,190 @@ EXEC_QUERY:
 
 	return ports, nil
 } // func (self *HostDB) PortGetByHost(id krylib.ID) ([]Port, error)
+
+func (self *HostDB) PortGetReplyCount() (int64, error) {
+	var msg string
+	var err error
+	var stmt *sql.Stmt
+	var rows *sql.Rows
+	var cnt int64
+
+GET_QUERY:
+	if stmt, err = self.getStatement(STMT_PORT_GET_REPLY_CNT); err != nil {
+		if self.worth_a_retry(err) {
+			time.Sleep(RETRY_DELAY)
+			goto GET_QUERY
+		} else {
+			msg = fmt.Sprintf("Error getting query STMT_PORT_GET_REPLY_CNT: %s",
+				err.Error())
+			self.log.Println(msg)
+			return 0, errors.New(msg)
+		}
+	} else if self.tx != nil {
+		stmt = self.tx.Stmt(stmt)
+	}
+
+EXEC_QUERY:
+	if rows, err = stmt.Query(); err != nil {
+		if self.worth_a_retry(err) {
+			time.Sleep(RETRY_DELAY)
+			goto EXEC_QUERY
+		} else {
+			msg = fmt.Sprintf("Error querying number of scanned open ports: %s",
+				err.Error())
+			self.log.Println(msg)
+			return 0, errors.New(msg)
+		}
+	} else {
+		defer rows.Close()
+	}
+
+	rows.Next()
+
+	if err = rows.Scan(&cnt); err != nil {
+		msg = fmt.Sprintf("Error scanning result set for number of scanned ports: %s",
+			err.Error())
+		self.log.Println(msg)
+		return 0, errors.New(msg)
+	} else {
+		return cnt, nil
+	}
+} // func (self *HostDB) PortGetReplyCount() (int64, error)
+
+func (self *HostDB) PortGetOpen() ([]ScanResult, error) {
+	var msg string
+	var err error
+	var stmt *sql.Stmt
+	var rows *sql.Rows
+	var result []ScanResult
+	var host_cache map[krylib.ID]*Host
+
+GET_QUERY:
+	if stmt, err = self.getStatement(STMT_PORT_GET_OPEN); err != nil {
+		if self.worth_a_retry(err) {
+			time.Sleep(RETRY_DELAY)
+			goto GET_QUERY
+		} else {
+			msg = fmt.Sprintf("Error getting query STMT_PORT_GET_OPEN: %s", err.Error())
+			self.log.Println(msg)
+			return nil, errors.New(msg)
+		}
+	} else if self.tx != nil {
+		stmt = self.tx.Stmt(stmt)
+	}
+
+EXEC_QUERY:
+	if rows, err = stmt.Query(); err != nil {
+		if self.worth_a_retry(err) {
+			time.Sleep(RETRY_DELAY)
+			goto EXEC_QUERY
+		} else {
+			msg = fmt.Sprintf("Error querying for open ports: %s",
+				err.Error())
+			self.log.Println(msg)
+			return nil, errors.New(msg)
+		}
+	} else {
+		defer rows.Close()
+	}
+
+	result = make([]ScanResult, 0)
+	host_cache = make(map[krylib.ID]*Host)
+
+	for rows.Next() {
+		var id, host_id, timestamp, port int64
+		var reply string
+
+	SCAN_ROW:
+		if err = rows.Scan(&id, &host_id, &port, &timestamp, &reply); err != nil {
+			if self.worth_a_retry(err) {
+				time.Sleep(RETRY_DELAY)
+				goto SCAN_ROW
+			} else {
+				msg = fmt.Sprintf("Error scanning result set: %s",
+					err.Error())
+				self.log.Println(msg)
+				return nil, errors.New(msg)
+			}
+		} else {
+			var host *Host // = new(Host)
+			var ok bool
+			if host, ok = host_cache[krylib.ID(host_id)]; !ok {
+				if host, err = self.HostGetByID(krylib.ID(host_id)); err != nil {
+					// CANTHAPPEN!!!
+					msg = fmt.Sprintf("CANTHAPPEN: Error looking up host for port: %s",
+						err.Error())
+					self.log.Println(msg)
+					continue
+				} else if host == nil {
+					// CANTHAPPEN!!!
+					msg = fmt.Sprintf("CANTHAPPEN: Did not find host for port #%d (Host #%d)",
+						id, host_id)
+					continue
+				} else {
+					host_cache[krylib.ID(host_id)] = host
+				}
+			}
+
+			var res ScanResult = ScanResult{
+				Host:  *host,
+				Port:  uint16(port),
+				Reply: &reply,
+				Stamp: time.Unix(timestamp, 0),
+				Err:   nil,
+			}
+
+			result = append(result, res)
+		}
+	}
+
+	return result, nil
+} // func (self *HostDB) PortGetOpen() ([]ScanResult, error)
+
+func (self *HostDB) HostGetCount() (int64, error) {
+	var msg string
+	var err error
+	var stmt *sql.Stmt
+	var rows *sql.Rows
+	var cnt int64
+
+GET_QUERY:
+	if stmt, err = self.getStatement(STMT_HOST_GET_CNT); err != nil {
+		if self.worth_a_retry(err) {
+			time.Sleep(RETRY_DELAY)
+			goto GET_QUERY
+		} else {
+			msg = fmt.Sprintf("Error getting query STMT_HOST_GET_CNT: %s",
+				err.Error())
+			self.log.Println(msg)
+			return -1, errors.New(msg)
+		}
+	} else if self.tx != nil {
+		stmt = self.tx.Stmt(stmt)
+	}
+
+EXEC_QUERY:
+	if rows, err = stmt.Query(); err != nil {
+		if self.worth_a_retry(err) {
+			time.Sleep(RETRY_DELAY)
+			goto EXEC_QUERY
+		} else {
+			msg = fmt.Sprintf("Error querying host count: %s",
+				err.Error())
+			self.log.Println(msg)
+			return 0, errors.New(msg)
+		}
+	} else {
+		defer rows.Close()
+	}
+
+	rows.Next()
+
+	if err = rows.Scan(&cnt); err != nil {
+		msg = fmt.Sprintf("Error scanning result: %s", err.Error())
+		self.log.Println(msg)
+		return -1, errors.New(msg)
+	} else {
+		return cnt, nil
+	}
+} // func (self *HostDB) HostGetCount() (int64, error)

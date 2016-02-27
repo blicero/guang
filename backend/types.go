@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 23. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2016-01-09 20:38:53 krylon>
+// Time-stamp: <2016-02-26 23:41:52 krylon>
 
 package backend
 
@@ -101,6 +101,22 @@ type ScanResult struct {
 	Stamp time.Time
 	Err   error
 }
+
+func (self *ScanResult) HostName() string {
+	return self.Host.Name
+} // func (self *ScanResult) HostName() string
+
+func (self *ScanResult) Address() string {
+	return self.Host.Address.String()
+}
+
+func (self *ScanResult) ReplyString() string {
+	if self.Reply == nil {
+		return ""
+	} else {
+		return *self.Reply
+	}
+} // func (self *ScanResult) ReplyString() string
 
 const (
 	CTL_MSG_STOP = iota

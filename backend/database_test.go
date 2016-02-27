@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 25. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2015-12-30 10:27:51 krylon>
+// Time-stamp: <2016-02-12 21:34:00 krylon>
 
 package backend
 
@@ -135,3 +135,15 @@ func TestPortAdd(t *testing.T) {
 		t.Fatalf("Error adding ScanResult: %s", err.Error())
 	}
 } // func TestPortAdd(t *testing.T)
+
+func TestPortCnt(t *testing.T) {
+	var err error
+	var cnt int64
+
+	if cnt, err = db.PortGetReplyCount(); err != nil {
+		t.Errorf("Error getting reply count from database: %s",
+			err.Error())
+	} else if cnt < 1 {
+		t.Fatalf("Invalid/Unexpected reply count: %d", cnt)
+	}
+}

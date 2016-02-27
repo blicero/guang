@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 25. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2016-01-09 02:22:04 krylon>
+// Time-stamp: <2016-02-12 19:38:10 krylon>
 
 package backend
 
@@ -15,6 +15,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sync"
 	"time"
 
 	//"github.com/miekg/dns"
@@ -34,6 +35,8 @@ type XFRClient struct {
 	host_re       *regexp.Regexp
 	name_bl       *NameBlacklist
 	addr_bl       *IPBlacklist
+	worker_cnt    int
+	lock          sync.Mutex
 }
 
 func MakeXFRClient(queue chan string) (*XFRClient, error) {
@@ -57,11 +60,15 @@ func MakeXFRClient(queue chan string) (*XFRClient, error) {
 } // func MakeXFRClient(queue chan string) (*XFRClient, error)
 
 func (self *XFRClient) Start(cnt int) {
+	self.lock.Lock()
+	defer self.lock.Unlock()
+
 	for i := 1; i <= cnt; i++ {
 		if DEBUG {
 			self.log.Printf("Starting XFR Worker #%d\n", i)
 		}
 		go self.Worker(i)
+		self.worker_cnt++
 	}
 } // func (self *XFRClient) Start(cnt int)
 
@@ -71,6 +78,12 @@ func (self *XFRClient) Worker(worker_id int) {
 	var xfr *XFR
 	var submatch []string
 	var db *HostDB
+
+	defer func() {
+		self.lock.Lock()
+		self.worker_cnt--
+		self.lock.Unlock()
+	}()
 
 	if db, err = OpenDB(DB_PATH); err != nil {
 		msg = fmt.Sprintf("Error opening database at %s: %s",

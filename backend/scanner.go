@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 28. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2016-02-06 13:00:00 krylon>
+// Time-stamp: <2016-02-20 19:46:51 krylon>
 //
 // Freitag, 08. 01. 2016, 22:10
 // I kinda feel like I'm not going to write a comprehensive test suite for this
@@ -233,7 +233,7 @@ func (self *Scanner) hostFeeder() {
 	}
 
 	for self.IsRunning() {
-		if hosts, err = db.HostGetRandom(self.worker_cnt); err != nil {
+		if hosts, err = db.HostGetRandom(self.worker_cnt * 10); err != nil {
 			msg = fmt.Sprintf("Error getting (up to) %d random hosts: %s",
 				self.worker_cnt, err.Error())
 			self.log.Println(msg)
@@ -259,7 +259,7 @@ func (self *Scanner) hostFeeder() {
 					}
 
 					if DEBUG {
-						self.log.Printf("Enqueueing host %s/%s as a scan taget.\n",
+						self.log.Printf("Enqueueing host %s/%s as a scan target.\n",
 							host.Address.String(), host.Name)
 					}
 
@@ -279,6 +279,7 @@ func (self *Scanner) getRandomScanRequest() ScanRequest {
 		self.log.Println("Getting one random scan request from the host queue...")
 	}
 
+GET_HOST:
 	hwp = <-self.host_queue
 
 	if DEBUG {
@@ -294,7 +295,9 @@ func (self *Scanner) getRandomScanRequest() ScanRequest {
 
 	req.Port = get_scan_port(&req.Host, portmap)
 
-	if DEBUG {
+	if req.Port == 0 {
+		goto GET_HOST
+	} else if DEBUG {
 		self.log.Printf("Returning Request to scan %s:%d\n",
 			req.Host.Name, req.Port)
 	}
@@ -306,6 +309,12 @@ func (self *Scanner) worker(id int) {
 	var request ScanRequest
 	var result *ScanResult
 	var err error
+
+	defer func() {
+		self.lock.Lock()
+		self.worker_cnt--
+		self.lock.Unlock()
+	}()
 
 	if DEBUG {
 		self.log.Printf("Scanner worker %d starting up...\n",
@@ -513,7 +522,7 @@ func scan_http(host *Host, port uint16) (*ScanResult, error) {
 	}
 	client := new(http.Client)
 	client.Transport = transport
-	client.Timeout = 5 * time.Second
+	client.Timeout = 15 * time.Second
 
 	url := fmt.Sprintf("http://%s:%d/", host.Address.String(), port)
 	response, err := client.Head(url)
