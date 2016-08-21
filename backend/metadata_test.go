@@ -2,20 +2,17 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 20. 08. 2016 by Benjamin Walkenhorst
 // (c) 2016 Benjamin Walkenhorst
-// Time-stamp: <2016-08-21 17:13:56 krylon>
+// Time-stamp: <2016-08-21 19:18:50 krylon>
 
 package backend
 
 import (
 	"krylib"
 	"net"
+	"os"
+	"path/filepath"
 	"testing"
 )
-
-// const (
-// 	TEST_ADDR = "62.153.71.106"
-// 	TEST_NAME = "vpn.wellmann-engineering.eu"
-// )
 
 var test_hosts []Host = []Host{
 	Host{
@@ -42,10 +39,14 @@ var test_locations map[krylib.ID]host_location = map[krylib.ID]host_location{
 
 var meta_engine *MetaEngine
 
+func str_ptr(s string) *string {
+	return &s
+} // func str_ptr(s string) *string
+
 func TestOpenMeta(t *testing.T) {
 	var err error
 
-	if meta_engine, err = OpenMetaEngine("/Users/krylon/guang.d/GeoLite2-City.mmdb"); err != nil {
+	if meta_engine, err = OpenMetaEngine(filepath.Join(os.Getenv("HOME"), "guang.d/GeoLite2-City.mmdb")); err != nil {
 		t.Fatalf("Error opening meta engine: %s", err.Error())
 	} else if meta_engine == nil {
 		t.Fatal("OpenMetaEngine() returned a nil value!")
@@ -85,3 +86,36 @@ func TestLookupCity(t *testing.T) {
 		}
 	}
 } // func TestLookupCity(t *testing.T)
+
+func TestGuessOperatingSystem(t *testing.T) {
+	var test_hosts_with_ports []HostWithPorts = []HostWithPorts{
+		HostWithPorts{
+			Host: Host{
+				ID:      1,
+				Name:    "host01.example.com",
+				Address: net.ParseIP("127.0.0.1"),
+			},
+			Ports: []Port{
+				Port{
+					ID:     krylib.INVALID_ID,
+					HostID: 1,
+					Port:   80,
+					Reply:  str_ptr("Apache 2.0.47 (Ubuntu)"),
+				},
+			},
+		},
+	}
+	var os_map map[krylib.ID]string = map[krylib.ID]string{
+		1: "Ubuntu",
+	}
+
+	for _, h := range test_hosts_with_ports {
+		system := meta_engine.LookupOperatingSystem(&h)
+		if system != os_map[h.Host.ID] {
+			t.Errorf("Unexpected Operating System for host %s: Expected %s, Result %s",
+				h.Host.Name,
+				os_map[h.Host.ID],
+				system)
+		}
+	}
+} // func TestGuessOperatingSystem(t *testing.T)
