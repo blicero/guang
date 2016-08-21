@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 06. 02. 2016 by Benjamin Walkenhorst
 // (c) 2016 Benjamin Walkenhorst
-// Time-stamp: <2016-02-27 08:06:17 krylon>
+// Time-stamp: <2016-08-20 19:04:48 krylon>
 
 //go:generate ./build_templates_go.pl
 
@@ -58,6 +58,11 @@ type report_info_port struct {
 	Results []backend.ScanResult
 }
 
+type host_scan_result struct {
+	Host  *backend.Host
+	Ports []backend.ScanResult
+}
+
 type tmpl_data_by_port struct {
 	Debug bool
 	Title string
@@ -65,6 +70,36 @@ type tmpl_data_by_port struct {
 	Count int
 	Ports map[uint16]report_info_port
 }
+
+// Donnerstag, 18. 08. 2016, 21:10
+// Damit ich das in der HTML-Template gescheit verarbeiten kann, müsste ich
+// eigentlich eine Liste von Strukturen haben, wo der Host und die Ports drin
+// liegen.
+// Oder? Ich könnte eine Methode schreiben, die den Host anhand der ID zurück
+// gibt? In den Rohdaten aus der Datenbank steht der ja drin.
+type tmpl_data_by_host struct {
+	Debug bool
+	Title string
+	Error []string
+	Count int
+	Hosts []backend.HostWithPorts
+}
+
+type ResultListByHost []backend.ScanResult
+
+func (r ResultListByHost) Len() int {
+	return len(r)
+} // func (r ResultListByHost) Len() int
+
+func (r ResultListByHost) Swap(i, j int) {
+	tmp := r[i]
+	r[i] = r[j]
+	r[j] = tmp
+} // func (r ResultListByHost) Swap(i, j int)
+
+func (r ResultListByHost) Less(i, j int) bool {
+	return r[i].Port < r[j].Port
+} // func (r ResultListByHost) Less(i, j int) bool
 
 func CreateFrontend(addr string, port uint16, nexus *backend.Nexus) (*WebFrontend, error) {
 	var msg string
@@ -95,6 +130,7 @@ func CreateFrontend(addr string, port uint16, nexus *backend.Nexus) (*WebFronten
 	frontend.router = mux.NewRouter()
 	frontend.router.HandleFunc("/{pagename:(?:index|start|main)?$}", frontend.HandleIndex)
 	frontend.router.HandleFunc("/by_port", frontend.HandleByPort)
+	frontend.router.HandleFunc("/by_host", frontend.HandleByHost)
 	frontend.router.HandleFunc("/static/{file}", frontend.HandleStaticFile)
 
 	fmap := template.FuncMap{
@@ -266,9 +302,6 @@ func (self *WebFrontend) HandleByPort(w http.ResponseWriter, request *http.Reque
 		defer self.PutDB(db)
 	}
 
-	if backend.DEBUG {
-		self.log.Println("Getting database connection from Pool.")
-	}
 	if db_res, err = db.PortGetOpen(); err != nil {
 		msg = fmt.Sprintf("Error getting list of open ports: %s", err.Error())
 		self.log.Println(msg)
@@ -317,6 +350,58 @@ func (self *WebFrontend) HandleByPort(w http.ResponseWriter, request *http.Reque
 	}
 } // func (self *WebFrontend) HandleByPort(w http.ResponseWriter, request *http.Request)
 
+func (self *WebFrontend) HandleByHost(w http.ResponseWriter, request *http.Request) {
+	var err error
+	var msg string
+	var db *backend.HostDB
+	var data tmpl_data_by_host
+	var tmpl *template.Template
+
+	if backend.DEBUG {
+		self.log.Printf("Handling request for %s\n", request.RequestURI)
+	}
+
+	if db, err = self.GetDB(); err != nil {
+		msg = fmt.Sprintf("Error getting database from Pool: %s", err.Error())
+		self.log.Println(msg)
+		self.SendErrorMessage(w, msg)
+		return
+	} else {
+		defer self.PutDB(db)
+	}
+
+	data = tmpl_data_by_host{
+		Title: "Scanned Ports by Host",
+		Debug: backend.DEBUG,
+		Error: make([]string, 0),
+		Count: len(data.Hosts),
+	}
+
+	if data.Hosts, err = db.HostGetByHostReport(); err != nil {
+		msg = fmt.Sprintf("Error getting open ports grouped by Host: %s",
+			err.Error())
+		self.log.Println(msg)
+		self.SendErrorMessage(w, msg)
+		return
+	}
+
+	if tmpl = self.tmpl.Lookup("by_host"); tmpl == nil {
+		msg = "Error: Template 'by_host' was not found!"
+		self.log.Println(msg)
+		self.SendErrorMessage(w, msg)
+		return
+	}
+
+	w.WriteHeader(200)
+	if err = tmpl.Execute(w, data); err != nil {
+		msg = fmt.Sprintf("Error rendering template or sending output to client: %s",
+			err.Error())
+		self.log.Println(msg)
+	}
+
+	return
+} // func (self *WebFrontend) HandleByHost(w http.ResponseWriter, request *http.Request)
+
 // Deliver a static file to the client.
 // Currently, all templates and static "files" are actually compiled into the binary,
 // so there is no actual "file" access involved.
@@ -362,7 +447,7 @@ func (self *WebFrontend) HandleStaticFile(w http.ResponseWriter, request *http.R
 // Meant for cases where something went wrong, render and deliver a simple HTML
 // document with an error message to the client.
 func (self *WebFrontend) SendErrorMessage(w http.ResponseWriter, msg string) {
-	html := `
+	const html = `
 <!DOCTYPE html>
 <html>
   <head>

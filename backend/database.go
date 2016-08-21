@@ -2,7 +2,12 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 23. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2016-02-20 19:58:52 krylon>
+// Time-stamp: <2016-08-20 21:29:52 krylon>
+//
+// Samstag, 20. 08. 2016, 21:27
+// Ich würde für Hosts gern a) anhand der Antworten, die ich erhalte, das
+// Betriebssystem ermitteln, und b) anhand der IP-Adresse den ungefähren
+// Standort.
 
 package backend
 
@@ -45,9 +50,8 @@ CREATE TABLE port (id INTEGER PRIMARY KEY,
 CREATE TABLE xfr (id INTEGER PRIMARY KEY,
                   zone TEXT UNIQUE NOT NULL,
                   start INTEGER NOT NULL,
-                  end INTEGER,
-                  status INTEGER NOT NULL DEFAULT 0,
-                  CHECK (end >= start))`,
+                  end INTEGER NOT NULL DEFAULT 0,
+                  status INTEGER NOT NULL DEFAULT 0)`,
 
 	"CREATE INDEX host_addr_idx ON host (addr)",
 	"CREATE INDEX host_name_idx ON host (name)",
@@ -65,6 +69,7 @@ const (
 	STMT_HOST_GET_RANDOM
 	STMT_HOST_GET_CNT
 	STMT_HOST_EXISTS
+	STMT_HOST_PORT_BY_HOST
 	STMT_PORT_ADD
 	STMT_PORT_GET_BY_HOST
 	STMT_PORT_GET_REPLY_CNT
@@ -99,6 +104,20 @@ OFFSET ABS(RANDOM()) % MAX((SELECT COUNT(*) FROM host), 1)
 	STMT_HOST_GET_CNT: "SELECT COUNT(id) FROM host",
 
 	STMT_HOST_EXISTS: "SELECT COUNT(id) FROM host WHERE addr = ?",
+
+	STMT_HOST_PORT_BY_HOST: `
+SELECT 
+  P.id,
+  P.host_id,
+  P.port,
+  P.timestamp,
+  P.reply
+  H.adddr,
+  H.name
+FROM port P
+INNER JOIN host H ON port.host_id = host.id
+WHERE port.reply IS NOT NULL
+`,
 
 	STMT_PORT_ADD: `
 INSERT INTO port (host_id, port, timestamp, reply)
@@ -1120,3 +1139,85 @@ EXEC_QUERY:
 		return cnt, nil
 	}
 } // func (self *HostDB) HostGetCount() (int64, error)
+
+func (self *HostDB) HostGetByHostReport() ([]HostWithPorts, error) {
+	var err error
+	var msg string
+	var stmt *sql.Stmt
+	var rows *sql.Rows
+	var ports map[krylib.ID][]Port = make(map[krylib.ID][]Port)
+
+GET_QUERY:
+	if stmt, err = self.getStatement(STMT_PORT_GET_OPEN); err != nil {
+		if self.worth_a_retry(err) {
+			time.Sleep(RETRY_DELAY)
+			goto GET_QUERY
+		} else {
+			msg = fmt.Sprintf("Error preparing query STMT_HOST_PORT_BY_HOST: %s",
+				err.Error())
+			self.log.Println(msg)
+			return nil, errors.New(msg)
+		}
+	} else if self.tx != nil {
+		stmt = self.tx.Stmt(stmt)
+	}
+
+EXEC_QUERY:
+	if rows, err = stmt.Query(); err != nil {
+		if self.worth_a_retry(err) {
+			time.Sleep(RETRY_DELAY)
+			goto EXEC_QUERY
+		}
+	} else {
+		defer rows.Close()
+	}
+
+	for rows.Next() {
+		var port_id, host_id, stamp, port_no int64
+		var ok bool
+		var reply *string
+		var portlist []Port
+
+		if err = rows.Scan(&port_id, &host_id, &port_no, &stamp, &reply); err != nil {
+			msg = fmt.Sprintf("Error scanning row: %s", err.Error())
+			self.log.Println(msg)
+			return nil, errors.New(msg)
+		}
+
+		port := Port{
+			ID:        krylib.ID(port_id),
+			HostID:    krylib.ID(host_id),
+			Port:      uint16(port_no),
+			Timestamp: time.Unix(stamp, 0),
+			Reply:     reply,
+		}
+
+		if portlist, ok = ports[port.HostID]; ok {
+			ports[port.HostID] = append(portlist, port)
+		} else {
+			ports[port.HostID] = []Port{port}
+		}
+	}
+
+	var res []HostWithPorts = make([]HostWithPorts, len(ports))
+	var idx int = 0
+
+	for host_id, portlist := range ports {
+		var host *Host
+
+		if host, err = self.HostGetByID(host_id); err != nil {
+			msg = fmt.Sprintf("Error retrieving host #%d from database: %s",
+				host_id, err.Error())
+			self.log.Println(msg)
+			return nil, errors.New(msg)
+		} else {
+			res[idx] = HostWithPorts{
+				Host:  *host,
+				Ports: portlist,
+			}
+			idx++
+		}
+	}
+
+	return res, nil
+} // func (self *HostDB) HostGetByHostReport() ([]HostWithPorts, error)

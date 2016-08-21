@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 23. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2016-02-26 23:41:52 krylon>
+// Time-stamp: <2016-08-20 20:17:43 krylon>
 
 package backend
 
@@ -39,8 +39,16 @@ type Port struct {
 	Reply     *string
 }
 
+func (self *Port) ReplyString() string {
+	if self.Reply == nil {
+		return ""
+	} else {
+		return *self.Reply
+	}
+}
+
 type HostWithPorts struct {
-	Host  *Host
+	Host  Host
 	Ports []Port
 }
 
@@ -64,7 +72,7 @@ func (self XfrStatus) String() string {
 	case XFR_STATUS_ABORT:
 		return "Finished/Aborted"
 	default:
-		return "INVALID STATUS!!!"
+		return fmt.Sprintf("INVALID STATUS (%d)!!!", self)
 	}
 } // func (XfrStatus self) String() string
 

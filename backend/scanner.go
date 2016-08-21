@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 28. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2016-02-20 19:46:51 krylon>
+// Time-stamp: <2016-08-20 18:02:47 krylon>
 //
 // Freitag, 08. 01. 2016, 22:10
 // I kinda feel like I'm not going to write a comprehensive test suite for this
@@ -37,7 +37,7 @@ var newline = regexp.MustCompile("[\r\n]+$")
 // Samstag, 05. 07. 2014, 16:40
 // Da muss ich später noch mal schauen, wie weit ich die Liste erweitern kann,
 // erst mal will ich das Gerüst stehen haben.
-var PORTS []uint16 = []uint16{21, 22, 23, 25, 53, 79, 80, 110, 143, 161, 631, 1024, 4444, 2525, 5353, 8000, 8080, 8081}
+var PORTS []uint16 = []uint16{21, 22, 23, 25, 53, 79, 80, 110, 143, 161, 631, 1024, 4444, 2525, 5353, 5800, 5900, 8000, 8080, 8081}
 
 func get_scan_port(host *Host, ports map[uint16]bool) uint16 {
 	if host.Source == HOST_SOURCE_MX {
@@ -254,7 +254,7 @@ func (self *Scanner) hostFeeder() {
 				} else {
 					*phost = host
 					host_with_ports := HostWithPorts{
-						Host:  phost,
+						Host:  *phost,
 						Ports: ports,
 					}
 
@@ -291,7 +291,7 @@ GET_HOST:
 		portmap[port.Port] = true
 	}
 
-	req.Host = *hwp.Host
+	req.Host = hwp.Host
 
 	req.Port = get_scan_port(&req.Host, portmap)
 
@@ -367,7 +367,7 @@ func scan_host(host *Host, port uint16) (*ScanResult, error) {
 		return scan_dns(host, port)
 	case 79:
 		return scan_finger(host, port)
-	case 80, 8000, 8080, 8081, 3128, 3689, 631, 1024, 4444:
+	case 80, 8000, 8080, 8081, 3128, 3689, 631, 1024, 4444, 5800:
 		return scan_http(host, port)
 	case 161:
 		return scan_snmp(host, port)

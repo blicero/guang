@@ -1,0 +1,60 @@
+{{ define "by_host" }}
+{{/* -*- mode: web; coding: utf-8; -*- */}}
+{{/* Time-stamp: <2016-08-20 20:32:06 krylon> */}}
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>{{.Title}}</title>
+    <link rel="stylesheet" type="text/css" href="/static/style.css" />
+    <script type="text/javascript" src="/static/jquery-1.11.3.min.js">
+    </script>
+
+    <script type="text/javascript" src="/static/underscore.js">
+    </script>
+
+    <script type="text/javascript" src="/static/interact.js">
+    </script>
+  </head>
+
+  <body>
+    <h1>{{ .Title }}</h1>
+    <hr />
+
+    {{ if .Debug }}
+    Page was rendered on {{ now }}
+    {{ end }}
+
+    {{ template "menu" }}
+
+    <table border="1" borderwidth="1">
+      <thead>
+        <tr>
+          <th>IP</th>
+          <th>Name</th>
+          <th>Location</th>
+          <th>Operating System</th>
+          <th>Ports</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {{ range .Hosts }}
+        <tr>
+          <td>{{ .Host.Address }}</td>
+          <td>{{ .Host.Name }}</td>
+          <td></td>
+          <td></td>
+          <td>
+            <ol>
+            {{ range .Ports }}
+              <li> <b>{{ .Port }}</b> - <pre>{{ .ReplyString }}</pre></li>
+            {{ end }}
+            </ol>
+          </td>
+        </tr>
+        {{ end }}
+      </tbody>
+    </table>
+  </body>
+</html>
+{{ end }}
