@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 28. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2016-08-20 18:02:47 krylon>
+// Time-stamp: <2016-08-29 18:08:40 krylon>
 //
 // Freitag, 08. 01. 2016, 22:10
 // I kinda feel like I'm not going to write a comprehensive test suite for this
@@ -37,7 +37,14 @@ var newline = regexp.MustCompile("[\r\n]+$")
 // Samstag, 05. 07. 2014, 16:40
 // Da muss ich später noch mal schauen, wie weit ich die Liste erweitern kann,
 // erst mal will ich das Gerüst stehen haben.
-var PORTS []uint16 = []uint16{21, 22, 23, 25, 53, 79, 80, 110, 143, 161, 631, 1024, 4444, 2525, 5353, 5800, 5900, 8000, 8080, 8081}
+//
+// Montag, 29. 08. 2016, 18:07
+// Ich habe guang eine Weile auf meinem Server bei Digitalocean laufen lassen
+// und irgendwann eine Mail bekommen, dass denen wiederum jemand geschrieben hat,
+// dass auf deren Firewall Alarm geschlagen wurde.
+// Ich nehme die Ports 1024 und 4444 mal vorsichtshalber raus. Nicht, dass
+// wir noch Ärger bekommen.
+var PORTS []uint16 = []uint16{21, 22, 23, 25, 53, 79, 80, 110, 143, 161, 631 /* 1024, 4444, */, 2525, 5353, 5800, 5900, 8000, 8080, 8081}
 
 func get_scan_port(host *Host, ports map[uint16]bool) uint16 {
 	if host.Source == HOST_SOURCE_MX {
