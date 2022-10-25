@@ -3,7 +3,7 @@
 # /Users/krylon/go/src/videostore/build_templates_go.pl
 # created at 05. 09. 2015 by Benjamin Walkenhorst
 # (c) 2015 Benjamin Walkenhorst <krylon@gmx.net>
-# Time-stamp: <2016-02-13 10:55:38 krylon>
+# Time-stamp: <2022-10-25 16:07:59 krylon>
 #  Redistribution and use in source and binary forms, with or without
 #  modification, are permitted provided that the following conditions
 #  are met:
@@ -38,8 +38,8 @@ use Time::Piece;
 
 my $now = localtime()->strftime('%Y-%m-%d, %H:%M:%S');
 
-my $output_path = "$ENV{GOPATH}/src/guang/frontend/templates.go";
-my $html_root = "$ENV{GOPATH}/src/guang/frontend/html";
+my $output_path = "$ENV{GOPATH}/src/github.com/blicero/guang/frontend/templates.go";
+my $html_root = "$ENV{GOPATH}/src/github.com/blicero/guang/frontend/html";
 
 open(my $output, ">:encoding(UTF-8)", $output_path)
   or croak "Error opening $output_path: $OS_ERROR";

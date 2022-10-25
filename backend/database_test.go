@@ -2,17 +2,18 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 25. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2016-02-12 21:34:00 krylon>
+// Time-stamp: <2022-10-25 00:00:35 krylon>
 
 package backend
 
 import (
 	"fmt"
-	"krylib"
 	"math/rand"
 	"net"
 	"testing"
 	"time"
+
+	"github.com/blicero/krylib"
 )
 
 var db *HostDB

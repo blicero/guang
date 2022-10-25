@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 20. 08. 2016 by Benjamin Walkenhorst
 // (c) 2016 Benjamin Walkenhorst
-// Time-stamp: <2016-08-21 18:58:25 krylon>
+// Time-stamp: <2022-10-25 00:00:30 krylon>
 //
 // Sonntag, 21. 08. 2016, 18:25
 // Looking up locations seems to work reasonably well. Whether or not the
@@ -15,10 +15,11 @@ package backend
 import (
 	"errors"
 	"fmt"
-	"krylib"
 	"log"
 	"path/filepath"
 	"regexp"
+
+	"github.com/blicero/krylib"
 
 	"github.com/oschwald/geoip2-golang"
 )

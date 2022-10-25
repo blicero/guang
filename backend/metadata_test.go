@@ -2,16 +2,17 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 20. 08. 2016 by Benjamin Walkenhorst
 // (c) 2016 Benjamin Walkenhorst
-// Time-stamp: <2016-08-21 19:18:50 krylon>
+// Time-stamp: <2022-10-25 00:00:22 krylon>
 
 package backend
 
 import (
-	"krylib"
 	"net"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/blicero/krylib"
 )
 
 var test_hosts []Host = []Host{

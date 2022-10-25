@@ -2,27 +2,34 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 06. 02. 2016 by Benjamin Walkenhorst
 // (c) 2016 Benjamin Walkenhorst
-// Time-stamp: <2016-08-20 19:04:48 krylon>
+// Time-stamp: <2022-10-25 18:37:48 krylon>
 
-//go:generate ./build_templates_go.pl
+// go : generate ./build_templates_go.pl
 
 package frontend
 
 import (
+	"embed"
 	"errors"
 	"fmt"
-	"guang/backend"
+	"io/fs"
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"regexp"
 	"sync"
 	"text/template"
 	"time"
 
+	"github.com/blicero/guang/backend"
+
 	"github.com/gorilla/mux"
 	"github.com/muesli/cache2go"
 )
+
+//go:embed html
+var assets embed.FS
 
 const DEFAULT_CACHE_TIMEOUT = time.Minute * 5
 
@@ -141,11 +148,39 @@ func CreateFrontend(addr string, port uint16, nexus *backend.Nexus) (*WebFronten
 
 	frontend.tmpl = template.New("").Funcs(fmap)
 
-	for name, body := range html_data.Templates {
-		if frontend.tmpl, err = frontend.tmpl.Parse(body); err != nil {
-			msg = fmt.Sprintf("Error parsing template %s: %s", name, err.Error())
-			frontend.log.Println(msg)
-			return nil, errors.New(msg)
+	const tmplFolder = "html/templates"
+	var templates []fs.DirEntry
+	var tmplRe = regexp.MustCompile("[.]tmpl$")
+
+	if templates, err = assets.ReadDir(tmplFolder); err != nil {
+		frontend.log.Printf("[ERROR] Cannot read embedded templates: %s\n",
+			err.Error())
+		return nil, err
+
+		for _, entry := range templates {
+			var (
+				content []byte
+				path    = filepath.Join(tmplFolder, entry.Name())
+			)
+
+			if !tmplRe.MatchString(entry.Name()) {
+				continue
+			} else if content, err = assets.ReadFile(path); err != nil {
+				msg = fmt.Sprintf("Cannot read embedded file %s: %s",
+					path,
+					err.Error())
+				frontend.log.Printf("[CRITICAL] %s\n", msg)
+				return nil, errors.New(msg)
+			} else if frontend.tmpl, err = frontend.tmpl.Parse(string(content)); err != nil {
+				msg = fmt.Sprintf("Could not parse template %s: %s",
+					entry.Name(),
+					err.Error())
+				frontend.log.Println("[CRITICAL] " + msg)
+				return nil, errors.New(msg)
+			} else if common.Debug {
+				frontend.log.Printf("[TRACE] Template \"%s\" was parsed successfully.\n",
+					entry.Name())
+			}
 		}
 	}
 

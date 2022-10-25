@@ -2,14 +2,13 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 25. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2016-02-12 19:38:10 krylon>
+// Time-stamp: <2022-10-24 23:59:37 krylon>
 
 package backend
 
 import (
 	"errors"
 	"fmt"
-	"krylib"
 	"log"
 	"net"
 	"os"
@@ -18,8 +17,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/blicero/krylib"
+
 	//"github.com/miekg/dns"
-	"github.com/tonnerre/golang-dns"
+	dns "github.com/tonnerre/golang-dns"
 )
 
 const (

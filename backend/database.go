@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 23. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2016-08-20 21:29:52 krylon>
+// Time-stamp: <2022-10-24 23:59:17 krylon>
 //
 // Samstag, 20. 08. 2016, 21:27
 // Ich würde für Hosts gern a) anhand der Antworten, die ich erhalte, das
@@ -15,13 +15,14 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"krylib"
 	"log"
 	"net"
 	"os"
 	"regexp"
 	"sync"
 	"time"
+
+	"github.com/blicero/krylib"
 
 	"github.com/muesli/cache2go"
 	_ "github.com/mxk/go-sqlite/sqlite3"

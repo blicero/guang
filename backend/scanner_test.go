@@ -2,16 +2,17 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 05. 02. 2016 by Benjamin Walkenhorst
 // (c) 2016 Benjamin Walkenhorst
-// Time-stamp: <2016-02-06 12:58:43 krylon>
+// Time-stamp: <2022-10-25 00:00:00 krylon>
 
 package backend
 
 import (
 	"fmt"
-	"krylib"
 	"net"
 	"testing"
 	"time"
+
+	"github.com/blicero/krylib"
 )
 
 type scan_target struct {

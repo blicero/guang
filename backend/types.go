@@ -2,15 +2,16 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 23. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2016-08-20 20:17:43 krylon>
+// Time-stamp: <2022-10-24 23:59:50 krylon>
 
 package backend
 
 import (
 	"fmt"
-	"krylib"
 	"net"
 	"time"
+
+	"github.com/blicero/krylib"
 )
 
 const (

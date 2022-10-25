@@ -9,8 +9,8 @@ package main
 import (
 	"flag"
 	"fmt"
-	"guang/backend"
-	"guang/frontend"
+	"github.com/blicero/guang/backend"
+	"github.com/blicero/guang/frontend"
 	"log"
 	"os"
 	"time"
