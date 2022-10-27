@@ -1,5 +1,5 @@
 # -*- mode: org; fill-column: 78; -*-
-# Time-stamp: <2022-10-27 18:36:22 krylon>
+# Time-stamp: <2022-10-27 20:51:45 krylon>
 #
 #+TAGS: optimize(o) refactor(r) bug(b) feature(f) architecture(a)
 #+TAGS: web(w) database(d) javascript(j)
@@ -11,17 +11,21 @@
 * Guang
 ** Clocktable
    #+BEGIN: clocktable :scope file :maxlevel 20
-   #+CAPTION: Clock summary at [2022-10-27 Do 18:36]
-   | Headline            | Time   |      |      |      |
-   |---------------------+--------+------+------+------|
-   | *Total time*        | *4:59* |      |      |      |
-   |---------------------+--------+------+------+------|
-   | Guang               | 4:59   |      |      |      |
-   | \_  Components      |        | 4:59 |      |      |
-   | \_    Database      |        |      | 0:44 |      |
-   | \_      SQLite      |        |      |      | 0:44 |
-   | \_    Web interface |        |      | 4:15 |      |
-   | \_      Embed       |        |      |      | 4:15 |
+   #+CAPTION: Clock summary at [2022-10-27 Do 20:51]
+   | Headline                    | Time   |      |      |      |      |
+   |-----------------------------+--------+------+------+------+------|
+   | *Total time*                | *6:08* |      |      |      |      |
+   |-----------------------------+--------+------+------+------+------|
+   | Guang                       | 6:08   |      |      |      |      |
+   | \_  Components              |        | 6:08 |      |      |      |
+   | \_    Database              |        |      | 0:47 |      |      |
+   | \_      SQLite              |        |      |      | 0:44 |      |
+   | \_      Major cleanup [1/2] |        |      |      | 0:03 |      |
+   | \_        Package           |        |      |      |      | 0:03 |
+   | \_    Web interface         |        |      | 4:15 |      |      |
+   | \_      Embed               |        |      |      | 4:15 |      |
+   | \_    Refactoring [0/1]     |        |      | 1:06 |      |      |
+   | \_      Packages            |        |      |      | 1:06 |      |
    #+END:
 ** Diary
 *** [2022-10-26 Mi 15:56]
@@ -37,6 +41,16 @@
      :END:
      The library I use for the SQLite bindings is kind of out of date, I think
 **** TODO Pool
+**** Major cleanup [1/2]                                           :refactor:
+     I need to fix/refactor a couple of things.
+***** DONE Package
+      CLOSED: [2022-10-27 Do 19:45]
+      :LOGBOOK:
+      CLOCK: [2022-10-27 Do 19:41]--[2022-10-27 Do 19:44] =>  0:03
+      :END:
+      I need to move the database into a separate package
+***** TODO Names
+      I need to change a bunch of names.
 *** Web interface
 **** DONE Embed
      CLOSED: [2022-10-26 Mi 20:42]
@@ -46,4 +60,11 @@
      I use a Perl script to roll all of my assets into a Go variable, which
      became unneccessary when Go gained go:embed. Still need to make a few
      adjustments to make that step, then I can remove the script.
+*** Refactoring [0/1]                                              :refactor:
+**** TODO Packages
+     :LOGBOOK:
+     CLOCK: [2022-10-27 Do 19:45]--[2022-10-27 Do 20:51] =>  1:06
+     :END:
+     I need break up the application into more packages, the current state is
+     just repulsive from an aesthetic perspective.
 ** Bugs
