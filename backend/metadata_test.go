@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 20. 08. 2016 by Benjamin Walkenhorst
 // (c) 2016 Benjamin Walkenhorst
-// Time-stamp: <2022-10-25 00:00:22 krylon>
+// Time-stamp: <2022-10-27 21:23:56 krylon>
 
 package backend
 
@@ -12,16 +12,17 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/blicero/guang/data"
 	"github.com/blicero/krylib"
 )
 
-var test_hosts []Host = []Host{
-	Host{
+var test_hosts []data.Host = []data.Host{
+	data.Host{
 		ID:      1,
 		Address: net.ParseIP("62.153.71.106"),
 		Name:    "vpn.wellmann-engineering.eu",
 	},
-	Host{
+	data.Host{
 		ID:      2,
 		Address: net.ParseIP("46.101.125.6"),
 		Name:    "straylight.krylon.selfhost.eu",
@@ -89,15 +90,15 @@ func TestLookupCity(t *testing.T) {
 } // func TestLookupCity(t *testing.T)
 
 func TestGuessOperatingSystem(t *testing.T) {
-	var test_hosts_with_ports []HostWithPorts = []HostWithPorts{
-		HostWithPorts{
-			Host: Host{
+	var test_hosts_with_ports []data.HostWithPorts = []data.HostWithPorts{
+		data.HostWithPorts{
+			Host: data.Host{
 				ID:      1,
 				Name:    "host01.example.com",
 				Address: net.ParseIP("127.0.0.1"),
 			},
-			Ports: []Port{
-				Port{
+			Ports: []data.Port{
+				data.Port{
 					ID:     krylib.INVALID_ID,
 					HostID: 1,
 					Port:   80,

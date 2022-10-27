@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 23. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2022-10-27 20:37:53 krylon>
+// Time-stamp: <2022-10-27 21:42:45 krylon>
 //
 // IIRC, throughput never was much of an issue with this part of the program.
 // But if it were, there are a few tricks on could pull here.
@@ -64,29 +64,29 @@ func CreateGenerator(worker_cnt int) (*HostGenerator, error) {
 	return gen, nil
 } // func CreateGenerator(worker_cnt int) (*HostGenerator, error)
 
-func (self *HostGenerator) Start() {
-	for i := 0; i < self.worker_cnt; i++ {
-		go self.worker(i)
+func (gen *HostGenerator) Start() {
+	for i := 0; i < gen.worker_cnt; i++ {
+		go gen.worker(i)
 	}
-} // func (self *HostGenerator) Start()
+} // func (gen *HostGenerator) Start()
 
-func (self *HostGenerator) IsRunning() bool {
-	self.lock.Lock()
-	defer self.lock.Unlock()
-	return self.running
-} // func (self *HostGenerator) IsRunning() bool
+func (gen *HostGenerator) IsRunning() bool {
+	gen.lock.Lock()
+	defer gen.lock.Unlock()
+	return gen.running
+} // func (gen *HostGenerator) IsRunning() bool
 
-func (self *HostGenerator) Stop() {
-	self.lock.Lock()
-	self.running = false
-	self.lock.Unlock()
-} // func (self *HostGenerator) Stop()
+func (gen *HostGenerator) Stop() {
+	gen.lock.Lock()
+	gen.running = false
+	gen.lock.Unlock()
+} // func (gen *HostGenerator) Stop()
 
-func (self *HostGenerator) worker(id int) {
+func (gen *HostGenerator) worker(id int) {
 	defer func() {
-		self.lock.Lock()
-		self.worker_cnt--
-		self.lock.Unlock()
+		gen.lock.Lock()
+		gen.worker_cnt--
+		gen.lock.Unlock()
 	}()
 
 	var msg, astr string
@@ -96,23 +96,24 @@ func (self *HostGenerator) worker(id int) {
 	var namelist []string
 
 MAIN_LOOP:
-	for self.IsRunning() {
+	for gen.IsRunning() {
 		var host data.Host
-		for addr = self.get_rand_ip(rng); self.addr_bl.MatchesIP(addr); addr = self.get_rand_ip(rng) {
+		for addr = gen.get_rand_ip(rng); gen.addr_bl.MatchesIP(addr); addr = gen.get_rand_ip(rng) {
 			// This loop has no body.
 			// It's all in the head.
 		}
 
 		astr = addr.String()
 
-		if res, err := self.cache.GetInt(astr); err != nil {
+		if res, err := gen.cache.GetInt(astr); err != nil {
 			msg = fmt.Sprintf("Error looking for %s in cache: %s",
 				astr, err.Error())
+			gen.log.Println(msg)
 		} else if res != 0 {
 			continue MAIN_LOOP
 		} else {
-			self.cache.SetInt(astr, 1)
-			self.cache.Commit()
+			gen.cache.SetInt(astr, 1) // nolint: errcheck
+			gen.cache.Commit()        // nolint: errcheck
 		}
 
 		if namelist, err = net.LookupAddr(astr); err != nil {
@@ -120,9 +121,9 @@ MAIN_LOOP:
 		} else if len(namelist) == 0 {
 			msg = fmt.Sprintf("net.LookupAddr(%s) returned neither an error nor any names",
 				astr)
-			self.log.Println(msg)
+			gen.log.Println(msg)
 			continue MAIN_LOOP
-		} else if self.name_bl.Matches(namelist[0]) {
+		} else if gen.name_bl.Matches(namelist[0]) {
 			continue MAIN_LOOP
 		} else {
 			host.Address = addr
@@ -130,17 +131,17 @@ MAIN_LOOP:
 
 			host.Source = data.HOST_SOURCE_GEN
 			host.Added = time.Now()
-			self.HostQueue <- host
+			gen.HostQueue <- host
 		}
 	}
 
 	if common.DEBUG {
-		self.log.Printf("Generator worker #%d is quitting.\n", id)
+		gen.log.Printf("Generator worker #%d is quitting.\n", id)
 	}
-} // func (self *HostGenerator) worker(id int)
+} // func (gen *HostGenerator) worker(id int)
 
 // Create and return a random IPv4 address.
-func (self *HostGenerator) get_rand_ip(rng *rand.Rand) net.IP {
+func (gen *HostGenerator) get_rand_ip(rng *rand.Rand) net.IP {
 	var octets [4]byte
 
 	octets[0] = byte(rng.Intn(256))

@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 20. 08. 2016 by Benjamin Walkenhorst
 // (c) 2016 Benjamin Walkenhorst
-// Time-stamp: <2022-10-27 20:47:19 krylon>
+// Time-stamp: <2022-10-27 21:33:42 krylon>
 //
 // Sonntag, 21. 08. 2016, 18:25
 // Looking up locations seems to work reasonably well. Whether or not the
@@ -47,7 +47,7 @@ var os_pattern_map map[string][]*regexp.Regexp = map[string][]*regexp.Regexp{
 		regexp.MustCompile("CentOS"),
 	},
 	"Red Hat Enterprise Linux": []*regexp.Regexp{
-		regexp.MustCompile("(?i)rhel\\d"),
+		regexp.MustCompile(`(?i)rhel\d`),
 		regexp.MustCompile("(?i)Red ?Hat"),
 	},
 	"FreeBSD": []*regexp.Regexp{

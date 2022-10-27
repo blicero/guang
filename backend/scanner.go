@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 28. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2022-10-27 20:44:36 krylon>
+// Time-stamp: <2022-10-27 21:43:06 krylon>
 //
 // Freitag, 08. 01. 2016, 22:10
 // I kinda feel like I'm not going to write a comprehensive test suite for this
@@ -34,7 +34,6 @@ import (
 var www_pat *regexp.Regexp = regexp.MustCompile("(?i)^www")
 var ftp_pat *regexp.Regexp = regexp.MustCompile("(?i)^ftp")
 var mx_pat *regexp.Regexp = regexp.MustCompile("(?i)^(?:mx|mail|smtp|pop|imap)")
-var http_srv_pat *regexp.Regexp = regexp.MustCompile("(?i)^Server:\\s+(.*)$")
 var newline = regexp.MustCompile("[\r\n]+$")
 
 // Samstag, 05. 07. 2014, 16:40
@@ -438,9 +437,9 @@ func scan_finger(host *data.Host, port uint16) (*data.ScanResult, error) {
 		defer conn.Close()
 	}
 
-	conn.Write([]byte("root\r\n"))
+	conn.Write([]byte("root\r\n")) // nolint: errcheck
 
-	conn.SetDeadline(time.Now().Add(TIMEOUT))
+	conn.SetDeadline(time.Now().Add(TIMEOUT)) // nolint: errcheck
 
 	if n, err = conn.Read(recvbuffer); err != nil {
 		msg := fmt.Sprintf("Error receiving from [%s]:%d - %s",
@@ -544,8 +543,7 @@ func scan_http(host *data.Host, port uint16) (*data.ScanResult, error) {
 	result := new(data.ScanResult)
 	result.Host = *host
 	result.Port = port
-	var res_string string
-	res_string = newline.ReplaceAllString(response.Header.Get("Server"), "")
+	var res_string = newline.ReplaceAllString(response.Header.Get("Server"), "")
 	if common.DEBUG {
 		fmt.Printf("http://%s:%d/ -> %s\n",
 			host.Address.String(),
@@ -615,17 +613,17 @@ func scan_telnet(host *data.Host, port uint16) (*data.ScanResult, error) {
 
 	conn, err := net.Dial("tcp", target)
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("Error connecting to %s: %s", host.Name, err.Error()))
+		return nil, fmt.Errorf("Error connecting to %s: %s", host.Name, err.Error())
 	} else {
 		defer conn.Close()
 	}
 
 	n, err = conn.Read(recvbuffer)
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("Error receiving from %s: %s", host.Name, err.Error()))
+		return nil, fmt.Errorf("Error receiving from %s: %s", host.Name, err.Error())
 	}
 
-	conn.Write(probe)
+	conn.Write(probe) // nolint: errcheck
 	var snd_fill int
 
 	for {
@@ -658,7 +656,7 @@ func scan_telnet(host *data.Host, port uint16) (*data.ScanResult, error) {
 		}
 
 		if snd_fill > 0 {
-			n, err = conn.Write(snd_buf[:snd_fill])
+			_, err = conn.Write(snd_buf[:snd_fill])
 			if err != nil {
 				msg := fmt.Sprintf("Error sending snd_buf to server: %s\n", err.Error())
 				fmt.Println(msg)
@@ -668,7 +666,7 @@ func scan_telnet(host *data.Host, port uint16) (*data.ScanResult, error) {
 
 		n, err = conn.Read(recvbuffer)
 		if err != nil {
-			return nil, errors.New(fmt.Sprintf("Error receiving from %s: %s", host.Name, err.Error()))
+			return nil, fmt.Errorf("Error receiving from %s: %s", host.Name, err.Error())
 		} else {
 			fmt.Printf("Received %d bytes of data from server.\n", n)
 		}

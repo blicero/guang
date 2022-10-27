@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 25. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2022-10-27 20:47:20 krylon>
+// Time-stamp: <2022-10-27 21:43:42 krylon>
 
 package backend
 
@@ -30,7 +30,7 @@ const (
 	HOST_RE_PAT = "^[^.]+[.](.*)$"
 )
 
-var v6_addr_pat = regexp.MustCompile("[0-9a-f:]+")
+// var v6_addr_pat = regexp.MustCompile("[0-9a-f:]+")
 
 type XFRClient struct {
 	res           *dns.Client
@@ -160,6 +160,7 @@ LOOP:
 		if err = db.XfrFinish(xfr, status); err != nil {
 			msg = fmt.Sprintf("Error finishing XFR of %s with status %s: %s",
 				zone, status.String(), err.Error())
+			self.log.Println(msg)
 		}
 	}
 } // func (self *XFRClient) Worker()
@@ -273,7 +274,7 @@ func (self *XFRClient) attempt_xfr(zone string, srv net.IP, db *database.HostDB)
 		for _, rr := range envelope.RR {
 			var host data.Host
 			dbg_string := rr.String() + "\n"
-			fh.WriteString(dbg_string)
+			fh.WriteString(dbg_string) // nolint: errcheck
 			rr_cnt++
 
 			switch t := rr.(type) {

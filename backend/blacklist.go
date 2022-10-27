@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 23. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2015-12-27 16:30:32 krylon>
+// Time-stamp: <2022-10-27 21:45:05 krylon>
 
 package backend
 
@@ -14,7 +14,7 @@ import (
 	"sync"
 )
 
-var DEFAULT_NETWORKS = []string{
+var reservedNetworks = []string{
 	"0.0.0.0/8",
 	"10.0.0.0/8",
 	"127.0.0.0/8",
@@ -32,7 +32,7 @@ var DEFAULT_NETWORKS = []string{
 	"255.0.0.0/8",
 }
 
-var DEFAULT_NAME_PATTERNS = []string{
+var nameBlacklistPatterns = []string{
 	"\\bdiu?p-?\\d*\\.",
 	"(?:versanet|telekom|uni-paderborn|upb)\\.(?:de|net|com|biz|eu)\\.?$",
 	"[.]?nothing[.]",
@@ -93,9 +93,9 @@ var DEFAULT_NAME_PATTERNS = []string{
 	"^noname[.]",
 }
 
-type blacklist interface {
-	Matches(x string) bool
-}
+// type blacklist interface {
+// 	Matches(x string) bool
+// }
 
 type NameBlacklistItem struct {
 	Pattern *regexp.Regexp
@@ -123,7 +123,6 @@ func (self *NameBlacklist) Less(a, b int) bool {
 }
 
 func MakeNameBlacklist(patterns []string) (*NameBlacklist, error) {
-	//bl := make([]NameBlacklistItem, len(patterns))
 	bl := &NameBlacklist{
 		blacklist: make([]NameBlacklistItem, len(patterns)),
 	}
@@ -229,7 +228,7 @@ func (self *IPBlacklist) MatchesIP(x net.IP) bool {
 }
 
 func DefaultNameBlacklist() *NameBlacklist {
-	bl, err := MakeNameBlacklist(DEFAULT_NAME_PATTERNS)
+	bl, err := MakeNameBlacklist(nameBlacklistPatterns)
 	if err != nil {
 		panic(fmt.Sprintf("Error compiling name blacklist: %s", err.Error()))
 	}
@@ -238,7 +237,7 @@ func DefaultNameBlacklist() *NameBlacklist {
 }
 
 func DefaultIPBlacklist() *IPBlacklist {
-	bl, err := MakeIPBlacklist(DEFAULT_NETWORKS)
+	bl, err := MakeIPBlacklist(reservedNetworks)
 	if err != nil {
 		panic(fmt.Sprintf("Error compiling IP blacklist: %s", err.Error()))
 	}

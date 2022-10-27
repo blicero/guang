@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 24. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2015-12-27 16:31:51 krylon>
+// Time-stamp: <2022-10-27 21:33:19 krylon>
 
 package backend
 
@@ -11,6 +11,8 @@ import (
 	"math/rand"
 	"testing"
 	"time"
+
+	"github.com/blicero/guang/common"
 )
 
 var gen *HostGenerator
@@ -23,7 +25,7 @@ func TestCreateGenerator(t *testing.T) {
 	var err error
 
 	fmt.Printf("Setting BASE_DIR to %s\n", test_path)
-	SetBaseDir(test_path)
+	common.SetBaseDir(test_path)
 
 	if gen, err = CreateGenerator(8); err != nil {
 		t.Fatalf("Error creating HostGenerator: %s", err.Error())
@@ -35,11 +37,9 @@ func TestCreateGenerator(t *testing.T) {
 } // func TestCreateGenerator(t *testing.T)
 
 func TestReceiveHosts(t *testing.T) {
-	var host Host
+	var host = <-gen.HostQueue
 
-	host = <-gen.HostQueue
-
-	if DEBUG {
+	if common.DEBUG {
 		fmt.Printf("Got one host: %s (%s)\n",
 			host.Name, host.Address)
 	}

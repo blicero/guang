@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 26. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2015-12-28 15:05:32 krylon>
+// Time-stamp: <2022-10-27 21:25:07 krylon>
 
 package backend
 
@@ -11,6 +11,9 @@ import (
 	"math/rand"
 	"testing"
 	"time"
+
+	"github.com/blicero/guang/common"
+	"github.com/blicero/guang/database"
 )
 
 var xfr_client *XFRClient
@@ -27,7 +30,7 @@ func TestCreateClient(t *testing.T) {
 	var err error
 
 	fmt.Printf("Setting BASE_DIR to %s\n", test_path)
-	SetBaseDir(test_path)
+	common.SetBaseDir(test_path)
 
 	req_queue = make(chan string)
 
@@ -38,9 +41,9 @@ func TestCreateClient(t *testing.T) {
 
 func TestXFR(t *testing.T) {
 	var err error
-	var db *HostDB
+	var db *database.HostDB
 
-	if db, err = OpenDB(DB_PATH); err != nil {
+	if db, err = database.OpenDB(common.DB_PATH); err != nil {
 		t.Fatalf("Error opening database: %s", err.Error())
 	} else {
 		defer db.Close()
@@ -54,11 +57,11 @@ func TestXFR(t *testing.T) {
 
 func TestXFRFail(t *testing.T) {
 	var err error
-	var db *HostDB
+	var db *database.HostDB
 
-	if db, err = OpenDB(DB_PATH); err != nil {
+	if db, err = database.OpenDB(common.DB_PATH); err != nil {
 		t.Fatalf("Error opening HostDB at %s: %s",
-			DB_PATH, err.Error())
+			common.DB_PATH, err.Error())
 	} else if err = xfr_client.perform_xfr(REQ_ZONE_FAIL, db); err == nil {
 		t.Fatalf("Well THAT was unexpected: XFR of %s should have failed, but apparently it did not.",
 			REQ_ZONE_FAIL)
