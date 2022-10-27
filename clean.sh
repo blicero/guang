@@ -1,5 +1,5 @@
 #!/bin/sh
-# Time-stamp: <2022-10-27 18:40:37 krylon>
+# Time-stamp: <2022-10-27 18:42:06 krylon>
 
 cd $GOPATH/src/github.com/blicero/guang/
 
