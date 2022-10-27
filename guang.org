@@ -1,0 +1,49 @@
+# -*- mode: org; fill-column: 78; -*-
+# Time-stamp: <2022-10-27 18:36:22 krylon>
+#
+#+TAGS: optimize(o) refactor(r) bug(b) feature(f) architecture(a)
+#+TAGS: web(w) database(d) javascript(j)
+#+TODO: TODO(t) IMPLEMENT(i) TEST(e) RESEARCH(r) | DONE(d)
+#+TODO: MEDITATE(m) PLANNING(p) REFINE(n) | FAILED(f) CANCELLED(c) SUSPENDED(s)
+#+TODO: EXPERIMENT(x) |
+#+PRIORITIES: A G D
+
+* Guang
+** Clocktable
+   #+BEGIN: clocktable :scope file :maxlevel 20
+   #+CAPTION: Clock summary at [2022-10-27 Do 18:36]
+   | Headline            | Time   |      |      |      |
+   |---------------------+--------+------+------+------|
+   | *Total time*        | *4:59* |      |      |      |
+   |---------------------+--------+------+------+------|
+   | Guang               | 4:59   |      |      |      |
+   | \_  Components      |        | 4:59 |      |      |
+   | \_    Database      |        |      | 0:44 |      |
+   | \_      SQLite      |        |      |      | 0:44 |
+   | \_    Web interface |        |      | 4:15 |      |
+   | \_      Embed       |        |      |      | 4:15 |
+   #+END:
+** Diary
+*** [2022-10-26 Mi 15:56]
+    I haven't touched this code in a pretty long time, before I can move on,
+    I'm going to reorganize it so it conforms to the layout I used in my more
+    recent projects, plus the web interface is going to need *a lot* of work.
+** Components
+*** Database
+**** DONE SQLite
+     CLOSED: [2022-10-27 Do 18:36]
+     :LOGBOOK:
+     CLOCK: [2022-10-27 Do 17:52]--[2022-10-27 Do 18:36] =>  0:44
+     :END:
+     The library I use for the SQLite bindings is kind of out of date, I think
+**** TODO Pool
+*** Web interface
+**** DONE Embed
+     CLOSED: [2022-10-26 Mi 20:42]
+     :LOGBOOK:
+     CLOCK: [2022-10-26 Mi 16:27]--[2022-10-26 Mi 20:42] =>  4:15
+     :END:
+     I use a Perl script to roll all of my assets into a Go variable, which
+     became unneccessary when Go gained go:embed. Still need to make a few
+     adjustments to make that step, then I can remove the script.
+** Bugs
