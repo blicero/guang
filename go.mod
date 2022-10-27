@@ -7,9 +7,9 @@ require (
 	github.com/blicero/krylib v0.0.0-20221024225925-870d2f2ca1ee
 	github.com/fsouza/gokabinet v0.0.0-20130207020839-3e91e780ca18
 	github.com/gorilla/mux v1.8.0
+	github.com/mattn/go-sqlite3 v1.14.16
 	github.com/miekg/dns v1.1.50
 	github.com/muesli/cache2go v0.0.0-20221011235721-518229cd8021
-	github.com/mxk/go-sqlite v0.0.0-20140611214908-167da9432e1f
 	github.com/oschwald/geoip2-golang v1.8.0
 	github.com/tonnerre/golang-dns v0.0.0-20130925195549-c07f3c3cc475
 )

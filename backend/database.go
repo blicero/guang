@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 23. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2022-10-24 23:59:17 krylon>
+// Time-stamp: <2022-10-27 18:17:56 krylon>
 //
 // Samstag, 20. 08. 2016, 21:27
 // Ich würde für Hosts gern a) anhand der Antworten, die ich erhalte, das
@@ -24,8 +24,8 @@ import (
 
 	"github.com/blicero/krylib"
 
+	_ "github.com/mattn/go-sqlite3" // Import the database driver
 	"github.com/muesli/cache2go"
-	_ "github.com/mxk/go-sqlite/sqlite3"
 )
 
 var open_lock sync.Mutex
@@ -64,8 +64,10 @@ CREATE TABLE xfr (id INTEGER PRIMARY KEY,
 	"CREATE INDEX xfr_status_idx ON xfr (status)",
 }
 
+type QueryID int
+
 const (
-	STMT_HOST_ADD = iota
+	STMT_HOST_ADD QueryID = iota
 	STMT_HOST_GET_BY_ID
 	STMT_HOST_GET_RANDOM
 	STMT_HOST_GET_CNT
@@ -80,8 +82,6 @@ const (
 	STMT_XFR_FINISH
 	STMT_XFR_GET_UNFINISHED
 )
-
-type QueryID int
 
 var stmt_table map[QueryID]string = map[QueryID]string{
 	STMT_HOST_ADD: `
@@ -869,7 +869,7 @@ GET_QUERY:
 	stmt = tx.Stmt(stmt)
 
 EXEC_QUERY:
-	if _, err = stmt.Exec(res.Host.ID, res.Port, res.Stamp, res.Reply); err != nil {
+	if _, err = stmt.Exec(res.Host.ID, res.Port, res.Stamp.Unix(), res.Reply); err != nil {
 		if self.worth_a_retry(err) {
 			time.Sleep(RETRY_DELAY)
 			goto EXEC_QUERY
