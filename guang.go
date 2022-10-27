@@ -2,18 +2,21 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 27. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2016-02-13 15:01:04 krylon>
+// Time-stamp: <2022-10-27 20:51:10 krylon>
 
 package main
 
 import (
 	"flag"
 	"fmt"
-	"github.com/blicero/guang/backend"
-	"github.com/blicero/guang/frontend"
 	"log"
 	"os"
 	"time"
+
+	"github.com/blicero/guang/backend"
+	"github.com/blicero/guang/common"
+	"github.com/blicero/guang/database"
+	"github.com/blicero/guang/frontend"
 
 	"net/http"
 	_ "net/http/pprof"
@@ -29,20 +32,20 @@ func main() {
 	var gen *backend.HostGenerator
 	var xfr *backend.XFRClient
 	var xfr_queue chan string
-	var db *backend.HostDB
+	var db *database.HostDB
 	var do_xfr bool
 	var scanner *backend.Scanner
 	var webserver *frontend.WebFrontend
 	var port int = 4711
 	var nexus *backend.Nexus
-	var base_dir string = backend.BASE_DIR
+	var base_dir string = common.BASE_DIR
 
 	flag.IntVar(&gen_cnt, "generators", gen_cnt, "Number of Host Generators to run")
 	flag.IntVar(&xfr_worker_cnt, "xfr", xfr_worker_cnt, "Number of XFR workers to run")
 	flag.IntVar(&scanner_cnt, "scanner", scanner_cnt, "Number of scanner workers to run")
 	flag.BoolVar(&do_profile, "profile", do_profile, "Run the builtin profiling server")
 	flag.IntVar(&port, "port", port, "Port for the web server to listen on")
-	flag.StringVar(&base_dir, "basedir", backend.BASE_DIR, "Base directory for application-specific files")
+	flag.StringVar(&base_dir, "basedir", common.BASE_DIR, "Base directory for application-specific files")
 
 	flag.Parse()
 
@@ -64,19 +67,19 @@ func main() {
 	}
 
 	//base_dir := filepath.Join(os.Getenv("HOME"), "guang.d")
-	if base_dir != backend.BASE_DIR {
-		backend.SetBaseDir(base_dir)
+	if base_dir != common.BASE_DIR {
+		common.SetBaseDir(base_dir)
 	}
 
-	if mlog, err = backend.GetLogger("MAIN"); err != nil {
+	if mlog, err = common.GetLogger("MAIN"); err != nil {
 		fmt.Printf("Error creating Logger instance: %s\n",
 			err.Error())
 		os.Exit(1)
 	}
 
-	if db, err = backend.OpenDB(backend.DB_PATH); err != nil {
+	if db, err = database.OpenDB(common.DB_PATH); err != nil {
 		mlog.Printf("Error opening database at %s: %s\n",
-			backend.DB_PATH, err.Error())
+			common.DB_PATH, err.Error())
 		os.Exit(1)
 	}
 
@@ -86,7 +89,7 @@ func main() {
 			os.Exit(1)
 		} else {
 			gen.Start()
-			if backend.DEBUG {
+			if common.DEBUG {
 				mlog.Printf("Started generator with %d workers.\n", gen_cnt)
 			}
 		}
@@ -97,7 +100,7 @@ func main() {
 
 				host := <-gen.HostQueue
 
-				if backend.DEBUG {
+				if common.DEBUG {
 					mlog.Printf("Got host %s/%s from generator queue.\n",
 						host.Name, host.Address)
 				}
@@ -128,7 +131,7 @@ func main() {
 			xfr.Start(xfr_worker_cnt)
 		}
 
-		if backend.DEBUG {
+		if common.DEBUG {
 			mlog.Printf("Started %d XFR workers.\n", xfr_worker_cnt)
 		}
 	}

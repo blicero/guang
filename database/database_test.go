@@ -2,9 +2,9 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 25. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2022-10-25 00:00:35 krylon>
+// Time-stamp: <2022-10-27 20:21:43 krylon>
 
-package backend
+package database
 
 import (
 	"fmt"
@@ -13,45 +13,47 @@ import (
 	"testing"
 	"time"
 
+	"github.com/blicero/guang/common"
+	"github.com/blicero/guang/data"
 	"github.com/blicero/krylib"
 )
 
 var db *HostDB
 
-var hosts []Host = []Host{
-	Host{
+var hosts []data.Host = []data.Host{
+	data.Host{
 		ID:      krylib.INVALID_ID,
 		Address: net.ParseIP("192.168.0.1"),
 		Name:    "finn.krylon.net",
-		Source:  HOST_SOURCE_USER,
+		Source:  data.HOST_SOURCE_USER,
 	},
-	Host{
+	data.Host{
 		ID:      krylib.INVALID_ID,
 		Address: net.ParseIP("192.168.0.13"),
 		Name:    "neuromancer.krylon.net",
-		Source:  HOST_SOURCE_USER,
+		Source:  data.HOST_SOURCE_USER,
 	},
-	Host{
+	data.Host{
 		ID:      krylib.INVALID_ID,
 		Address: net.ParseIP("192.168.0.4"),
 		Name:    "wintermute.krylon.net",
-		Source:  HOST_SOURCE_USER,
+		Source:  data.HOST_SOURCE_USER,
 	},
 }
 
 func TestCreateDatabase(t *testing.T) {
 	var rng *rand.Rand = rand.New(rand.NewSource(time.Now().Unix()))
 
-	var test_path string = fmt.Sprintf("/tmp/guang_test_%08x",
+	var testPath string = fmt.Sprintf("/tmp/guang_test_%08x",
 		rng.Int31())
 	var err error
 
-	fmt.Printf("Setting BASE_DIR to %s\n", test_path)
-	SetBaseDir(test_path)
+	fmt.Printf("Setting BASE_DIR to %s\n", testPath)
+	common.SetBaseDir(testPath)
 
-	if db, err = OpenDB(DB_PATH); err != nil {
+	if db, err = OpenDB(common.DB_PATH); err != nil {
 		t.Fatalf("Error opening database at %s: %s",
-			DB_PATH, err.Error())
+			common.DB_PATH, err.Error())
 	}
 } // func TestCreateDatabase(t *testing.T)
 
@@ -81,31 +83,31 @@ func TestAddHosts(t *testing.T) {
 
 func TestGetHosts(t *testing.T) {
 	var err error
-	var host *Host
+	var host *data.Host
 
-	for _, ref_host := range hosts {
-		if host, err = db.HostGetByID(ref_host.ID); err != nil {
+	for _, refHost := range hosts {
+		if host, err = db.HostGetByID(refHost.ID); err != nil {
 			t.Fatalf("Error getting Host by ID #%d: %s",
-				ref_host.ID, err.Error())
-		} else if ref_host.ID != host.ID {
+				refHost.ID, err.Error())
+		} else if refHost.ID != host.ID {
 			t.Errorf("Host came back with the wrong ID: %d (expected) <-> %d (actual)",
-				ref_host.ID, host.ID)
-		} else if ref_host.Name != host.Name {
+				refHost.ID, host.ID)
+		} else if refHost.Name != host.Name {
 			t.Errorf("Host came back with the wrong name: %s (expected) <-> %s (actual)",
-				ref_host.Name, host.Name)
+				refHost.Name, host.Name)
 		}
 	}
 } // func TestGetHosts(t *testing.T)
 
-var xfr *XFR
+var xfr *data.XFR
 
 func TestAddXFR(t *testing.T) {
 	var err error
-	xfr = &XFR{
+	xfr = &data.XFR{
 		ID:     krylib.INVALID_ID,
 		Zone:   "krylon.net",
 		Start:  time.Now(),
-		Status: XFR_STATUS_UNFINISHED,
+		Status: data.XFR_STATUS_UNFINISHED,
 	}
 
 	if err = db.XfrAdd(xfr); err != nil {
@@ -117,18 +119,18 @@ func TestAddXFR(t *testing.T) {
 
 func TestFinishXFR(t *testing.T) {
 	var err error
-	if err = db.XfrFinish(xfr, XFR_STATUS_SUCCESS); err != nil {
+	if err = db.XfrFinish(xfr, data.XFR_STATUS_SUCCESS); err != nil {
 		t.Fatalf("Error finishing XFR: %s", err.Error())
 	}
 } // func TestFinishXFR(t *testing.T)
 
 func TestPortAdd(t *testing.T) {
 	var err error
-	var test_reply string = "Wer das liest, ist doof."
-	var res ScanResult = ScanResult{
+	var testReply string = "Wer das liest, ist doof."
+	var res data.ScanResult = data.ScanResult{
 		Host:  hosts[0],
 		Port:  22,
-		Reply: &test_reply,
+		Reply: &testReply,
 		Stamp: time.Now(),
 	}
 

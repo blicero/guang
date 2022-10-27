@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 25. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2022-10-24 23:59:37 krylon>
+// Time-stamp: <2022-10-27 20:47:20 krylon>
 
 package backend
 
@@ -17,6 +17,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/blicero/guang/common"
+	"github.com/blicero/guang/data"
+	"github.com/blicero/guang/database"
 	"github.com/blicero/krylib"
 
 	//"github.com/miekg/dns"
@@ -52,7 +55,7 @@ func MakeXFRClient(queue chan string) (*XFRClient, error) {
 
 	client.res.Net = "tcp"
 
-	if client.log, err = GetLogger("XFRClient"); err != nil {
+	if client.log, err = common.GetLogger("XFRClient"); err != nil {
 		fmt.Printf("Error getting Logger instance for XFRClient: %s\n", err.Error())
 		return nil, err
 	} else {
@@ -65,7 +68,7 @@ func (self *XFRClient) Start(cnt int) {
 	defer self.lock.Unlock()
 
 	for i := 1; i <= cnt; i++ {
-		if DEBUG {
+		if common.DEBUG {
 			self.log.Printf("Starting XFR Worker #%d\n", i)
 		}
 		go self.Worker(i)
@@ -76,9 +79,9 @@ func (self *XFRClient) Start(cnt int) {
 func (self *XFRClient) Worker(worker_id int) {
 	var hostname, zone, msg string
 	var err error
-	var xfr *XFR
+	var xfr *data.XFR
 	var submatch []string
-	var db *HostDB
+	var db *database.HostDB
 
 	defer func() {
 		self.lock.Lock()
@@ -86,9 +89,9 @@ func (self *XFRClient) Worker(worker_id int) {
 		self.lock.Unlock()
 	}()
 
-	if db, err = OpenDB(DB_PATH); err != nil {
+	if db, err = database.OpenDB(common.DB_PATH); err != nil {
 		msg = fmt.Sprintf("Error opening database at %s: %s",
-			DB_PATH, err.Error())
+			common.DB_PATH, err.Error())
 		self.log.Println(msg)
 		return
 	} else {
@@ -99,7 +102,7 @@ LOOP:
 	for {
 		hostname = <-self.request_queue
 
-		if DEBUG {
+		if common.DEBUG {
 			self.log.Printf("XFR Worker #%d got request for host %s\n",
 				worker_id, hostname)
 		}
@@ -112,7 +115,7 @@ LOOP:
 			msg = fmt.Sprintf("CANTHAPPEN: Did not find zone in hostname: %s", hostname)
 			self.log.Println(msg)
 			continue LOOP
-		} else if DEBUG {
+		} else if common.DEBUG {
 			self.log.Printf("XFR#%d - extracted zone %s from hostname %s\n",
 				worker_id, submatch[1], hostname)
 		}
@@ -128,11 +131,11 @@ LOOP:
 			continue LOOP
 		}
 
-		xfr = &XFR{
+		xfr = &data.XFR{
 			ID:     krylib.INVALID_ID,
 			Zone:   zone,
 			Start:  time.Now(),
-			Status: XFR_STATUS_UNFINISHED,
+			Status: data.XFR_STATUS_UNFINISHED,
 		}
 
 		if err = db.XfrAdd(xfr); err != nil {
@@ -146,12 +149,12 @@ LOOP:
 			continue LOOP
 		}
 
-		var status XfrStatus
+		var status data.XfrStatus
 
 		if err = self.perform_xfr(zone, db); err != nil {
-			status = XFR_STATUS_REFUSED
+			status = data.XFR_STATUS_REFUSED
 		} else {
-			status = XFR_STATUS_SUCCESS
+			status = data.XFR_STATUS_SUCCESS
 		}
 
 		if err = db.XfrFinish(xfr, status); err != nil {
@@ -161,7 +164,7 @@ LOOP:
 	}
 } // func (self *XFRClient) Worker()
 
-func (self *XFRClient) perform_xfr(zone string, db *HostDB) error {
+func (self *XFRClient) perform_xfr(zone string, db *database.HostDB) error {
 	var err error
 	var msg string
 	var ns_records []*net.NS
@@ -213,7 +216,7 @@ func (self *XFRClient) perform_xfr(zone string, db *HostDB) error {
 
 // Samstag, 26. 12. 2015, 00:44
 // Maybe I should factor this method into yet more sub-methods. It's rather long...
-func (self *XFRClient) attempt_xfr(zone string, srv net.IP, db *HostDB) (bool, error) {
+func (self *XFRClient) attempt_xfr(zone string, srv net.IP, db *database.HostDB) (bool, error) {
 	var msg string
 	var err error
 	var rr_cnt int64
@@ -226,7 +229,7 @@ func (self *XFRClient) attempt_xfr(zone string, srv net.IP, db *HostDB) (bool, e
 
 	self.log.Printf("Attempting AXFR of %s\n", zone)
 
-	xfr_path := filepath.Join(XFR_DBG_PATH, zone)
+	xfr_path := filepath.Join(common.XFR_DBG_PATH, zone)
 	fh, err := os.Create(xfr_path)
 	if err != nil {
 		msg = fmt.Sprintf("Error opening dbg file for XFR (%s): %s",
@@ -268,7 +271,7 @@ func (self *XFRClient) attempt_xfr(zone string, srv net.IP, db *HostDB) (bool, e
 
 	RR_LOOP:
 		for _, rr := range envelope.RR {
-			var host Host
+			var host data.Host
 			dbg_string := rr.String() + "\n"
 			fh.WriteString(dbg_string)
 			rr_cnt++
@@ -277,7 +280,7 @@ func (self *XFRClient) attempt_xfr(zone string, srv net.IP, db *HostDB) (bool, e
 			case *dns.A:
 				host.Address = t.A
 				host.Name = rr.Header().Name
-				host.Source = HOST_SOURCE_A
+				host.Source = data.HOST_SOURCE_A
 
 				if self.name_bl.Matches(host.Name) || self.addr_bl.MatchesIP(host.Address) {
 					continue RR_LOOP
@@ -309,10 +312,10 @@ func (self *XFRClient) attempt_xfr(zone string, srv net.IP, db *HostDB) (bool, e
 				} else {
 				ADDR_LOOP:
 					for _, addr := range addr_list {
-						var ns_host Host = Host{Name: host.Name}
+						var ns_host data.Host = data.Host{Name: host.Name}
 
 						ns_host.Address = net.ParseIP(addr)
-						ns_host.Source = HOST_SOURCE_NS
+						ns_host.Source = data.HOST_SOURCE_NS
 
 						if self.addr_bl.MatchesIP(ns_host.Address) {
 							continue ADDR_LOOP
@@ -343,10 +346,10 @@ func (self *XFRClient) attempt_xfr(zone string, srv net.IP, db *HostDB) (bool, e
 
 			MX_HOST:
 				for _, addr := range addr_list {
-					var mx_host Host = Host{
+					var mx_host data.Host = data.Host{
 						Name:    host.Name,
 						Address: net.ParseIP(addr),
-						Source:  HOST_SOURCE_MX,
+						Source:  data.HOST_SOURCE_MX,
 					}
 
 					if host_exists, err = db.HostExists(mx_host.Address.String()); err != nil {
@@ -367,7 +370,7 @@ func (self *XFRClient) attempt_xfr(zone string, srv net.IP, db *HostDB) (bool, e
 			case *dns.AAAA:
 				host.Name = rr.Header().Name
 				host.Address = t.AAAA
-				host.Source = HOST_SOURCE_A
+				host.Source = data.HOST_SOURCE_A
 
 				if self.name_bl.Matches(host.Name) || self.addr_bl.MatchesIP(host.Address) {
 					continue RR_LOOP

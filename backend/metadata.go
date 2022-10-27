@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 20. 08. 2016 by Benjamin Walkenhorst
 // (c) 2016 Benjamin Walkenhorst
-// Time-stamp: <2022-10-25 00:00:30 krylon>
+// Time-stamp: <2022-10-27 20:47:19 krylon>
 //
 // Sonntag, 21. 08. 2016, 18:25
 // Looking up locations seems to work reasonably well. Whether or not the
@@ -19,6 +19,8 @@ import (
 	"path/filepath"
 	"regexp"
 
+	"github.com/blicero/guang/common"
+	"github.com/blicero/guang/data"
 	"github.com/blicero/krylib"
 
 	"github.com/oschwald/geoip2-golang"
@@ -78,10 +80,10 @@ func OpenMetaEngine(path string) (*MetaEngine, error) {
 	if ex, _ := krylib.Fexists(path); ex {
 		db_path = path
 	} else {
-		db_path = filepath.Join(BASE_DIR, GEOIP_CITY_PATH)
+		db_path = filepath.Join(common.BASE_DIR, GEOIP_CITY_PATH)
 	}
 
-	if eng.log, err = GetLogger("MetaEngine"); err != nil {
+	if eng.log, err = common.GetLogger("MetaEngine"); err != nil {
 		return nil, err
 	} else if eng.geodb, err = geoip2.Open(db_path); err != nil {
 		msg = fmt.Sprintf("Error opening GeoIP database: %s", err.Error())
@@ -100,7 +102,7 @@ func (self *MetaEngine) Close() {
 	self.geodb.Close()
 } // func (self *MetaEngine) Close()
 
-func (self *MetaEngine) LookupCountry(h *Host) (string, error) {
+func (self *MetaEngine) LookupCountry(h *data.Host) (string, error) {
 	var err error
 	var country *geoip2.Country
 
@@ -111,7 +113,7 @@ func (self *MetaEngine) LookupCountry(h *Host) (string, error) {
 	}
 } // func (self *MetaEngine) LookupCountry(h *Host) (string, error)
 
-func (self *MetaEngine) LookupCity(h *Host) (string, error) {
+func (self *MetaEngine) LookupCity(h *data.Host) (string, error) {
 	var err error
 	var city *geoip2.City
 
@@ -122,7 +124,7 @@ func (self *MetaEngine) LookupCity(h *Host) (string, error) {
 	}
 } // func (self *MetaEngine) LookupCity(h *Host) (string, error)
 
-func (self *MetaEngine) LookupOperatingSystem(h *HostWithPorts) string {
+func (self *MetaEngine) LookupOperatingSystem(h *data.HostWithPorts) string {
 	var result_map map[string]int = make(map[string]int)
 
 PORT:

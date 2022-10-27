@@ -2,9 +2,10 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 23. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2022-10-24 23:59:50 krylon>
+// Time-stamp: <2022-10-27 19:48:35 krylon>
 
-package backend
+// Package data provides data types used throughout the application.
+package data
 
 import (
 	"fmt"

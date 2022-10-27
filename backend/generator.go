@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 23. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2016-02-13 10:45:49 krylon>
+// Time-stamp: <2022-10-27 20:37:53 krylon>
 //
 // IIRC, throughput never was much of an issue with this part of the program.
 // But if it were, there are a few tricks on could pull here.
@@ -21,11 +21,13 @@ import (
 	"sync"
 	"time"
 
+	"github.com/blicero/guang/common"
+	"github.com/blicero/guang/data"
 	"github.com/fsouza/gokabinet/kc"
 )
 
 type HostGenerator struct {
-	HostQueue  chan Host
+	HostQueue  chan data.Host
 	name_bl    *NameBlacklist
 	addr_bl    *IPBlacklist
 	cache      *kc.DB
@@ -40,21 +42,21 @@ func CreateGenerator(worker_cnt int) (*HostGenerator, error) {
 	var msg string
 
 	gen := &HostGenerator{
-		HostQueue:  make(chan Host, worker_cnt*2),
+		HostQueue:  make(chan data.Host, worker_cnt*2),
 		running:    true,
 		worker_cnt: worker_cnt,
 		name_bl:    DefaultNameBlacklist(),
 		addr_bl:    DefaultIPBlacklist(),
 	}
 
-	if gen.log, err = GetLogger("Generator"); err != nil {
+	if gen.log, err = common.GetLogger("Generator"); err != nil {
 		fmt.Printf("Error getting Logger instance for host generator: %s\n",
 			err.Error())
 		return nil, err
 		//} else if err = gen.cache.Open(HOST_CACHE_PATH, cabinet.KCOWRITER|cabinet.KCOCREATE|cabinet.KCOAUTOTRAN|cabinet.KCOAUTOSYNC); err != nil {
-	} else if gen.cache, err = kc.Open(HOST_CACHE_PATH, kc.WRITE); err != nil {
+	} else if gen.cache, err = kc.Open(common.HOST_CACHE_PATH, kc.WRITE); err != nil {
 		msg = fmt.Sprintf("Error opening Host cache at %s: %s",
-			HOST_CACHE_PATH, err.Error())
+			common.HOST_CACHE_PATH, err.Error())
 		gen.log.Println(msg)
 		return nil, errors.New(msg)
 	}
@@ -95,7 +97,7 @@ func (self *HostGenerator) worker(id int) {
 
 MAIN_LOOP:
 	for self.IsRunning() {
-		var host Host
+		var host data.Host
 		for addr = self.get_rand_ip(rng); self.addr_bl.MatchesIP(addr); addr = self.get_rand_ip(rng) {
 			// This loop has no body.
 			// It's all in the head.
@@ -126,13 +128,13 @@ MAIN_LOOP:
 			host.Address = addr
 			host.Name = namelist[0]
 
-			host.Source = HOST_SOURCE_GEN
+			host.Source = data.HOST_SOURCE_GEN
 			host.Added = time.Now()
 			self.HostQueue <- host
 		}
 	}
 
-	if DEBUG {
+	if common.DEBUG {
 		self.log.Printf("Generator worker #%d is quitting.\n", id)
 	}
 } // func (self *HostGenerator) worker(id int)

@@ -2,11 +2,15 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 12. 02. 2016 by Benjamin Walkenhorst
 // (c) 2016 Benjamin Walkenhorst
-// Time-stamp: <2016-02-12 19:59:57 krylon>
+// Time-stamp: <2022-10-27 20:47:19 krylon>
 
 package backend
 
-import "log"
+import (
+	"log"
+
+	"github.com/blicero/guang/common"
+)
 
 type Nexus struct {
 	generator *HostGenerator
@@ -19,7 +23,7 @@ func CreateNexus(gen *HostGenerator, scanner *Scanner, xfr *XFRClient) (*Nexus, 
 	var nexus *Nexus = new(Nexus)
 	var err error
 
-	if nexus.log, err = GetLogger("Nexus"); err != nil {
+	if nexus.log, err = common.GetLogger("Nexus"); err != nil {
 		return nil, err
 	} else {
 		nexus.generator = gen

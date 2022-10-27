@@ -2,9 +2,11 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 23. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2016-02-13 14:47:23 krylon>
+// Time-stamp: <2022-10-27 19:50:05 krylon>
 
-package backend
+// Package common provides constants, variables and functions used
+// throughout the application.
+package common
 
 import (
 	"errors"
