@@ -2,9 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 06. 02. 2016 by Benjamin Walkenhorst
 // (c) 2016 Benjamin Walkenhorst
-// Time-stamp: <2022-10-25 18:37:48 krylon>
-
-// go : generate ./build_templates_go.pl
+// Time-stamp: <2022-10-26 17:03:43 krylon>
 
 package frontend
 
@@ -12,6 +10,7 @@ import (
 	"embed"
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"log"
 	"net/http"
@@ -156,32 +155,32 @@ func CreateFrontend(addr string, port uint16, nexus *backend.Nexus) (*WebFronten
 		frontend.log.Printf("[ERROR] Cannot read embedded templates: %s\n",
 			err.Error())
 		return nil, err
+	}
 
-		for _, entry := range templates {
-			var (
-				content []byte
-				path    = filepath.Join(tmplFolder, entry.Name())
-			)
+	for _, entry := range templates {
+		var (
+			content []byte
+			path    = filepath.Join(tmplFolder, entry.Name())
+		)
 
-			if !tmplRe.MatchString(entry.Name()) {
-				continue
-			} else if content, err = assets.ReadFile(path); err != nil {
-				msg = fmt.Sprintf("Cannot read embedded file %s: %s",
-					path,
-					err.Error())
-				frontend.log.Printf("[CRITICAL] %s\n", msg)
-				return nil, errors.New(msg)
-			} else if frontend.tmpl, err = frontend.tmpl.Parse(string(content)); err != nil {
-				msg = fmt.Sprintf("Could not parse template %s: %s",
-					entry.Name(),
-					err.Error())
-				frontend.log.Println("[CRITICAL] " + msg)
-				return nil, errors.New(msg)
-			} else if common.Debug {
-				frontend.log.Printf("[TRACE] Template \"%s\" was parsed successfully.\n",
-					entry.Name())
-			}
+		if !tmplRe.MatchString(entry.Name()) {
+			continue
+		} else if content, err = assets.ReadFile(path); err != nil {
+			msg = fmt.Sprintf("Cannot read embedded file %s: %s",
+				path,
+				err.Error())
+			frontend.log.Printf("[CRITICAL] %s\n", msg)
+			return nil, errors.New(msg)
+		} else if frontend.tmpl, err = frontend.tmpl.Parse(string(content)); err != nil {
+			msg = fmt.Sprintf("Could not parse template %s: %s",
+				entry.Name(),
+				err.Error())
+			frontend.log.Println("[CRITICAL] " + msg)
+			return nil, errors.New(msg)
 		}
+
+		frontend.log.Printf("[TRACE] Template \"%s\" was parsed successfully.\n",
+			entry.Name())
 	}
 
 	frontend.srv.Addr = fmt.Sprintf("%s:%d", addr, port)
@@ -470,13 +469,22 @@ func (self *WebFrontend) HandleStaticFile(w http.ResponseWriter, request *http.R
 
 	w.Header().Set("Content-Type", mime_type)
 
-	if body, ok := html_data.Static[filename]; ok {
-		w.WriteHeader(200)
-		w.Write([]byte(body))
-	} else {
-		msg := fmt.Sprintf("ERROR - cannot find file %s", filename)
+	var (
+		err  error
+		fh   fs.File
+		path = filepath.Join("html", "static", filename)
+	)
+
+	if fh, err = assets.Open(path); err != nil {
+		msg := fmt.Sprintf("ERROR - cannot find file %s", path)
 		self.SendErrorMessage(w, msg)
+		return
 	}
+
+	defer fh.Close() // nolint: errcheck
+
+	w.WriteHeader(200)
+	io.Copy(w, fh)
 } // func (self *WebFrontend) HandleStaticFile(w http.ResponseWriter, request *http.Request)
 
 // Meant for cases where something went wrong, render and deliver a simple HTML
