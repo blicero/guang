@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 12. 02. 2016 by Benjamin Walkenhorst
 // (c) 2016 Benjamin Walkenhorst
-// Time-stamp: <2022-10-27 20:47:19 krylon>
+// Time-stamp: <2022-10-28 22:48:16 krylon>
 
 package backend
 
@@ -10,16 +10,17 @@ import (
 	"log"
 
 	"github.com/blicero/guang/common"
+	"github.com/blicero/guang/generator"
 )
 
 type Nexus struct {
-	generator *HostGenerator
+	generator *generator.HostGenerator
 	scanner   *Scanner
 	xfr       *XFRClient
 	log       *log.Logger
 }
 
-func CreateNexus(gen *HostGenerator, scanner *Scanner, xfr *XFRClient) (*Nexus, error) {
+func CreateNexus(gen *generator.HostGenerator, scanner *Scanner, xfr *XFRClient) (*Nexus, error) {
 	var nexus *Nexus = new(Nexus)
 	var err error
 
@@ -34,13 +35,7 @@ func CreateNexus(gen *HostGenerator, scanner *Scanner, xfr *XFRClient) (*Nexus, 
 } // func CreateNexus(gen *HostGenerator, scanner *Scanner, xfr *XFRClient) (*Nexus, error)
 
 func (self *Nexus) GetGeneratorCount() int {
-	var cnt int
-
-	self.generator.lock.Lock()
-	cnt = self.generator.worker_cnt
-	self.generator.lock.Unlock()
-
-	return cnt
+	return self.generator.Count()
 } // func (self *Nexus) GetGeneratorCount() int
 
 func (self *Nexus) GetScannerCount() int {

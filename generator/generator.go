@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 23. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2022-10-27 22:26:02 krylon>
+// Time-stamp: <2022-10-28 22:47:38 krylon>
 //
 // IIRC, throughput never was much of an issue with this part of the program.
 // But if it were, there are a few tricks on could pull here.
@@ -10,7 +10,7 @@
 // all workers. If each had its own blacklist, it would probably improve
 // parallelism. OTOH, the main problem here is probably DNS lookups.
 
-package backend
+package generator
 
 import (
 	"errors"
@@ -81,6 +81,13 @@ func (gen *HostGenerator) Stop() {
 	gen.running = false
 	gen.lock.Unlock()
 } // func (gen *HostGenerator) Stop()
+
+func (gen *HostGenerator) Count() int {
+	gen.lock.Lock()
+	var cnt = gen.worker_cnt
+	gen.lock.Unlock()
+	return cnt
+} // func (gen *HostGenerator) Count() int
 
 func (gen *HostGenerator) worker(id int) {
 	defer func() {

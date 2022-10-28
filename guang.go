@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 27. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2022-10-27 20:51:10 krylon>
+// Time-stamp: <2022-10-28 23:15:01 krylon>
 
 package main
 
@@ -17,6 +17,7 @@ import (
 	"github.com/blicero/guang/common"
 	"github.com/blicero/guang/database"
 	"github.com/blicero/guang/frontend"
+	"github.com/blicero/guang/generator"
 
 	"net/http"
 	_ "net/http/pprof"
@@ -29,7 +30,7 @@ func main() {
 	var do_profile bool = false
 	var err error
 	var mlog *log.Logger
-	var gen *backend.HostGenerator
+	var gen *generator.HostGenerator
 	var xfr *backend.XFRClient
 	var xfr_queue chan string
 	var db *database.HostDB
@@ -84,7 +85,7 @@ func main() {
 	}
 
 	if gen_cnt > 0 {
-		if gen, err = backend.CreateGenerator(gen_cnt); err != nil {
+		if gen, err = generator.CreateGenerator(gen_cnt); err != nil {
 			mlog.Printf("Error creating HostGenerator: %s\n", err.Error())
 			os.Exit(1)
 		} else {

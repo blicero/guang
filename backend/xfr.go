@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 25. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2022-10-27 21:43:42 krylon>
+// Time-stamp: <2022-10-28 23:12:18 krylon>
 
 package backend
 
@@ -20,6 +20,7 @@ import (
 	"github.com/blicero/guang/common"
 	"github.com/blicero/guang/data"
 	"github.com/blicero/guang/database"
+	"github.com/blicero/guang/generator"
 	"github.com/blicero/krylib"
 
 	//"github.com/miekg/dns"
@@ -37,8 +38,8 @@ type XFRClient struct {
 	request_queue chan string
 	log           *log.Logger
 	host_re       *regexp.Regexp
-	name_bl       *NameBlacklist
-	addr_bl       *IPBlacklist
+	name_bl       *generator.NameBlacklist
+	addr_bl       *generator.IPBlacklist
 	worker_cnt    int
 	lock          sync.Mutex
 }
@@ -48,8 +49,8 @@ func MakeXFRClient(queue chan string) (*XFRClient, error) {
 	var client *XFRClient = &XFRClient{
 		request_queue: queue,
 		host_re:       regexp.MustCompile(HOST_RE_PAT),
-		name_bl:       DefaultNameBlacklist(),
-		addr_bl:       DefaultIPBlacklist(),
+		name_bl:       generator.DefaultNameBlacklist(),
+		addr_bl:       generator.DefaultIPBlacklist(),
 		res:           new(dns.Client),
 	}
 
