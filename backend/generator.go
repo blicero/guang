@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 23. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2022-10-27 21:42:45 krylon>
+// Time-stamp: <2022-10-27 22:26:02 krylon>
 //
 // IIRC, throughput never was much of an issue with this part of the program.
 // But if it were, there are a few tricks on could pull here.
@@ -106,9 +106,9 @@ MAIN_LOOP:
 		astr = addr.String()
 
 		if res, err := gen.cache.GetInt(astr); err != nil {
-			msg = fmt.Sprintf("Error looking for %s in cache: %s",
-				astr, err.Error())
-			gen.log.Println(msg)
+			// msg = fmt.Sprintf("Error looking for %s in cache: %s",
+			// 	astr, err.Error())
+			// gen.log.Println(msg)
 		} else if res != 0 {
 			continue MAIN_LOOP
 		} else {
