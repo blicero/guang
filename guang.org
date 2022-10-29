@@ -1,5 +1,5 @@
 # -*- mode: org; fill-column: 78; -*-
-# Time-stamp: <2022-10-27 20:51:45 krylon>
+# Time-stamp: <2022-10-30 00:34:10 krylon>
 #
 #+TAGS: optimize(o) refactor(r) bug(b) feature(f) architecture(a)
 #+TAGS: web(w) database(d) javascript(j)
@@ -11,21 +11,21 @@
 * Guang
 ** Clocktable
    #+BEGIN: clocktable :scope file :maxlevel 20
-   #+CAPTION: Clock summary at [2022-10-27 Do 20:51]
-   | Headline                    | Time   |      |      |      |      |
-   |-----------------------------+--------+------+------+------+------|
-   | *Total time*                | *6:08* |      |      |      |      |
-   |-----------------------------+--------+------+------+------+------|
-   | Guang                       | 6:08   |      |      |      |      |
-   | \_  Components              |        | 6:08 |      |      |      |
-   | \_    Database              |        |      | 0:47 |      |      |
-   | \_      SQLite              |        |      |      | 0:44 |      |
-   | \_      Major cleanup [1/2] |        |      |      | 0:03 |      |
-   | \_        Package           |        |      |      |      | 0:03 |
-   | \_    Web interface         |        |      | 4:15 |      |      |
-   | \_      Embed               |        |      |      | 4:15 |      |
-   | \_    Refactoring [0/1]     |        |      | 1:06 |      |      |
-   | \_      Packages            |        |      |      | 1:06 |      |
+   #+CAPTION: Clock summary at [2022-10-30 So 00:34]
+   | Headline                    | Time    |       |      |      |      |
+   |-----------------------------+---------+-------+------+------+------|
+   | *Total time*                | *12:40* |       |      |      |      |
+   |-----------------------------+---------+-------+------+------+------|
+   | Guang                       | 12:40   |       |      |      |      |
+   | \_  Components              |         | 12:40 |      |      |      |
+   | \_    Database              |         |       | 0:47 |      |      |
+   | \_      SQLite              |         |       |      | 0:44 |      |
+   | \_      Major cleanup [1/2] |         |       |      | 0:03 |      |
+   | \_        Package           |         |       |      |      | 0:03 |
+   | \_    Web interface         |         |       | 4:15 |      |      |
+   | \_      Embed               |         |       |      | 4:15 |      |
+   | \_    Refactoring [0/1]     |         |       | 7:38 |      |      |
+   | \_      Packages            |         |       |      | 7:38 |      |
    #+END:
 ** Diary
 *** [2022-10-26 Mi 15:56]
@@ -63,6 +63,7 @@
 *** Refactoring [0/1]                                              :refactor:
 **** TODO Packages
      :LOGBOOK:
+     CLOCK: [2022-10-29 Sa 18:01]--[2022-10-30 So 00:33] =>  6:32
      CLOCK: [2022-10-27 Do 19:45]--[2022-10-27 Do 20:51] =>  1:06
      :END:
      I need break up the application into more packages, the current state is
