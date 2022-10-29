@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 06. 02. 2016 by Benjamin Walkenhorst
 // (c) 2016 Benjamin Walkenhorst
-// Time-stamp: <2022-10-27 20:50:01 krylon>
+// Time-stamp: <2022-10-29 19:23:48 krylon>
 
 package frontend
 
@@ -42,11 +42,11 @@ type WebFrontend struct {
 	router     *mux.Router
 	log        *log.Logger
 	tmpl       *template.Template
-	isRunning  bool
-	lock       sync.Mutex
+	isRunning  bool         // nolint: unused
+	lock       sync.RWMutex // nolint: unused
 	suffix_re  *regexp.Regexp
 	mime_map   map[string]string
-	host_cache *cache2go.CacheTable
+	host_cache *cache2go.CacheTable // nolint: unused
 	db_pool    sync.Pool
 	nexus      *backend.Nexus
 }
@@ -67,10 +67,10 @@ type report_info_port struct {
 	Results []data.ScanResult
 }
 
-type host_scan_result struct {
-	Host  *data.Host
-	Ports []data.ScanResult
-}
+// type host_scan_result struct {
+// 	Host  *data.Host
+// 	Ports []data.ScanResult
+// }
 
 type tmpl_data_by_port struct {
 	Debug bool
@@ -218,13 +218,11 @@ func CreateFrontend(addr string, port uint16, nexus *backend.Nexus) (*WebFronten
 func (self *WebFrontend) Serve() {
 	self.log.Println("The web server is starting to accept requests now.")
 	http.Handle("/", self.router)
-	self.srv.ListenAndServe()
+	self.srv.ListenAndServe() // nolint: errcheck
 } // func (self *WebFrontend) Serve()
 
 func (self *WebFrontend) GetDB() (*database.HostDB, error) {
-	var tmp interface{}
-
-	tmp = self.db_pool.Get()
+	var tmp = self.db_pool.Get()
 
 	if tmp == nil {
 		return nil, nil
@@ -234,7 +232,7 @@ func (self *WebFrontend) GetDB() (*database.HostDB, error) {
 	case *database.HostDB:
 		return item, nil
 	default:
-		var msg string = fmt.Sprintf("Unexptected type came out of the HostDB pool!")
+		var msg string = fmt.Sprintf("Unexptected type came out of the HostDB pool: %T", tmp)
 		self.log.Println(msg)
 		return nil, errors.New(msg)
 	}
@@ -435,8 +433,6 @@ func (self *WebFrontend) HandleByHost(w http.ResponseWriter, request *http.Reque
 			err.Error())
 		self.log.Println(msg)
 	}
-
-	return
 } // func (self *WebFrontend) HandleByHost(w http.ResponseWriter, request *http.Request)
 
 // Deliver a static file to the client.
@@ -487,7 +483,7 @@ func (self *WebFrontend) HandleStaticFile(w http.ResponseWriter, request *http.R
 	defer fh.Close() // nolint: errcheck
 
 	w.WriteHeader(200)
-	io.Copy(w, fh)
+	io.Copy(w, fh) // nolint: errcheck
 } // func (self *WebFrontend) HandleStaticFile(w http.ResponseWriter, request *http.Request)
 
 // Meant for cases where something went wrong, render and deliver a simple HTML

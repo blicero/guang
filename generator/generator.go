@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 23. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2022-10-28 22:47:38 krylon>
+// Time-stamp: <2022-10-29 18:23:56 krylon>
 //
 // IIRC, throughput never was much of an issue with this part of the program.
 // But if it were, there are a few tricks on could pull here.
@@ -21,6 +21,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/blicero/guang/blacklist"
 	"github.com/blicero/guang/common"
 	"github.com/blicero/guang/data"
 	"github.com/fsouza/gokabinet/kc"
@@ -28,8 +29,8 @@ import (
 
 type HostGenerator struct {
 	HostQueue  chan data.Host
-	name_bl    *NameBlacklist
-	addr_bl    *IPBlacklist
+	name_bl    *blacklist.NameBlacklist
+	addr_bl    *blacklist.IPBlacklist
 	cache      *kc.DB
 	lock       sync.Mutex
 	running    bool
@@ -45,8 +46,8 @@ func CreateGenerator(worker_cnt int) (*HostGenerator, error) {
 		HostQueue:  make(chan data.Host, worker_cnt*2),
 		running:    true,
 		worker_cnt: worker_cnt,
-		name_bl:    DefaultNameBlacklist(),
-		addr_bl:    DefaultIPBlacklist(),
+		name_bl:    blacklist.DefaultNameBlacklist(),
+		addr_bl:    blacklist.DefaultIPBlacklist(),
 	}
 
 	if gen.log, err = common.GetLogger("Generator"); err != nil {

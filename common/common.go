@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 23. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2022-10-27 19:50:05 krylon>
+// Time-stamp: <2022-10-29 19:14:21 krylon>
 
 // Package common provides constants, variables and functions used
 // throughout the application.
@@ -52,7 +52,7 @@ func GetLogger(name string) (*log.Logger, error) {
 	var err error
 	err = InitApp()
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("Error initializing application environment: %s", err.Error()))
+		return nil, fmt.Errorf("Error initializing application environment: %s", err.Error())
 	}
 
 	log_name := fmt.Sprintf("%s.%s",

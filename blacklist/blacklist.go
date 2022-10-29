@@ -2,9 +2,9 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 23. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2022-10-28 22:33:46 krylon>
+// Time-stamp: <2022-10-29 18:11:59 krylon>
 
-package generator
+package blacklist
 
 import (
 	"fmt"
@@ -97,31 +97,34 @@ var nameBlacklistPatterns = []string{
 // 	Matches(x string) bool
 // }
 
+// NameBlacklistItem is a blacklist item that matches hostnames.
 type NameBlacklistItem struct {
 	Pattern *regexp.Regexp
 	Cnt     int64
 }
 
-//type NameBlacklist []NameBlacklistItem
+//NameBlacklist is a blacklist that matches host names against a list
+//of NameBlacklistItems.
 type NameBlacklist struct {
 	blacklist []NameBlacklistItem
 	lock      sync.Mutex
 }
 
-func (self *NameBlacklist) Len() int {
-	return len(self.blacklist)
+func (bl *NameBlacklist) Len() int {
+	return len(bl.blacklist)
 }
 
-func (self *NameBlacklist) Swap(a, b int) {
-	var tmp NameBlacklistItem = self.blacklist[a]
-	self.blacklist[a] = self.blacklist[b]
-	self.blacklist[b] = tmp
+func (bl *NameBlacklist) Swap(a, b int) {
+	var tmp NameBlacklistItem = bl.blacklist[a]
+	bl.blacklist[a] = bl.blacklist[b]
+	bl.blacklist[b] = tmp
 }
 
-func (self *NameBlacklist) Less(a, b int) bool {
-	return self.blacklist[b].Cnt < self.blacklist[a].Cnt
+func (bl *NameBlacklist) Less(a, b int) bool {
+	return bl.blacklist[b].Cnt < bl.blacklist[a].Cnt
 }
 
+// MakeNameBlacklist creates a new NameBlacklist from the list of patterns.
 func MakeNameBlacklist(patterns []string) (*NameBlacklist, error) {
 	bl := &NameBlacklist{
 		blacklist: make([]NameBlacklistItem, len(patterns)),
@@ -139,44 +142,51 @@ func MakeNameBlacklist(patterns []string) (*NameBlacklist, error) {
 	return bl, nil
 } // func MakeNameBlacklist(patterns []string) (*NameBlacklist, error)
 
-func (self *NameBlacklist) Matches(x string) bool {
-	self.lock.Lock()
-	defer self.lock.Unlock()
-	for idx, item := range self.blacklist {
+// Matches returns true if the given string matches any of the patterns
+// in the blacklist.
+func (bl *NameBlacklist) Matches(x string) bool {
+	bl.lock.Lock()
+	defer bl.lock.Unlock()
+	for idx, item := range bl.blacklist {
 		if item.Pattern.Match([]byte(x)) {
-			self.blacklist[idx].Cnt++
-			sort.Sort(self)
+			bl.blacklist[idx].Cnt++
+			sort.Sort(bl)
 			return true
 		}
 	}
 	return false
-} // func (self NameBlacklist) Matches(x string) bool
+} // func (bl NameBlacklist) Matches(x string) bool
 
 // IP blacklist
 
+// IPBlacklistItem is a blacklist item that matches IP addresses against
+// a network.
 type IPBlacklistItem struct {
 	Network *net.IPNet
 	Cnt     int
 }
 
-//type IPBlacklist []IPBlacklistItem
+// IPBlacklist is a blacklist that matches IP addresses against a list
+// of networks.
 type IPBlacklist struct {
 	blacklist []IPBlacklistItem
 	lock      sync.Mutex
 }
 
-func (self *IPBlacklist) Len() int {
-	return len(self.blacklist)
+func (bl *IPBlacklist) Len() int {
+	return len(bl.blacklist)
 }
 
-func (self *IPBlacklist) Swap(a, b int) {
-	self.blacklist[a], self.blacklist[b] = self.blacklist[b], self.blacklist[a]
+func (bl *IPBlacklist) Swap(a, b int) {
+	bl.blacklist[a], bl.blacklist[b] = bl.blacklist[b], bl.blacklist[a]
 }
 
-func (self *IPBlacklist) Less(a, b int) bool {
-	return self.blacklist[b].Cnt < self.blacklist[a].Cnt
+func (bl *IPBlacklist) Less(a, b int) bool {
+	return bl.blacklist[b].Cnt < bl.blacklist[a].Cnt
 }
 
+// MakeIPBlacklist creates an IPBlacklist from the list of networks
+// given in CIDR notation.
 func MakeIPBlacklist(networks []string) (*IPBlacklist, error) {
 	bl := &IPBlacklist{
 		blacklist: make([]IPBlacklistItem, len(networks)),
@@ -187,46 +197,52 @@ func MakeIPBlacklist(networks []string) (*IPBlacklist, error) {
 		if err != nil {
 			fmt.Printf("Error parsing network %s: %s\n", n, err.Error())
 			return nil, err
-		} else {
-			bl.blacklist[i] = IPBlacklistItem{network, 0}
 		}
+
+		bl.blacklist[i] = IPBlacklistItem{network, 0}
 	}
 
 	return bl, nil
 }
 
-func (self *IPBlacklist) Matches(x string) bool {
+// Matches returns true if the given IP address is a member of any of
+// the networks in the blacklist.
+func (bl *IPBlacklist) Matches(x string) bool {
 	addr := net.ParseIP(x)
 
-	self.lock.Lock()
-	defer self.lock.Unlock()
+	bl.lock.Lock()
+	defer bl.lock.Unlock()
 
-	for idx, item := range self.blacklist {
+	for idx, item := range bl.blacklist {
 		if item.Network.Contains(addr) {
-			self.blacklist[idx].Cnt++
-			sort.Sort(self)
+			bl.blacklist[idx].Cnt++
+			sort.Sort(bl)
 			return true
 		}
 	}
 
 	return false
-}
+} // func (bl *IPBlacklist) Matches(x string) bool
 
-func (self *IPBlacklist) MatchesIP(x net.IP) bool {
-	self.lock.Lock()
-	defer self.lock.Unlock()
+// MatchesIP returns true if the given IP address is a member of any of
+// the networks in the blacklist.
+func (bl *IPBlacklist) MatchesIP(x net.IP) bool {
+	bl.lock.Lock()
+	defer bl.lock.Unlock()
 
-	for idx, item := range self.blacklist {
+	for idx, item := range bl.blacklist {
 		if item.Network.Contains(x) {
-			self.blacklist[idx].Cnt++
-			sort.Sort(self)
+			bl.blacklist[idx].Cnt++
+			sort.Sort(bl)
 			return true
 		}
 	}
 
 	return false
-}
+} // func (bl *IPBlacklist) MatchesIP(x net.IP) bool
 
+// DefaultNameBlacklist returns a new NameBlacklist created from the
+// default list of names.
 func DefaultNameBlacklist() *NameBlacklist {
 	bl, err := MakeNameBlacklist(nameBlacklistPatterns)
 	if err != nil {
@@ -234,8 +250,10 @@ func DefaultNameBlacklist() *NameBlacklist {
 	}
 
 	return bl
-}
+} // func DefaultNameBlacklist() *NameBlacklist
 
+// DefaultIPBlacklist returns a new IPBlacklist created from the list
+// of reserved networks.
 func DefaultIPBlacklist() *IPBlacklist {
 	bl, err := MakeIPBlacklist(reservedNetworks)
 	if err != nil {
@@ -243,4 +261,4 @@ func DefaultIPBlacklist() *IPBlacklist {
 	}
 
 	return bl
-}
+} // func DefaultIPBlacklist() *IPBlacklist

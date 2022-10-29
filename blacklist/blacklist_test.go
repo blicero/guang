@@ -2,9 +2,9 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 21. 06. 2014 by Benjamin Walkenhorst
 // (c) 2014 Benjamin Walkenhorst
-// Time-stamp: <2022-10-28 22:30:28 krylon>
+// Time-stamp: <2022-10-29 18:11:51 krylon>
 
-package generator
+package blacklist
 
 import (
 	"fmt"
@@ -12,7 +12,7 @@ import (
 )
 
 func TestIPBlacklist(t *testing.T) {
-	forbidden_addresses := []string{
+	forbiddenAddresses := []string{
 		"127.0.0.1",
 		"192.168.0.13",
 		"192.168.80.221",
@@ -23,7 +23,7 @@ func TestIPBlacklist(t *testing.T) {
 		"255.255.255.255",
 	}
 
-	allowed_addresses := []string{
+	allowedAddresses := []string{
 		"91.34.78.15",
 		"157.21.199.201",
 		"101.17.81.34",
@@ -36,23 +36,23 @@ func TestIPBlacklist(t *testing.T) {
 	bl := DefaultIPBlacklist()
 	var msg string
 
-	for _, addr := range forbidden_addresses {
+	for _, addr := range forbiddenAddresses {
 		if !bl.Matches(addr) {
 			msg = fmt.Sprintf("Blacklist did not match forbidden address %s!", addr)
 			t.Error(msg)
 		}
 	}
 
-	for _, addr := range allowed_addresses {
+	for _, addr := range allowedAddresses {
 		if bl.Matches(addr) {
 			msg = fmt.Sprintf("Blacklist DID match allowed address %s!", addr)
 			t.Error(msg)
 		}
 	}
-}
+} // func TestIPBlacklist(t *testing.T)
 
 func TestNameBlacklist(t *testing.T) {
-	forbidden_names := []string{
+	forbiddenAddresses := []string{
 		"23.invalid.addr.",
 		"incorrect.domain.com",
 		"abef.pool.heise.de",
@@ -64,7 +64,7 @@ func TestNameBlacklist(t *testing.T) {
 		"dyn81.t-online.de",
 	}
 
-	allowed_names := []string{
+	allowedAddresses := []string{
 		"www.heise.de",
 		"www02.google.de",
 		"srv03.webapp.some-company.de",
@@ -80,17 +80,17 @@ func TestNameBlacklist(t *testing.T) {
 	bl := DefaultNameBlacklist()
 	var msg string
 
-	for _, name := range forbidden_names {
+	for _, name := range forbiddenAddresses {
 		if !bl.Matches(name) {
 			msg = fmt.Sprintf("Blacklist did NOT match forbidden name %s!", name)
 			t.Error(msg)
 		}
 	}
 
-	for _, name := range allowed_names {
+	for _, name := range allowedAddresses {
 		if bl.Matches(name) {
 			msg = fmt.Sprintf("Blacklist DID match allowed name %s!", name)
 			t.Error(msg)
 		}
 	}
-}
+} // func TestNameBlacklist(t *testing.T)

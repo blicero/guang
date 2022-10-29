@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 05. 02. 2016 by Benjamin Walkenhorst
 // (c) 2016 Benjamin Walkenhorst
-// Time-stamp: <2022-10-27 21:19:55 krylon>
+// Time-stamp: <2022-10-30 00:15:32 krylon>
 
 package backend
 
@@ -28,49 +28,60 @@ var targets []scan_target = []scan_target{
 		Host: data.Host{
 			ID:      krylib.INVALID_ID,
 			Source:  data.HOST_SOURCE_USER,
-			Address: net.ParseIP("192.168.0.11"),
-			Name:    "beastie.krylon.net",
-			Added:   time.Now(),
-		},
-
-		Ports: []uint16{21, 22, 23, 79, 80},
-	},
-
-	scan_target{
-		Host: data.Host{
-			ID:      krylib.INVALID_ID,
-			Source:  data.HOST_SOURCE_USER,
-			Address: net.ParseIP("192.168.0.13"),
-			Name:    "neuromancer.krylon.net",
-			Added:   time.Now(),
-		},
-
-		Ports: []uint16{21, 22, 80, 53},
-	},
-
-	scan_target{
-		Host: data.Host{
-			ID:      krylib.INVALID_ID,
-			Source:  data.HOST_SOURCE_USER,
-			Address: net.ParseIP("192.168.0.1"),
-			Name:    "finn.krylon.net",
-			Added:   time.Now(),
-		},
-
-		Ports: []uint16{21, 22, 80, 631},
-	},
-
-	scan_target{
-		Host: data.Host{
-			ID:      krylib.INVALID_ID,
-			Source:  data.HOST_SOURCE_USER,
-			Address: net.ParseIP("192.168.0.4"),
+			Address: net.ParseIP("10.10.0.1"),
 			Name:    "wintermute.krylon.net",
 			Added:   time.Now(),
 		},
 
-		Ports: []uint16{21, 22, 53, 80},
+		Ports: []uint16{21, 22, 79, 80},
 	},
+
+	scan_target{
+		Host: data.Host{
+			ID:      krylib.INVALID_ID,
+			Source:  data.HOST_SOURCE_USER,
+			Address: net.ParseIP("10.10.0.7"),
+			Name:    "neuromancer.krylon.net",
+			Added:   time.Now(),
+		},
+
+		Ports: []uint16{22, 23, 79, 5900},
+	},
+
+	scan_target{
+		Host: data.Host{
+			ID:      krylib.INVALID_ID,
+			Source:  data.HOST_SOURCE_USER,
+			Address: net.ParseIP("10.10.0.3"),
+			Name:    "dixie.krylon.net",
+			Added:   time.Now(),
+		},
+
+		Ports: []uint16{22, 5900},
+	},
+
+	scan_target{
+		Host: data.Host{
+			ID:      krylib.INVALID_ID,
+			Source:  data.HOST_SOURCE_USER,
+			Address: net.ParseIP("10.10.8.10"),
+			Name:    "achtfaden.krylon.net",
+			Added:   time.Now(),
+		},
+		Ports: []uint16{22, 79},
+	},
+
+	// scan_target{
+	// 	Host: data.Host{
+	// 		ID:      krylib.INVALID_ID,
+	// 		Source:  data.HOST_SOURCE_USER,
+	// 		Address: net.ParseIP("192.168.0.4"),
+	// 		Name:    "wintermute.krylon.net",
+	// 		Added:   time.Now(),
+	// 	},
+
+	// 	Ports: []uint16{21, 22, 53, 80},
+	// },
 }
 
 var scanner *Scanner
