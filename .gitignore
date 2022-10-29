@@ -1,3 +1,4 @@
+# Time-stamp: <2022-10-30 00:36:45 krylon>
 # Emacs backup and auto-save files
 *~
 .\#*
@@ -106,3 +107,7 @@ templates.go
 
 guang
 bak.guang
+
+*_string.go
+*_gen.go
+*ffjson*
