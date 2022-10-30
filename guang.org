@@ -1,5 +1,5 @@
 # -*- mode: org; fill-column: 78; -*-
-# Time-stamp: <2022-10-30 00:34:10 krylon>
+# Time-stamp: <2022-10-30 21:59:55 krylon>
 #
 #+TAGS: optimize(o) refactor(r) bug(b) feature(f) architecture(a)
 #+TAGS: web(w) database(d) javascript(j)
@@ -11,21 +11,22 @@
 * Guang
 ** Clocktable
    #+BEGIN: clocktable :scope file :maxlevel 20
-   #+CAPTION: Clock summary at [2022-10-30 So 00:34]
+   #+CAPTION: Clock summary at [2022-10-30 So 21:59]
    | Headline                    | Time    |       |      |      |      |
    |-----------------------------+---------+-------+------+------+------|
-   | *Total time*                | *12:40* |       |      |      |      |
+   | *Total time*                | *14:14* |       |      |      |      |
    |-----------------------------+---------+-------+------+------+------|
-   | Guang                       | 12:40   |       |      |      |      |
-   | \_  Components              |         | 12:40 |      |      |      |
+   | Guang                       | 14:14   |       |      |      |      |
+   | \_  Components              |         | 14:14 |      |      |      |
    | \_    Database              |         |       | 0:47 |      |      |
    | \_      SQLite              |         |       |      | 0:44 |      |
    | \_      Major cleanup [1/2] |         |       |      | 0:03 |      |
    | \_        Package           |         |       |      |      | 0:03 |
    | \_    Web interface         |         |       | 4:15 |      |      |
    | \_      Embed               |         |       |      | 4:15 |      |
-   | \_    Refactoring [0/1]     |         |       | 7:38 |      |      |
+   | \_    Refactoring [0/2]     |         |       | 9:12 |      |      |
    | \_      Packages            |         |       |      | 7:38 |      |
+   | \_      Linter              |         |       |      | 1:34 |      |
    #+END:
 ** Diary
 *** [2022-10-26 Mi 15:56]
@@ -60,7 +61,7 @@
      I use a Perl script to roll all of my assets into a Go variable, which
      became unneccessary when Go gained go:embed. Still need to make a few
      adjustments to make that step, then I can remove the script.
-*** Refactoring [0/1]                                              :refactor:
+*** Refactoring [0/2]                                              :refactor:
 **** TODO Packages
      :LOGBOOK:
      CLOCK: [2022-10-29 Sa 18:01]--[2022-10-30 So 00:33] =>  6:32
@@ -68,4 +69,10 @@
      :END:
      I need break up the application into more packages, the current state is
      just repulsive from an aesthetic perspective.
+**** TODO Linter
+     :LOGBOOK:
+     CLOCK: [2022-10-30 So 20:25]--[2022-10-30 So 21:59] =>  1:34
+     :END:
+     Apparently I was not in the habit of using a linter when I wrote guang
+     initially. So I have to do a lot of simple but tedious work to do.
 ** Bugs
