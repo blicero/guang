@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 12. 02. 2016 by Benjamin Walkenhorst
 // (c) 2016 Benjamin Walkenhorst
-// Time-stamp: <2022-10-30 17:07:48 krylon>
+// Time-stamp: <2022-10-30 21:38:31 krylon>
 
 package backend
 
@@ -17,11 +17,11 @@ import (
 type Nexus struct {
 	generator *generator.HostGenerator
 	scanner   *Scanner
-	xfr       *xfr.XFRClient
+	xfr       *xfr.Client
 	log       *log.Logger
 }
 
-func CreateNexus(gen *generator.HostGenerator, scanner *Scanner, xfr *xfr.XFRClient) (*Nexus, error) {
+func CreateNexus(gen *generator.HostGenerator, scanner *Scanner, xfr *xfr.Client) (*Nexus, error) {
 	var nexus *Nexus = new(Nexus)
 	var err error
 

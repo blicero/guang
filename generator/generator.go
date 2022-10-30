@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 23. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2022-10-29 18:23:56 krylon>
+// Time-stamp: <2022-10-30 21:14:53 krylon>
 //
 // IIRC, throughput never was much of an issue with this part of the program.
 // But if it were, there are a few tricks on could pull here.
@@ -27,27 +27,29 @@ import (
 	"github.com/fsouza/gokabinet/kc"
 )
 
+// HostGenerator generates random Hosts
 type HostGenerator struct {
-	HostQueue  chan data.Host
-	name_bl    *blacklist.NameBlacklist
-	addr_bl    *blacklist.IPBlacklist
-	cache      *kc.DB
-	lock       sync.Mutex
-	running    bool
-	worker_cnt int
-	log        *log.Logger
+	HostQueue chan data.Host
+	nameBL    *blacklist.NameBlacklist
+	addrBL    *blacklist.IPBlacklist
+	cache     *kc.DB
+	lock      sync.Mutex
+	running   bool
+	workerCnt int
+	log       *log.Logger
 }
 
-func CreateGenerator(worker_cnt int) (*HostGenerator, error) {
+// CreateGenerator creates a new HostGenerator.
+func CreateGenerator(workerCnt int) (*HostGenerator, error) {
 	var err error
 	var msg string
 
 	gen := &HostGenerator{
-		HostQueue:  make(chan data.Host, worker_cnt*2),
-		running:    true,
-		worker_cnt: worker_cnt,
-		name_bl:    blacklist.DefaultNameBlacklist(),
-		addr_bl:    blacklist.DefaultIPBlacklist(),
+		HostQueue: make(chan data.Host, workerCnt*2),
+		running:   true,
+		workerCnt: workerCnt,
+		nameBL:    blacklist.DefaultNameBlacklist(),
+		addrBL:    blacklist.DefaultIPBlacklist(),
 	}
 
 	if gen.log, err = common.GetLogger("Generator"); err != nil {
@@ -55,9 +57,9 @@ func CreateGenerator(worker_cnt int) (*HostGenerator, error) {
 			err.Error())
 		return nil, err
 		//} else if err = gen.cache.Open(HOST_CACHE_PATH, cabinet.KCOWRITER|cabinet.KCOCREATE|cabinet.KCOAUTOTRAN|cabinet.KCOAUTOSYNC); err != nil {
-	} else if gen.cache, err = kc.Open(common.HOST_CACHE_PATH, kc.WRITE); err != nil {
+	} else if gen.cache, err = kc.Open(common.HostCachePath, kc.WRITE); err != nil {
 		msg = fmt.Sprintf("Error opening Host cache at %s: %s",
-			common.HOST_CACHE_PATH, err.Error())
+			common.HostCachePath, err.Error())
 		gen.log.Println(msg)
 		return nil, errors.New(msg)
 	}
@@ -65,27 +67,31 @@ func CreateGenerator(worker_cnt int) (*HostGenerator, error) {
 	return gen, nil
 } // func CreateGenerator(worker_cnt int) (*HostGenerator, error)
 
+// Start starts the HostGenerator
 func (gen *HostGenerator) Start() {
-	for i := 0; i < gen.worker_cnt; i++ {
+	for i := 0; i < gen.workerCnt; i++ {
 		go gen.worker(i)
 	}
 } // func (gen *HostGenerator) Start()
 
+// IsRunning returns true if the HostGenerator is running.
 func (gen *HostGenerator) IsRunning() bool {
 	gen.lock.Lock()
 	defer gen.lock.Unlock()
 	return gen.running
 } // func (gen *HostGenerator) IsRunning() bool
 
+// Stop tells the HostGenerator to stop.
 func (gen *HostGenerator) Stop() {
 	gen.lock.Lock()
 	gen.running = false
 	gen.lock.Unlock()
 } // func (gen *HostGenerator) Stop()
 
+// Count returns the number of workers.
 func (gen *HostGenerator) Count() int {
 	gen.lock.Lock()
-	var cnt = gen.worker_cnt
+	var cnt = gen.workerCnt
 	gen.lock.Unlock()
 	return cnt
 } // func (gen *HostGenerator) Count() int
@@ -93,7 +99,7 @@ func (gen *HostGenerator) Count() int {
 func (gen *HostGenerator) worker(id int) {
 	defer func() {
 		gen.lock.Lock()
-		gen.worker_cnt--
+		gen.workerCnt--
 		gen.lock.Unlock()
 	}()
 
@@ -106,7 +112,7 @@ func (gen *HostGenerator) worker(id int) {
 MAIN_LOOP:
 	for gen.IsRunning() {
 		var host data.Host
-		for addr = gen.get_rand_ip(rng); gen.addr_bl.MatchesIP(addr); addr = gen.get_rand_ip(rng) {
+		for addr = gen.getRandIP(rng); gen.addrBL.MatchesIP(addr); addr = gen.getRandIP(rng) {
 			// This loop has no body.
 			// It's all in the head.
 		}
@@ -131,25 +137,25 @@ MAIN_LOOP:
 				astr)
 			gen.log.Println(msg)
 			continue MAIN_LOOP
-		} else if gen.name_bl.Matches(namelist[0]) {
+		} else if gen.nameBL.Matches(namelist[0]) {
 			continue MAIN_LOOP
 		} else {
 			host.Address = addr
 			host.Name = namelist[0]
 
-			host.Source = data.HOST_SOURCE_GEN
+			host.Source = data.HostSourceGen
 			host.Added = time.Now()
 			gen.HostQueue <- host
 		}
 	}
 
-	if common.DEBUG {
+	if common.Debug {
 		gen.log.Printf("Generator worker #%d is quitting.\n", id)
 	}
 } // func (gen *HostGenerator) worker(id int)
 
 // Create and return a random IPv4 address.
-func (gen *HostGenerator) get_rand_ip(rng *rand.Rand) net.IP {
+func (gen *HostGenerator) getRandIP(rng *rand.Rand) net.IP {
 	var octets [4]byte
 
 	octets[0] = byte(rng.Intn(256))

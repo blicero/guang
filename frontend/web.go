@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 06. 02. 2016 by Benjamin Walkenhorst
 // (c) 2016 Benjamin Walkenhorst
-// Time-stamp: <2022-10-29 19:23:48 krylon>
+// Time-stamp: <2022-10-30 19:59:16 krylon>
 
 package frontend
 
@@ -114,7 +114,7 @@ func CreateFrontend(addr string, port uint16, nexus *backend.Nexus) (*WebFronten
 	var msg string
 	var err error
 
-	if common.DEBUG {
+	if common.Debug {
 		fmt.Printf("Creating Guang Web Frontend to listen on %s:%d\n",
 			addr, port)
 	}
@@ -194,7 +194,7 @@ func CreateFrontend(addr string, port uint16, nexus *backend.Nexus) (*WebFronten
 		New: func() interface{} {
 			var err error
 			var db *database.HostDB
-			if db, err = database.OpenDB(common.DB_PATH); err != nil {
+			if db, err = database.OpenDB(common.DbPath); err != nil {
 				return nil
 			} else {
 				return db
@@ -204,7 +204,7 @@ func CreateFrontend(addr string, port uint16, nexus *backend.Nexus) (*WebFronten
 
 	for i := 0; i < 3; i++ {
 		var db *database.HostDB
-		if db, err = database.OpenDB(common.DB_PATH); err != nil {
+		if db, err = database.OpenDB(common.DbPath); err != nil {
 			frontend.log.Printf("Error opening database: %s\n", err.Error())
 			return nil, err
 		} else {
@@ -252,7 +252,7 @@ func (self *WebFrontend) HandleIndex(w http.ResponseWriter, request *http.Reques
 		Error: make([]string, 0),
 	}
 
-	if common.DEBUG {
+	if common.Debug {
 		self.log.Printf("Handling request for %s", request.RequestURI)
 	}
 
@@ -263,25 +263,25 @@ func (self *WebFrontend) HandleIndex(w http.ResponseWriter, request *http.Reques
 		return
 	} else {
 		defer self.PutDB(db)
-		if common.DEBUG {
+		if common.Debug {
 			self.log.Println("Got database from Pool")
 		}
 	}
 
-	if common.DEBUG {
+	if common.Debug {
 		self.log.Println("Getting generator count")
 	}
 	index_data.HostGenCnt = self.nexus.GetGeneratorCount()
-	if common.DEBUG {
+	if common.Debug {
 		self.log.Println("Getting Scanner count")
 	}
 	index_data.ScanCnt = self.nexus.GetScannerCount()
-	if common.DEBUG {
+	if common.Debug {
 		self.log.Println("Getting XFR count")
 	}
 	index_data.XFRCnt = self.nexus.GetXFRCount()
 
-	if common.DEBUG {
+	if common.Debug {
 		self.log.Println("Getting host count from database.")
 	}
 	if index_data.HostCnt, err = db.HostGetCount(); err != nil {
@@ -296,7 +296,7 @@ func (self *WebFrontend) HandleIndex(w http.ResponseWriter, request *http.Reques
 		return
 	}
 
-	if common.DEBUG {
+	if common.Debug {
 		self.log.Println("Looking up template")
 	}
 	if tmpl = self.tmpl.Lookup("index"); tmpl == nil {
@@ -309,7 +309,7 @@ func (self *WebFrontend) HandleIndex(w http.ResponseWriter, request *http.Reques
 			msg = fmt.Sprintf("Error rendering template or sending output to client: %s",
 				err.Error())
 			self.log.Println(msg)
-		} else if common.DEBUG {
+		} else if common.Debug {
 			self.log.Println("We sure showed THAT client a nice index!")
 		}
 	}
@@ -325,7 +325,7 @@ func (self *WebFrontend) HandleByPort(w http.ResponseWriter, request *http.Reque
 
 	_ = "breakpoint"
 
-	if common.DEBUG {
+	if common.Debug {
 		self.log.Printf("Handling request for %s\n", request.RequestURI)
 	}
 	if db, err = self.GetDB(); err != nil {
@@ -349,14 +349,14 @@ func (self *WebFrontend) HandleByPort(w http.ResponseWriter, request *http.Reque
 		return
 	} else {
 		tmpl_data = tmpl_data_by_port{
-			Debug: common.DEBUG,
+			Debug: common.Debug,
 			Title: "Hosts by Port",
 			Error: make([]string, 0),
 			Count: len(db_res),
 			//Ports: make(map[uint16]report_info_port),
 		}
 
-		if common.DEBUG {
+		if common.Debug {
 			self.log.Println("*Trying* to sort results.")
 		}
 		results := make(map[uint16]report_info_port)
@@ -392,7 +392,7 @@ func (self *WebFrontend) HandleByHost(w http.ResponseWriter, request *http.Reque
 	var data tmpl_data_by_host
 	var tmpl *template.Template
 
-	if common.DEBUG {
+	if common.Debug {
 		self.log.Printf("Handling request for %s\n", request.RequestURI)
 	}
 
@@ -407,7 +407,7 @@ func (self *WebFrontend) HandleByHost(w http.ResponseWriter, request *http.Reque
 
 	data = tmpl_data_by_host{
 		Title: "Scanned Ports by Host",
-		Debug: common.DEBUG,
+		Debug: common.Debug,
 		Error: make([]string, 0),
 		Count: len(data.Hosts),
 	}
@@ -452,7 +452,7 @@ func (self *WebFrontend) HandleStaticFile(w http.ResponseWriter, request *http.R
 	// vars := mux.Vars(request)
 	// filename := vars["file"]
 
-	if common.DEBUG {
+	if common.Debug {
 		self.log.Printf("Delivering static file %s to client\n", filename)
 	}
 

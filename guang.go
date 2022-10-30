@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 27. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2022-10-30 17:12:04 krylon>
+// Time-stamp: <2022-10-30 21:38:31 krylon>
 
 package main
 
@@ -32,7 +32,7 @@ func main() {
 	var err error
 	var mlog *log.Logger
 	var gen *generator.HostGenerator
-	var xfrClient *xfr.XFRClient
+	var xfrClient *xfr.Client
 	var xfr_queue chan string
 	var db *database.HostDB
 	var do_xfr bool
@@ -40,14 +40,19 @@ func main() {
 	var webserver *frontend.WebFrontend
 	var port int = 4711
 	var nexus *backend.Nexus
-	var base_dir string = common.BASE_DIR
+	var base_dir string = common.BaseDir
+
+	fmt.Printf("%s %s - built on %s\n",
+		common.AppName,
+		common.Version,
+		common.BuildStamp.Format(common.TimeFormat))
 
 	flag.IntVar(&gen_cnt, "generators", gen_cnt, "Number of Host Generators to run")
 	flag.IntVar(&xfr_worker_cnt, "xfr", xfr_worker_cnt, "Number of XFR workers to run")
 	flag.IntVar(&scanner_cnt, "scanner", scanner_cnt, "Number of scanner workers to run")
 	flag.BoolVar(&do_profile, "profile", do_profile, "Run the builtin profiling server")
 	flag.IntVar(&port, "port", port, "Port for the web server to listen on")
-	flag.StringVar(&base_dir, "basedir", common.BASE_DIR, "Base directory for application-specific files")
+	flag.StringVar(&base_dir, "basedir", common.BaseDir, "Base directory for application-specific files")
 
 	flag.Parse()
 
@@ -69,7 +74,7 @@ func main() {
 	}
 
 	//base_dir := filepath.Join(os.Getenv("HOME"), "guang.d")
-	if base_dir != common.BASE_DIR {
+	if base_dir != common.BaseDir {
 		common.SetBaseDir(base_dir)
 	}
 
@@ -79,9 +84,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	if db, err = database.OpenDB(common.DB_PATH); err != nil {
+	if db, err = database.OpenDB(common.DbPath); err != nil {
 		mlog.Printf("Error opening database at %s: %s\n",
-			common.DB_PATH, err.Error())
+			common.DbPath, err.Error())
 		os.Exit(1)
 	}
 
@@ -91,7 +96,7 @@ func main() {
 			os.Exit(1)
 		} else {
 			gen.Start()
-			if common.DEBUG {
+			if common.Debug {
 				mlog.Printf("Started generator with %d workers.\n", gen_cnt)
 			}
 		}
@@ -102,7 +107,7 @@ func main() {
 
 				host := <-gen.HostQueue
 
-				if common.DEBUG {
+				if common.Debug {
 					mlog.Printf("Got host %s/%s from generator queue.\n",
 						host.Name, host.Address)
 				}
@@ -133,7 +138,7 @@ func main() {
 			xfrClient.Start(xfr_worker_cnt)
 		}
 
-		if common.DEBUG {
+		if common.Debug {
 			mlog.Printf("Started %d XFR workers.\n", xfr_worker_cnt)
 		}
 	}

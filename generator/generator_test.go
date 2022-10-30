@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 24. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2022-10-28 22:30:53 krylon>
+// Time-stamp: <2022-10-30 21:15:13 krylon>
 
 package generator
 
@@ -20,12 +20,12 @@ var gen *HostGenerator
 func TestCreateGenerator(t *testing.T) {
 	var rng *rand.Rand = rand.New(rand.NewSource(time.Now().Unix()))
 
-	var test_path string = fmt.Sprintf("/tmp/guang_test_%08x",
+	var testPath string = fmt.Sprintf("/tmp/guang_test_%08x",
 		rng.Int31())
 	var err error
 
-	fmt.Printf("Setting BASE_DIR to %s\n", test_path)
-	common.SetBaseDir(test_path)
+	fmt.Printf("Setting BASE_DIR to %s\n", testPath)
+	common.SetBaseDir(testPath)
 
 	if gen, err = CreateGenerator(8); err != nil {
 		t.Fatalf("Error creating HostGenerator: %s", err.Error())
@@ -39,7 +39,7 @@ func TestCreateGenerator(t *testing.T) {
 func TestReceiveHosts(t *testing.T) {
 	var host = <-gen.HostQueue
 
-	if common.DEBUG {
+	if common.Debug {
 		fmt.Printf("Got one host: %s (%s)\n",
 			host.Name, host.Address)
 	}

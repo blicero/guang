@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 25. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2022-10-27 20:21:43 krylon>
+// Time-stamp: <2022-10-30 20:58:35 krylon>
 
 package database
 
@@ -15,6 +15,7 @@ import (
 
 	"github.com/blicero/guang/common"
 	"github.com/blicero/guang/data"
+	"github.com/blicero/guang/xfr/xfrstatus"
 	"github.com/blicero/krylib"
 )
 
@@ -25,19 +26,19 @@ var hosts []data.Host = []data.Host{
 		ID:      krylib.INVALID_ID,
 		Address: net.ParseIP("192.168.0.1"),
 		Name:    "finn.krylon.net",
-		Source:  data.HOST_SOURCE_USER,
+		Source:  data.HostSourceUser,
 	},
 	data.Host{
 		ID:      krylib.INVALID_ID,
 		Address: net.ParseIP("192.168.0.13"),
 		Name:    "neuromancer.krylon.net",
-		Source:  data.HOST_SOURCE_USER,
+		Source:  data.HostSourceUser,
 	},
 	data.Host{
 		ID:      krylib.INVALID_ID,
 		Address: net.ParseIP("192.168.0.4"),
 		Name:    "wintermute.krylon.net",
-		Source:  data.HOST_SOURCE_USER,
+		Source:  data.HostSourceUser,
 	},
 }
 
@@ -51,9 +52,9 @@ func TestCreateDatabase(t *testing.T) {
 	fmt.Printf("Setting BASE_DIR to %s\n", testPath)
 	common.SetBaseDir(testPath)
 
-	if db, err = OpenDB(common.DB_PATH); err != nil {
+	if db, err = OpenDB(common.DbPath); err != nil {
 		t.Fatalf("Error opening database at %s: %s",
-			common.DB_PATH, err.Error())
+			common.DbPath, err.Error())
 	}
 } // func TestCreateDatabase(t *testing.T)
 
@@ -99,27 +100,27 @@ func TestGetHosts(t *testing.T) {
 	}
 } // func TestGetHosts(t *testing.T)
 
-var xfr *data.XFR
+var xfrClient *data.XFR
 
 func TestAddXFR(t *testing.T) {
 	var err error
-	xfr = &data.XFR{
+	xfrClient = &data.XFR{
 		ID:     krylib.INVALID_ID,
 		Zone:   "krylon.net",
 		Start:  time.Now(),
-		Status: data.XFR_STATUS_UNFINISHED,
+		Status: xfrstatus.Unfinished,
 	}
 
-	if err = db.XfrAdd(xfr); err != nil {
+	if err = db.XfrAdd(xfrClient); err != nil {
 		t.Fatalf("Error adding xfr: %s", err.Error())
-	} else if xfr.ID == krylib.INVALID_ID {
+	} else if xfrClient.ID == krylib.INVALID_ID {
 		t.Fatalf("Error: XFR was added without error, but it didn't get an ID!")
 	}
 } // func TestAddXFR(t *testing.T)
 
 func TestFinishXFR(t *testing.T) {
 	var err error
-	if err = db.XfrFinish(xfr, data.XFR_STATUS_SUCCESS); err != nil {
+	if err = db.XfrFinish(xfrClient, xfrstatus.Success); err != nil {
 		t.Fatalf("Error finishing XFR: %s", err.Error())
 	}
 } // func TestFinishXFR(t *testing.T)

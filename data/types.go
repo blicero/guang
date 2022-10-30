@@ -2,29 +2,39 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 23. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2022-10-27 19:48:35 krylon>
+// Time-stamp: <2022-10-30 21:06:09 krylon>
 
 // Package data provides data types used throughout the application.
 package data
 
 import (
-	"fmt"
 	"net"
 	"time"
 
+	"github.com/blicero/guang/xfr/xfrstatus"
 	"github.com/blicero/krylib"
 )
 
-const (
-	HOST_SOURCE_USER = iota
-	HOST_SOURCE_GEN
-	HOST_SOURCE_A
-	HOST_SOURCE_MX
-	HOST_SOURCE_NS
-)
+//go:generate -type=HostSource
 
+// HostSource indicates how a Host ended up in the database.
 type HostSource int
 
+// HostSourceUser indicates a host was manually added by the user.
+// HostSourceGen indicates it was added by the HostGenerator.
+// HostSourceA indicates it was gathered from an address record in a
+// zone transfer.
+// HostSourceMx and HostSourceNs indicate a Host was gathered from the
+// respective records in a zone transfer.
+const (
+	HostSourceUser HostSource = iota
+	HostSourceGen
+	HostSourceA
+	HostSourceMx
+	HostSourceNs
+)
+
+// Host is a host somewhere on the Internet.
 type Host struct {
 	ID      krylib.ID
 	Source  HostSource
@@ -33,6 +43,7 @@ type Host struct {
 	Added   time.Time
 }
 
+// Port is a TCP/UDP port that was scanned on a given host.
 type Port struct {
 	ID        krylib.ID
 	HostID    krylib.ID
@@ -41,69 +52,53 @@ type Port struct {
 	Reply     *string
 }
 
-func (self *Port) ReplyString() string {
-	if self.Reply == nil {
+// ReplyString returns the Reply gathered from the Port or an empty string.
+func (p *Port) ReplyString() string {
+	if p.Reply == nil {
 		return ""
-	} else {
-		return *self.Reply
 	}
-}
 
+	return *p.Reply
+} // func (p *Port) ReplyString() string
+
+// HostWithPorts is a Host along with all the Ports that have been scanned
+// on that Host.
 type HostWithPorts struct {
 	Host  Host
 	Ports []Port
 }
 
-const (
-	XFR_STATUS_UNFINISHED = 0
-	XFR_STATUS_SUCCESS    = 1
-	XFR_STATUS_REFUSED    = 2
-	XFR_STATUS_ABORT      = 3
-)
-
-type XfrStatus int
-
-func (self XfrStatus) String() string {
-	switch self {
-	case XFR_STATUS_UNFINISHED:
-		return "Unfinished"
-	case XFR_STATUS_SUCCESS:
-		return "Finished/Success"
-	case XFR_STATUS_REFUSED:
-		return "Finished/Refused"
-	case XFR_STATUS_ABORT:
-		return "Finished/Aborted"
-	default:
-		return fmt.Sprintf("INVALID STATUS (%d)!!!", self)
-	}
-} // func (XfrStatus self) String() string
-
+// XFR represents a DNS zone transfer.
 type XFR struct {
 	ID     krylib.ID
 	Zone   string
 	Start  time.Time
 	End    time.Time
-	Status XfrStatus
+	Status xfrstatus.XfrStatus
 }
 
+// XfrNew creates a new XFR.
 func XfrNew(zone string) *XFR {
 	return &XFR{
 		ID:     krylib.INVALID_ID,
 		Zone:   zone,
 		Start:  time.Now(),
-		Status: XFR_STATUS_UNFINISHED,
+		Status: xfrstatus.Unfinished,
 	}
 } // func XfrNew(zone string) *XFR
 
-func (self *XFR) IsFinished() bool {
-	return self.Status != XFR_STATUS_UNFINISHED
+// IsFinished returns true if the XFR has been finished (successfully or not).
+func (x *XFR) IsFinished() bool {
+	return x.Status != xfrstatus.Unfinished
 } // func (self *XFR) IsFinished() bool
 
+// ScanRequest is a request to scan a specific port on a given host
 type ScanRequest struct {
 	Host Host
 	Port uint16
 }
 
+// ScanResult represents the result of scanning a single port.
 type ScanResult struct {
 	Host  Host
 	Port  uint16
@@ -112,36 +107,34 @@ type ScanResult struct {
 	Err   error
 }
 
-func (self *ScanResult) HostName() string {
-	return self.Host.Name
+// HostName returns the hostname of the scanned Host.
+func (res *ScanResult) HostName() string {
+	return res.Host.Name
 } // func (self *ScanResult) HostName() string
 
-func (self *ScanResult) Address() string {
-	return self.Host.Address.String()
-}
+// Address returns the IP address of the scanned host as a string.
+func (res *ScanResult) Address() string {
+	return res.Host.Address.String()
+} // func (self *ScanResult) Address() string
 
-func (self *ScanResult) ReplyString() string {
-	if self.Reply == nil {
+// ReplyString returns the reply gathered from the scanned port.
+func (res *ScanResult) ReplyString() string {
+	if res.Reply == nil {
 		return ""
-	} else {
-		return *self.Reply
 	}
+
+	return *res.Reply
 } // func (self *ScanResult) ReplyString() string
 
-const (
-	CTL_MSG_STOP = iota
-	CTL_MSG_STATUS
-)
+// go:generate stringer -type=ControlMessage
 
+// ControlMessage is a symbolic constant signifying a message send to
+// the Nexus.
 type ControlMessage int
 
-func (self ControlMessage) String() string {
-	switch self {
-	case CTL_MSG_STOP:
-		return "Control Message STOP"
-	case CTL_MSG_STATUS:
-		return "Control Message STATUS"
-	default:
-		return fmt.Sprintf("INVALID CONTROL MESSAGE (%d)", self)
-	}
-} // func (self ControlMessage) String() string
+// CtlMsgStop tells the Nexus to shut down.
+// CtlMsgStatus asks the Nexus for information on its current status.
+const (
+	CtlMsgStop ControlMessage = iota
+	CtlMsgStatus
+)

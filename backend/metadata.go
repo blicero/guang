@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 20. 08. 2016 by Benjamin Walkenhorst
 // (c) 2016 Benjamin Walkenhorst
-// Time-stamp: <2022-10-27 21:33:42 krylon>
+// Time-stamp: <2022-10-30 19:59:17 krylon>
 //
 // Sonntag, 21. 08. 2016, 18:25
 // Looking up locations seems to work reasonably well. Whether or not the
@@ -80,7 +80,7 @@ func OpenMetaEngine(path string) (*MetaEngine, error) {
 	if ex, _ := krylib.Fexists(path); ex {
 		db_path = path
 	} else {
-		db_path = filepath.Join(common.BASE_DIR, GEOIP_CITY_PATH)
+		db_path = filepath.Join(common.BaseDir, GEOIP_CITY_PATH)
 	}
 
 	if eng.log, err = common.GetLogger("MetaEngine"); err != nil {

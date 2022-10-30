@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 26. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2022-10-30 17:01:14 krylon>
+// Time-stamp: <2022-10-30 21:45:31 krylon>
 
 package xfr
 
@@ -16,25 +16,24 @@ import (
 	"github.com/blicero/guang/database"
 )
 
-var xfr_client *XFRClient
-var req_queue chan string
+var xfrClient *Client
+var requestQueue chan string
 
-const REQ_ZONE = "krylon.net."
-
-const REQ_ZONE_FAIL = "example.com."
+const reqZone = "krylon.net."
+const reqZoneFail = "example.com."
 
 func TestCreateClient(t *testing.T) {
 	var rng *rand.Rand = rand.New(rand.NewSource(time.Now().Unix()))
-	var test_path string = fmt.Sprintf("/tmp/guang_test_%08x",
+	var testPath string = fmt.Sprintf("/tmp/guang_test_%08x",
 		rng.Int31())
 	var err error
 
-	fmt.Printf("Setting BASE_DIR to %s\n", test_path)
-	common.SetBaseDir(test_path)
+	fmt.Printf("Setting BASE_DIR to %s\n", testPath)
+	common.SetBaseDir(testPath)
 
-	req_queue = make(chan string)
+	requestQueue = make(chan string)
 
-	if xfr_client, err = MakeXFRClient(req_queue); err != nil {
+	if xfrClient, err = MakeXFRClient(requestQueue); err != nil {
 		t.Fatalf("Error creating XFRClient: %s", err.Error())
 	}
 } // func TestCreateClient(t *testing.T)
@@ -43,15 +42,15 @@ func TestXFR(t *testing.T) {
 	var err error
 	var db *database.HostDB
 
-	if db, err = database.OpenDB(common.DB_PATH); err != nil {
+	if db, err = database.OpenDB(common.DbPath); err != nil {
 		t.Fatalf("Error opening database: %s", err.Error())
 	} else {
 		defer db.Close()
 	}
 
-	if err = xfr_client.perform_xfr(REQ_ZONE, db); err != nil {
+	if err = xfrClient.performXfr(reqZone, db); err != nil {
 		t.Fatalf("Error performing XFR of %s: %s",
-			REQ_ZONE, err.Error())
+			reqZone, err.Error())
 	}
 } // func TestXFR(t *testing.T)
 
@@ -59,11 +58,11 @@ func TestXFRFail(t *testing.T) {
 	var err error
 	var db *database.HostDB
 
-	if db, err = database.OpenDB(common.DB_PATH); err != nil {
+	if db, err = database.OpenDB(common.DbPath); err != nil {
 		t.Fatalf("Error opening HostDB at %s: %s",
-			common.DB_PATH, err.Error())
-	} else if err = xfr_client.perform_xfr(REQ_ZONE_FAIL, db); err == nil {
+			common.DbPath, err.Error())
+	} else if err = xfrClient.performXfr(reqZoneFail, db); err == nil {
 		t.Fatalf("Well THAT was unexpected: XFR of %s should have failed, but apparently it did not.",
-			REQ_ZONE_FAIL)
+			reqZoneFail)
 	}
 } // func TestXFRFail(t *testing.T)

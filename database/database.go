@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 23. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2022-10-27 20:34:57 krylon>
+// Time-stamp: <2022-10-30 21:09:26 krylon>
 //
 // Samstag, 20. 08. 2016, 21:27
 // Ich würde für Hosts gern a) anhand der Antworten, die ich erhalte, das
@@ -26,6 +26,7 @@ import (
 	"github.com/blicero/guang/common"
 	"github.com/blicero/guang/data"
 	"github.com/blicero/guang/database/query"
+	"github.com/blicero/guang/xfr/xfrstatus"
 	"github.com/blicero/krylib"
 
 	_ "github.com/mattn/go-sqlite3" // Import the database driver
@@ -68,15 +69,15 @@ CREATE TABLE xfr (id INTEGER PRIMARY KEY,
 	"CREATE INDEX xfr_status_idx ON xfr (status)",
 }
 
-var dbQueries map[query.QueryID]string = map[query.QueryID]string{
-	query.STMT_HOST_ADD: `
+var dbQueries map[query.ID]string = map[query.ID]string{
+	query.HostAdd: `
 INSERT INTO host (addr, name, source, add_stamp)
           VALUES (   ?,    ?,      ?,         ?)
 `,
-	query.STMT_HOST_GET_BY_ID: "SELECT addr, name, source, add_stamp FROM host WHERE id = ?",
+	query.HostGetByID: "SELECT addr, name, source, add_stamp FROM host WHERE id = ?",
 
 	//STMT_HOST_GET_RANDOM: "SELECT id, addr, name, source, add_stamp FROM host WHERE RANDOM() > 8301034833169298432 LIMIT ?",
-	query.STMT_HOST_GET_RANDOM: `
+	query.HostGetRandom: `
 SELECT id,
        addr,
        name,
@@ -87,11 +88,11 @@ LIMIT ?
 OFFSET ABS(RANDOM()) % MAX((SELECT COUNT(*) FROM host), 1)
 `,
 
-	query.STMT_HOST_GET_CNT: "SELECT COUNT(id) FROM host",
+	query.HostGetCnt: "SELECT COUNT(id) FROM host",
 
-	query.STMT_HOST_EXISTS: "SELECT COUNT(id) FROM host WHERE addr = ?",
+	query.HostExists: "SELECT COUNT(id) FROM host WHERE addr = ?",
 
-	query.STMT_HOST_PORT_BY_HOST: `
+	query.HostPortByPort: `
 SELECT 
   P.id,
   P.host_id,
@@ -105,17 +106,17 @@ INNER JOIN host H ON port.host_id = host.id
 WHERE port.reply IS NOT NULL
 `,
 
-	query.STMT_PORT_ADD: `
+	query.PortAdd: `
 INSERT INTO port (host_id, port, timestamp, reply)
           VALUES (      ?,    ?,         ?,     ?)
 `,
 
-	query.STMT_PORT_GET_BY_HOST: "SELECT id, port, timestamp, reply FROM port WHERE host_id = ?",
+	query.PortGetByHost: "SELECT id, port, timestamp, reply FROM port WHERE host_id = ?",
 
-	query.STMT_XFR_ADD:         "INSERT INTO xfr (zone, start, status) VALUES (?, ?, 0)",
-	query.STMT_XFR_GET_BY_ZONE: "SELECT id, start, end, status FROM xfr WHERE zone = ?",
-	query.STMT_XFR_FINISH:      "UPDATE xfr SET end = ?, status = ? WHERE id = ?",
-	query.STMT_XFR_GET_UNFINISHED: `
+	query.XfrAdd:       "INSERT INTO xfr (zone, start, status) VALUES (?, ?, 0)",
+	query.XfrGetByZone: "SELECT id, start, end, status FROM xfr WHERE zone = ?",
+	query.XfrFinish:    "UPDATE xfr SET end = ?, status = ? WHERE id = ?",
+	query.XfrGetUnfinished: `
 SELECT id, 
        zone, 
        start, 
@@ -124,9 +125,9 @@ SELECT id,
 FROM xfr
 WHERE status = 0
 `,
-	query.STMT_PORT_GET_REPLY_CNT: "SELECT COUNT(id) FROM port WHERE reply IS NOT NULL",
+	query.PortGetReplyCnt: "SELECT COUNT(id) FROM port WHERE reply IS NOT NULL",
 
-	query.STMT_PORT_GET_OPEN: `
+	query.PortGetOpen: `
 SELECT 
   id, 
   host_id, 
@@ -147,7 +148,7 @@ const cacheTimeout = time.Second * 1200
 // HostDB is a wrapper around the database connection.
 type HostDB struct {
 	db        *sql.DB
-	stmtTable map[query.QueryID]*sql.Stmt
+	stmtTable map[query.ID]*sql.Stmt
 	tx        *sql.Tx
 	log       *log.Logger
 	path      string
@@ -162,7 +163,7 @@ func OpenDB(path string) (*HostDB, error) {
 
 	db := &HostDB{
 		path:      path,
-		stmtTable: make(map[query.QueryID]*sql.Stmt),
+		stmtTable: make(map[query.ID]*sql.Stmt),
 		hostCache: cache2go.Cache("host"),
 	}
 
@@ -205,7 +206,7 @@ func (db *HostDB) worthARetry(err error) bool {
 	return retryPat.MatchString(err.Error())
 } // func (db *HostDB) worth_a_retry(err error) bool
 
-func (db *HostDB) getStatement(qid query.QueryID) (*sql.Stmt, error) {
+func (db *HostDB) getStatement(qid query.ID) (*sql.Stmt, error) {
 	if stmt, ok := db.stmtTable[qid]; ok {
 		return stmt, nil
 	}
@@ -352,7 +353,7 @@ func (db *HostDB) HostAdd(host *data.Host) error {
 	var adHoc bool
 
 GET_QUERY:
-	if stmt, err = db.getStatement(query.STMT_HOST_ADD); err != nil {
+	if stmt, err = db.getStatement(query.HostAdd); err != nil {
 		if db.worthARetry(err) {
 			time.Sleep(retryDelay)
 			goto GET_QUERY
@@ -435,7 +436,7 @@ func (db *HostDB) HostGetByID(id krylib.ID) (*data.Host, error) {
 	var stmt *sql.Stmt
 
 GET_QUERY:
-	if stmt, err = db.getStatement(query.STMT_HOST_GET_BY_ID); err != nil {
+	if stmt, err = db.getStatement(query.HostGetByID); err != nil {
 		if db.worthARetry(err) {
 			time.Sleep(retryDelay)
 			goto GET_QUERY
@@ -493,7 +494,7 @@ func (db *HostDB) HostGetRandom(max int) ([]data.Host, error) {
 	var hosts []data.Host
 
 GET_QUERY:
-	if stmt, err = db.getStatement(query.STMT_HOST_GET_RANDOM); err != nil {
+	if stmt, err = db.getStatement(query.HostGetRandom); err != nil {
 		if db.worthARetry(err) {
 			time.Sleep(retryDelay)
 			goto GET_QUERY
@@ -575,7 +576,7 @@ func (db *HostDB) HostExists(addr string) (bool, error) {
 	}
 
 GET_QUERY:
-	if stmt, err = db.getStatement(query.STMT_HOST_EXISTS); err != nil {
+	if stmt, err = db.getStatement(query.HostExists); err != nil {
 		if db.worthARetry(err) {
 			time.Sleep(retryDelay)
 			goto GET_QUERY
@@ -635,7 +636,7 @@ func (db *HostDB) XfrAdd(xfr *data.XFR) error {
 	var adHoc bool
 
 GET_STATEMENT:
-	if stmt, err = db.getStatement(query.STMT_XFR_ADD); err != nil {
+	if stmt, err = db.getStatement(query.XfrAdd); err != nil {
 		if db.worthARetry(err) {
 			time.Sleep(retryDelay)
 			goto GET_STATEMENT
@@ -706,7 +707,7 @@ EXEC_QUERY:
 } // func (db *HostDB) XfrAdd(xfr *XFR) error
 
 // XfrFinish marks a zone transfer as finished.
-func (db *HostDB) XfrFinish(xfr *data.XFR, status data.XfrStatus) error {
+func (db *HostDB) XfrFinish(xfr *data.XFR, status xfrstatus.XfrStatus) error {
 	var msg string
 	var err error
 	var stmt *sql.Stmt
@@ -714,7 +715,7 @@ func (db *HostDB) XfrFinish(xfr *data.XFR, status data.XfrStatus) error {
 	var adHoc bool
 
 GET_QUERY:
-	if stmt, err = db.getStatement(query.STMT_XFR_FINISH); err != nil {
+	if stmt, err = db.getStatement(query.XfrFinish); err != nil {
 		if db.worthARetry(err) {
 			time.Sleep(retryDelay)
 			goto GET_QUERY
@@ -774,7 +775,7 @@ func (db *HostDB) XfrGetByZone(zone string) (*data.XFR, error) {
 	var stmt *sql.Stmt
 
 GET_QUERY:
-	if stmt, err = db.getStatement(query.STMT_XFR_GET_BY_ZONE); err != nil {
+	if stmt, err = db.getStatement(query.XfrGetByZone); err != nil {
 		if db.worthARetry(err) {
 			time.Sleep(retryDelay)
 			goto GET_QUERY
@@ -816,7 +817,7 @@ EXEC_QUERY:
 		xfr.ID = krylib.ID(id)
 		xfr.Start = time.Unix(start, 0)
 		xfr.End = time.Unix(end, 0)
-		xfr.Status = data.XfrStatus(status)
+		xfr.Status = xfrstatus.XfrStatus(status)
 		return xfr, nil
 	}
 
@@ -833,7 +834,7 @@ func (db *HostDB) PortAdd(res *data.ScanResult) error {
 	var adHoc bool
 
 GET_QUERY:
-	if stmt, err = db.getStatement(query.STMT_PORT_ADD); err != nil {
+	if stmt, err = db.getStatement(query.PortAdd); err != nil {
 		if db.worthARetry(err) {
 			time.Sleep(retryDelay)
 			goto GET_QUERY
@@ -893,7 +894,7 @@ func (db *HostDB) PortGetByHost(hostID krylib.ID) ([]data.Port, error) {
 	var ports []data.Port
 
 GET_QUERY:
-	if stmt, err = db.getStatement(query.STMT_PORT_GET_BY_HOST); err != nil {
+	if stmt, err = db.getStatement(query.PortGetByHost); err != nil {
 		if db.worthARetry(err) {
 			time.Sleep(retryDelay)
 			goto GET_QUERY
@@ -959,7 +960,7 @@ func (db *HostDB) PortGetReplyCount() (int64, error) {
 	var cnt int64
 
 GET_QUERY:
-	if stmt, err = db.getStatement(query.STMT_PORT_GET_REPLY_CNT); err != nil {
+	if stmt, err = db.getStatement(query.PortGetReplyCnt); err != nil {
 		if db.worthARetry(err) {
 			time.Sleep(retryDelay)
 			goto GET_QUERY
@@ -1010,7 +1011,7 @@ func (db *HostDB) PortGetOpen() ([]data.ScanResult, error) {
 	var hostCache map[krylib.ID]*data.Host
 
 GET_QUERY:
-	if stmt, err = db.getStatement(query.STMT_PORT_GET_OPEN); err != nil {
+	if stmt, err = db.getStatement(query.PortGetOpen); err != nil {
 		if db.worthARetry(err) {
 			time.Sleep(retryDelay)
 			goto GET_QUERY
@@ -1100,7 +1101,7 @@ func (db *HostDB) HostGetCount() (int64, error) {
 	var cnt int64
 
 GET_QUERY:
-	if stmt, err = db.getStatement(query.STMT_HOST_GET_CNT); err != nil {
+	if stmt, err = db.getStatement(query.HostGetCnt); err != nil {
 		if db.worthARetry(err) {
 			time.Sleep(retryDelay)
 			goto GET_QUERY
@@ -1149,7 +1150,7 @@ func (db *HostDB) HostGetByHostReport() ([]data.HostWithPorts, error) {
 	var ports map[krylib.ID][]data.Port = make(map[krylib.ID][]data.Port)
 
 GET_QUERY:
-	if stmt, err = db.getStatement(query.STMT_PORT_GET_OPEN); err != nil {
+	if stmt, err = db.getStatement(query.PortGetOpen); err != nil {
 		if db.worthARetry(err) {
 			time.Sleep(retryDelay)
 			goto GET_QUERY

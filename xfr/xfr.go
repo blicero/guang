@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 25. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2022-10-30 17:06:43 krylon>
+// Time-stamp: <2022-10-30 21:44:35 krylon>
 
 package xfr
 
@@ -21,6 +21,7 @@ import (
 	"github.com/blicero/guang/common"
 	"github.com/blicero/guang/data"
 	"github.com/blicero/guang/database"
+	"github.com/blicero/guang/xfr/xfrstatus"
 	"github.com/blicero/krylib"
 
 	//"github.com/miekg/dns"
@@ -28,30 +29,32 @@ import (
 )
 
 const (
-	HOST_RE_PAT = "^[^.]+[.](.*)$"
+	hostRePat = "^[^.]+[.](.*)$"
 )
 
 // var v6_addr_pat = regexp.MustCompile("[0-9a-f:]+")
 
-type XFRClient struct {
-	res           *dns.Client
-	request_queue chan string
-	log           *log.Logger
-	host_re       *regexp.Regexp
-	name_bl       *blacklist.NameBlacklist
-	addr_bl       *blacklist.IPBlacklist
-	worker_cnt    int
-	lock          sync.Mutex
+// Client performs DNS zone transfers.
+type Client struct {
+	res          *dns.Client
+	requestQueue chan string
+	log          *log.Logger
+	hostRe       *regexp.Regexp
+	nameBL       *blacklist.NameBlacklist
+	addrBL       *blacklist.IPBlacklist
+	workerCnt    int
+	lock         sync.Mutex
 }
 
-func MakeXFRClient(queue chan string) (*XFRClient, error) {
+// MakeXFRClient creates a new XFRClient
+func MakeXFRClient(queue chan string) (*Client, error) {
 	var err error
-	var client *XFRClient = &XFRClient{
-		request_queue: queue,
-		host_re:       regexp.MustCompile(HOST_RE_PAT),
-		name_bl:       blacklist.DefaultNameBlacklist(),
-		addr_bl:       blacklist.DefaultIPBlacklist(),
-		res:           new(dns.Client),
+	var client *Client = &Client{
+		requestQueue: queue,
+		hostRe:       regexp.MustCompile(hostRePat),
+		nameBL:       blacklist.DefaultNameBlacklist(),
+		addrBL:       blacklist.DefaultIPBlacklist(),
+		res:          new(dns.Client),
 	}
 
 	client.res.Net = "tcp"
@@ -59,32 +62,34 @@ func MakeXFRClient(queue chan string) (*XFRClient, error) {
 	if client.log, err = common.GetLogger("XFRClient"); err != nil {
 		fmt.Printf("Error getting Logger instance for XFRClient: %s\n", err.Error())
 		return nil, err
-	} else {
-		return client, nil
 	}
+
+	return client, nil
 } // func MakeXFRClient(queue chan string) (*XFRClient, error)
 
-func (self *XFRClient) Start(cnt int) {
-	self.lock.Lock()
-	defer self.lock.Unlock()
+// Start starts the XFRCient
+func (xfrc *Client) Start(cnt int) {
+	xfrc.lock.Lock()
+	defer xfrc.lock.Unlock()
 
 	for i := 1; i <= cnt; i++ {
-		if common.DEBUG {
-			self.log.Printf("Starting XFR Worker #%d\n", i)
+		if common.Debug {
+			xfrc.log.Printf("Starting XFR Worker #%d\n", i)
 		}
-		go self.Worker(i)
-		self.worker_cnt++
+		go xfrc.worker(i)
+		xfrc.workerCnt++
 	}
-} // func (self *XFRClient) Start(cnt int)
+} // func (xfrc *XFRClient) Start(cnt int)
 
-func (self *XFRClient) WorkerCount() int {
-	self.lock.Lock()
-	var c = self.worker_cnt
-	self.lock.Unlock()
+// WorkerCount returns the number of workers.
+func (xfrc *Client) WorkerCount() int {
+	xfrc.lock.Lock()
+	var c = xfrc.workerCnt
+	xfrc.lock.Unlock()
 	return c
-} // func (self *XFRClient) WorkerCount() int
+} // func (xfrc *XFRClient) WorkerCount() int
 
-func (self *XFRClient) Worker(worker_id int) {
+func (xfrc *Client) worker(workerID int) {
 	var hostname, zone, msg string
 	var err error
 	var xfr *data.XFR
@@ -92,47 +97,47 @@ func (self *XFRClient) Worker(worker_id int) {
 	var db *database.HostDB
 
 	defer func() {
-		self.lock.Lock()
-		self.worker_cnt--
-		self.lock.Unlock()
+		xfrc.lock.Lock()
+		xfrc.workerCnt--
+		xfrc.lock.Unlock()
 	}()
 
-	if db, err = database.OpenDB(common.DB_PATH); err != nil {
+	if db, err = database.OpenDB(common.DbPath); err != nil {
 		msg = fmt.Sprintf("Error opening database at %s: %s",
-			common.DB_PATH, err.Error())
-		self.log.Println(msg)
+			common.DbPath, err.Error())
+		xfrc.log.Println(msg)
 		return
-	} else {
-		defer db.Close()
 	}
+
+	defer db.Close()
 
 LOOP:
 	for {
-		hostname = <-self.request_queue
+		hostname = <-xfrc.requestQueue
 
-		if common.DEBUG {
-			self.log.Printf("XFR Worker #%d got request for host %s\n",
-				worker_id, hostname)
+		if common.Debug {
+			xfrc.log.Printf("XFR Worker #%d got request for host %s\n",
+				workerID, hostname)
 		}
 
-		if submatch = self.host_re.FindStringSubmatch(hostname); submatch == nil {
+		if submatch = xfrc.hostRe.FindStringSubmatch(hostname); submatch == nil {
 			msg = fmt.Sprintf("Error extracting zone from hostname %s", hostname)
-			self.log.Println(msg)
+			xfrc.log.Println(msg)
 			continue LOOP
 		} else if len(submatch) == 0 {
 			msg = fmt.Sprintf("CANTHAPPEN: Did not find zone in hostname: %s", hostname)
-			self.log.Println(msg)
+			xfrc.log.Println(msg)
 			continue LOOP
-		} else if common.DEBUG {
-			self.log.Printf("XFR#%d - extracted zone %s from hostname %s\n",
-				worker_id, submatch[1], hostname)
+		} else if common.Debug {
+			xfrc.log.Printf("XFR#%d - extracted zone %s from hostname %s\n",
+				workerID, submatch[1], hostname)
 		}
 
 		zone = submatch[1]
 		if xfr, err = db.XfrGetByZone(zone); err != nil {
 			msg = fmt.Sprintf("Error looking up XFR of %s: %s",
 				zone, err.Error())
-			self.log.Println(msg)
+			xfrc.log.Println(msg)
 			continue LOOP
 		} else if xfr != nil {
 			// Looks like we've been down that road before...
@@ -143,59 +148,59 @@ LOOP:
 			ID:     krylib.INVALID_ID,
 			Zone:   zone,
 			Start:  time.Now(),
-			Status: data.XFR_STATUS_UNFINISHED,
+			Status: xfrstatus.Unfinished,
 		}
 
 		if err = db.XfrAdd(xfr); err != nil {
 			msg = fmt.Sprintf("Error adding XFR of %s to database: %s",
 				zone, err.Error())
-			self.log.Println(msg)
+			xfrc.log.Println(msg)
 			continue LOOP
 		} else if xfr.ID == krylib.INVALID_ID {
-			self.log.Printf("I added the XFR of %s to the database, but the ID was not set!\n",
+			xfrc.log.Printf("I added the XFR of %s to the database, but the ID was not set!\n",
 				zone)
 			continue LOOP
 		}
 
-		var status data.XfrStatus
+		var status xfrstatus.XfrStatus
 
-		if err = self.perform_xfr(zone, db); err != nil {
-			status = data.XFR_STATUS_REFUSED
+		if err = xfrc.performXfr(zone, db); err != nil {
+			status = xfrstatus.Refused
 		} else {
-			status = data.XFR_STATUS_SUCCESS
+			status = xfrstatus.Success
 		}
 
 		if err = db.XfrFinish(xfr, status); err != nil {
 			msg = fmt.Sprintf("Error finishing XFR of %s with status %s: %s",
 				zone, status.String(), err.Error())
-			self.log.Println(msg)
+			xfrc.log.Println(msg)
 		}
 	}
-} // func (self *XFRClient) Worker()
+} // func (xfrc *XFRClient) worker()
 
-func (self *XFRClient) perform_xfr(zone string, db *database.HostDB) error {
+func (xfrc *Client) performXfr(zone string, db *database.HostDB) error {
 	var err error
 	var msg string
-	var ns_records []*net.NS
+	var nsRecords []*net.NS
 	var res bool
 
 	// First, need to get the nameservers for the zone:
-	if ns_records, err = net.LookupNS(zone); err != nil {
+	if nsRecords, err = net.LookupNS(zone); err != nil {
 		msg = fmt.Sprintf("Error looking up nameservers for %s: %s",
 			zone, err.Error())
-		self.log.Println(msg)
+		xfrc.log.Println(msg)
 		return errors.New(msg)
 	}
 
 	servers := make([]net.IP, 0)
 
-	for _, srv := range ns_records {
+	for _, srv := range nsRecords {
 		var addr []net.IP
 
 		if addr, err = net.LookupIP(srv.Host); err != nil {
 			msg = fmt.Sprintf("Error looking up %s: %s",
 				srv.Host, err.Error())
-			self.log.Println(msg)
+			xfrc.log.Println(msg)
 		} else {
 			servers = append(servers, addr...)
 		}
@@ -203,15 +208,15 @@ func (self *XFRClient) perform_xfr(zone string, db *database.HostDB) error {
 
 	if len(servers) == 0 {
 		msg = fmt.Sprintf("Did not find any nameservers for %s", zone)
-		self.log.Println(msg)
+		xfrc.log.Println(msg)
 		return errors.New(msg)
 	}
 
 	for _, srv := range servers {
-		if res, err = self.attempt_xfr(zone, srv, db); err != nil {
+		if res, err = xfrc.attemptXfr(zone, srv, db); err != nil {
 			msg = fmt.Sprintf("Error asking %s for XFR of %s: %s",
 				srv.String(), zone, err.Error())
-			self.log.Println(msg)
+			xfrc.log.Println(msg)
 		} else if res {
 			return nil
 		}
@@ -219,189 +224,187 @@ func (self *XFRClient) perform_xfr(zone string, db *database.HostDB) error {
 
 	msg = fmt.Sprintf("None of the %d servers I asked wanted to give me an XFR of %s: %s",
 		len(servers), zone, err.Error())
-	self.log.Println(msg)
+	xfrc.log.Println(msg)
 	return errors.New(msg)
-} // func (self *XFRClient) perform_xfr(zone string) error
+} // func (xfrc *XFRClient) performXfr(zone string) error
 
 // Samstag, 26. 12. 2015, 00:44
 // Maybe I should factor this method into yet more sub-methods. It's rather long...
-func (self *XFRClient) attempt_xfr(zone string, srv net.IP, db *database.HostDB) (bool, error) {
+func (xfrc *Client) attemptXfr(zone string, srv net.IP, db *database.HostDB) (bool, error) {
 	var msg string
 	var err error
-	var rr_cnt int64
-	var xfr_msg dns.Msg
-	var env_chan chan *dns.Envelope
-	var addr_list []string
-	var xfr_error bool
+	var rrCnt int64
+	var xfrMsg dns.Msg
+	var envChan chan *dns.Envelope
+	var addrList []string
+	var xfrError bool
 
-	xfr_msg.SetAxfr(zone)
+	xfrMsg.SetAxfr(zone)
 
-	self.log.Printf("Attempting AXFR of %s\n", zone)
+	xfrc.log.Printf("Attempting AXFR of %s\n", zone)
 
-	xfr_path := filepath.Join(common.XFR_DBG_PATH, zone)
-	fh, err := os.Create(xfr_path)
+	xfrPath := filepath.Join(common.XfrDbgPath, zone)
+	fh, err := os.Create(xfrPath)
 	if err != nil {
 		msg = fmt.Sprintf("Error opening dbg file for XFR (%s): %s",
-			xfr_path, err.Error())
-		self.log.Println(msg)
+			xfrPath, err.Error())
+		xfrc.log.Println(msg)
 		return false, errors.New(msg)
-	} else {
-		cleanup := func() {
-			fh.Close()
-			if rr_cnt == 0 {
-				os.Remove(xfr_path)
-			}
-		}
-
-		defer cleanup()
 	}
+
+	defer func() {
+		fh.Close()
+		if rrCnt == 0 {
+			os.Remove(xfrPath)
+		}
+	}()
 
 	ns := fmt.Sprintf("[%s]:53", srv.String())
 
-	if env_chan, err = self.res.TransferIn(&xfr_msg, ns); err != nil {
+	if envChan, err = xfrc.res.TransferIn(&xfrMsg, ns); err != nil {
 		msg = fmt.Sprintf("Error requesting Transfer of zone %s: %s",
 			zone, err.Error())
-		self.log.Println(msg)
+		xfrc.log.Println(msg)
 		return false, errors.New(msg)
 	}
 
-	for envelope := range env_chan {
-		xfr_error = false
+	for envelope := range envChan {
+		xfrError = false
 		if envelope.Error != nil {
 			err = envelope.Error
-			xfr_error = true
+			xfrError = true
 			msg = fmt.Sprintf("Error during AXFR of %s: %s",
 				zone, envelope.Error.Error())
-			self.log.Println(msg)
+			xfrc.log.Println(msg)
 			continue
 		}
 
-		var host_exists bool
+		var hostExists bool
 
 	RR_LOOP:
 		for _, rr := range envelope.RR {
 			var host data.Host
-			dbg_string := rr.String() + "\n"
-			fh.WriteString(dbg_string) // nolint: errcheck
-			rr_cnt++
+			dbgString := rr.String() + "\n"
+			fh.WriteString(dbgString) // nolint: errcheck
+			rrCnt++
 
 			switch t := rr.(type) {
 			case *dns.A:
 				host.Address = t.A
 				host.Name = rr.Header().Name
-				host.Source = data.HOST_SOURCE_A
+				host.Source = data.HostSourceA
 
-				if self.name_bl.Matches(host.Name) || self.addr_bl.MatchesIP(host.Address) {
+				if xfrc.nameBL.Matches(host.Name) || xfrc.addrBL.MatchesIP(host.Address) {
 					continue RR_LOOP
 				}
 
-				if host_exists, err = db.HostExists(host.Address.String()); err != nil {
+				if hostExists, err = db.HostExists(host.Address.String()); err != nil {
 					msg = fmt.Sprintf("Error checking if %s is already in database: %s",
 						host.Address.String(), err.Error())
-					self.log.Println(msg)
-				} else if host_exists {
+					xfrc.log.Println(msg)
+				} else if hostExists {
 					continue RR_LOOP
 				} else if err = db.HostAdd(&host); err != nil {
 					msg = fmt.Sprintf("Error adding host %s/%s to database: %s",
 						host.Address.String(), host.Name, err.Error())
-					self.log.Println(msg)
+					xfrc.log.Println(msg)
 				}
 
 			case *dns.NS:
 				host.Name = rr.Header().Name
-				if self.name_bl.Matches(host.Name) {
+				if xfrc.nameBL.Matches(host.Name) {
 					continue RR_LOOP
 				}
 
-				if addr_list, err = net.LookupHost(host.Name); err != nil {
+				if addrList, err = net.LookupHost(host.Name); err != nil {
 					msg = fmt.Sprintf("Error looking up name for Nameserver %s: %s",
 						host.Name, err.Error())
-					self.log.Println(msg)
+					xfrc.log.Println(msg)
 					continue RR_LOOP
 				} else {
 				ADDR_LOOP:
-					for _, addr := range addr_list {
-						var ns_host data.Host = data.Host{Name: host.Name}
+					for _, addr := range addrList {
+						var nsHost data.Host = data.Host{Name: host.Name}
 
-						ns_host.Address = net.ParseIP(addr)
-						ns_host.Source = data.HOST_SOURCE_NS
+						nsHost.Address = net.ParseIP(addr)
+						nsHost.Source = data.HostSourceNs
 
-						if self.addr_bl.MatchesIP(ns_host.Address) {
+						if xfrc.addrBL.MatchesIP(nsHost.Address) {
 							continue ADDR_LOOP
-						} else if host_exists, err = db.HostExists(ns_host.Address.String()); err != nil {
+						} else if hostExists, err = db.HostExists(nsHost.Address.String()); err != nil {
 							msg = fmt.Sprintf("Error checking if %s is already in database: %s",
-								ns_host.Address.String(), err.Error())
-							self.log.Println(msg)
-						} else if host_exists {
+								nsHost.Address.String(), err.Error())
+							xfrc.log.Println(msg)
+						} else if hostExists {
 							continue ADDR_LOOP
-						} else if err = db.HostAdd(&ns_host); err != nil {
+						} else if err = db.HostAdd(&nsHost); err != nil {
 							msg = fmt.Sprintf("Error adding Nameserver %s to database: %s",
-								ns_host.Name, err.Error())
-							self.log.Println(msg)
+								nsHost.Name, err.Error())
+							xfrc.log.Println(msg)
 						}
 					}
 				}
 
 			case *dns.MX:
 				host.Name = rr.Header().Name
-				if self.name_bl.Matches(host.Name) {
+				if xfrc.nameBL.Matches(host.Name) {
 					continue RR_LOOP
-				} else if addr_list, err = net.LookupHost(host.Name); err != nil {
+				} else if addrList, err = net.LookupHost(host.Name); err != nil {
 					msg = fmt.Sprintf("Error looking up IP Address for %s: %s",
 						host.Name, err.Error())
-					self.log.Println(msg)
+					xfrc.log.Println(msg)
 					continue RR_LOOP
 				}
 
 			MX_HOST:
-				for _, addr := range addr_list {
-					var mx_host data.Host = data.Host{
+				for _, addr := range addrList {
+					var mxHost data.Host = data.Host{
 						Name:    host.Name,
 						Address: net.ParseIP(addr),
-						Source:  data.HOST_SOURCE_MX,
+						Source:  data.HostSourceMx,
 					}
 
-					if host_exists, err = db.HostExists(mx_host.Address.String()); err != nil {
+					if hostExists, err = db.HostExists(mxHost.Address.String()); err != nil {
 						msg = fmt.Sprintf("Error checking if %s is already in database: %s",
-							mx_host.Address.String(), err.Error())
-						self.log.Println(msg)
-					} else if host_exists {
+							mxHost.Address.String(), err.Error())
+						xfrc.log.Println(msg)
+					} else if hostExists {
 						continue MX_HOST
-					} else if err = db.HostAdd(&mx_host); err != nil {
+					} else if err = db.HostAdd(&mxHost); err != nil {
 						msg = fmt.Sprintf("Error adding MX %s/%s to database: %s",
-							mx_host.Name,
-							mx_host.Address.String(),
+							mxHost.Name,
+							mxHost.Address.String(),
 							err.Error())
-						self.log.Println(msg)
+						xfrc.log.Println(msg)
 					}
 				}
 
 			case *dns.AAAA:
 				host.Name = rr.Header().Name
 				host.Address = t.AAAA
-				host.Source = data.HOST_SOURCE_A
+				host.Source = data.HostSourceA
 
-				if self.name_bl.Matches(host.Name) || self.addr_bl.MatchesIP(host.Address) {
+				if xfrc.nameBL.Matches(host.Name) || xfrc.addrBL.MatchesIP(host.Address) {
 					continue RR_LOOP
-				} else if host_exists, err = db.HostExists(host.Address.String()); err != nil {
+				} else if hostExists, err = db.HostExists(host.Address.String()); err != nil {
 					msg = fmt.Sprintf("Error checking if %s exists in database: %s",
 						host.Address.String(), err.Error())
-					self.log.Println(msg)
-				} else if host_exists {
+					xfrc.log.Println(msg)
+				} else if hostExists {
 					continue RR_LOOP
 				} else if err = db.HostAdd(&host); err != nil {
 					msg = fmt.Sprintf("Error adding host %s/%s to database: %s",
 						host.Name, host.Address.String(), err.Error())
-					self.log.Println(msg)
+					xfrc.log.Println(msg)
 				}
 			}
 
 		}
 	}
 
-	if xfr_error {
+	if xfrError {
 		return false, err
 	}
 
 	return true, nil
-} // func (self *XFRClient) attempt_xfr(zone string, srv net.IP, db *HostDB) (bool, error)
+} // func (xfrc *XFRClient) attemptXfr(zone string, srv net.IP, db *HostDB) (bool, error)

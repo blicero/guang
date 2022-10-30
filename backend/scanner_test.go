@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 05. 02. 2016 by Benjamin Walkenhorst
 // (c) 2016 Benjamin Walkenhorst
-// Time-stamp: <2022-10-30 00:15:32 krylon>
+// Time-stamp: <2022-10-30 20:34:58 krylon>
 
 package backend
 
@@ -27,7 +27,7 @@ var targets []scan_target = []scan_target{
 	scan_target{
 		Host: data.Host{
 			ID:      krylib.INVALID_ID,
-			Source:  data.HOST_SOURCE_USER,
+			Source:  data.HostSourceUser,
 			Address: net.ParseIP("10.10.0.1"),
 			Name:    "wintermute.krylon.net",
 			Added:   time.Now(),
@@ -39,7 +39,7 @@ var targets []scan_target = []scan_target{
 	scan_target{
 		Host: data.Host{
 			ID:      krylib.INVALID_ID,
-			Source:  data.HOST_SOURCE_USER,
+			Source:  data.HostSourceUser,
 			Address: net.ParseIP("10.10.0.7"),
 			Name:    "neuromancer.krylon.net",
 			Added:   time.Now(),
@@ -51,7 +51,7 @@ var targets []scan_target = []scan_target{
 	scan_target{
 		Host: data.Host{
 			ID:      krylib.INVALID_ID,
-			Source:  data.HOST_SOURCE_USER,
+			Source:  data.HostSourceUser,
 			Address: net.ParseIP("10.10.0.3"),
 			Name:    "dixie.krylon.net",
 			Added:   time.Now(),
@@ -63,7 +63,7 @@ var targets []scan_target = []scan_target{
 	scan_target{
 		Host: data.Host{
 			ID:      krylib.INVALID_ID,
-			Source:  data.HOST_SOURCE_USER,
+			Source:  data.HostSourceUser,
 			Address: net.ParseIP("10.10.8.10"),
 			Name:    "achtfaden.krylon.net",
 			Added:   time.Now(),
