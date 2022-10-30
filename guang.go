@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 27. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2022-10-28 23:15:01 krylon>
+// Time-stamp: <2022-10-30 17:12:04 krylon>
 
 package main
 
@@ -18,6 +18,7 @@ import (
 	"github.com/blicero/guang/database"
 	"github.com/blicero/guang/frontend"
 	"github.com/blicero/guang/generator"
+	"github.com/blicero/guang/xfr"
 
 	"net/http"
 	_ "net/http/pprof"
@@ -31,7 +32,7 @@ func main() {
 	var err error
 	var mlog *log.Logger
 	var gen *generator.HostGenerator
-	var xfr *backend.XFRClient
+	var xfrClient *xfr.XFRClient
 	var xfr_queue chan string
 	var db *database.HostDB
 	var do_xfr bool
@@ -125,11 +126,11 @@ func main() {
 		do_xfr = true
 		xfr_queue = make(chan string, xfr_worker_cnt)
 
-		if xfr, err = backend.MakeXFRClient(xfr_queue); err != nil {
+		if xfrClient, err = xfr.MakeXFRClient(xfr_queue); err != nil {
 			mlog.Printf("Error creating XFR client: %s\n", err.Error())
 			os.Exit(1)
 		} else {
-			xfr.Start(xfr_worker_cnt)
+			xfrClient.Start(xfr_worker_cnt)
 		}
 
 		if common.DEBUG {
@@ -154,7 +155,7 @@ func main() {
 		for {
 			time.Sleep(time.Second * 10)
 		}
-	} else if nexus, err = backend.CreateNexus(gen, scanner, xfr); err != nil {
+	} else if nexus, err = backend.CreateNexus(gen, scanner, xfrClient); err != nil {
 		fmt.Printf("Error creating Nexus: %s\n", err.Error())
 		os.Exit(1)
 	} else {

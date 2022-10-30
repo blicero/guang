@@ -2,9 +2,9 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 26. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2022-10-27 21:25:07 krylon>
+// Time-stamp: <2022-10-30 17:01:14 krylon>
 
-package backend
+package xfr
 
 import (
 	"fmt"

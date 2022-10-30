@@ -2,9 +2,9 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 25. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2022-10-29 18:56:29 krylon>
+// Time-stamp: <2022-10-30 17:06:43 krylon>
 
-package backend
+package xfr
 
 import (
 	"errors"
@@ -76,6 +76,13 @@ func (self *XFRClient) Start(cnt int) {
 		self.worker_cnt++
 	}
 } // func (self *XFRClient) Start(cnt int)
+
+func (self *XFRClient) WorkerCount() int {
+	self.lock.Lock()
+	var c = self.worker_cnt
+	self.lock.Unlock()
+	return c
+} // func (self *XFRClient) WorkerCount() int
 
 func (self *XFRClient) Worker(worker_id int) {
 	var hostname, zone, msg string
