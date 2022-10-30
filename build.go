@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 01. 02. 2021 by Benjamin Walkenhorst
 // (c) 2021 Benjamin Walkenhorst
-// Time-stamp: <2022-10-29 18:16:30 krylon>
+// Time-stamp: <2022-10-30 21:17:14 krylon>
 
 // +build ignore
 
@@ -59,7 +59,10 @@ var orderedSteps = []string{
 
 var candidates = map[string][]string{
 	"generate": []string{
+		"common",
+		"logdomain",
 		"database/query",
+		"xfr/xfrstatus",
 	},
 	"test": []string{
 		"backend",
@@ -67,6 +70,7 @@ var candidates = map[string][]string{
 		"database",
 		"frontend",
 		"generator",
+		"xfr",
 	},
 	"vet": []string{
 		"backend",
@@ -78,6 +82,7 @@ var candidates = map[string][]string{
 		"frontend",
 		"generator",
 		"logdomain",
+		"xfr",
 	},
 	"lint": []string{
 		"backend",
@@ -89,6 +94,7 @@ var candidates = map[string][]string{
 		"frontend",
 		"generator",
 		"logdomain",
+		"xfr",
 	},
 }
 
