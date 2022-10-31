@@ -1,5 +1,5 @@
 # -*- mode: org; fill-column: 78; -*-
-# Time-stamp: <2022-10-31 19:24:43 krylon>
+# Time-stamp: <2022-10-31 19:49:32 krylon>
 #
 #+TAGS: optimize(o) refactor(r) bug(b) feature(f) architecture(a)
 #+TAGS: web(w) database(d) javascript(j)
@@ -11,15 +11,16 @@
 * Guang
 ** Clocktable
    #+BEGIN: clocktable :scope file :maxlevel 20
-   #+CAPTION: Clock summary at [2022-10-31 Mo 19:24]
+   #+CAPTION: Clock summary at [2022-10-31 Mo 19:49]
    | Headline                    | Time    |       |       |      |      |
    |-----------------------------+---------+-------+-------+------+------|
-   | *Total time*                | *15:27* |       |       |      |      |
+   | *Total time*                | *15:38* |       |       |      |      |
    |-----------------------------+---------+-------+-------+------+------|
-   | Guang                       | 15:27   |       |       |      |      |
-   | \_  Components              |         | 15:27 |       |      |      |
-   | \_    Database              |         |       |  0:47 |      |      |
+   | Guang                       | 15:38   |       |       |      |      |
+   | \_  Components              |         | 15:38 |       |      |      |
+   | \_    Database              |         |       |  0:58 |      |      |
    | \_      SQLite              |         |       |       | 0:44 |      |
+   | \_      Pool                |         |       |       | 0:11 |      |
    | \_      Major cleanup [1/2] |         |       |       | 0:03 |      |
    | \_        Package           |         |       |       |      | 0:03 |
    | \_    Web interface         |         |       |  4:15 |      |      |
@@ -41,7 +42,12 @@
      CLOCK: [2022-10-27 Do 17:52]--[2022-10-27 Do 18:36] =>  0:44
      :END:
      The library I use for the SQLite bindings is kind of out of date, I think
-**** TODO Pool
+**** DONE Pool
+     CLOSED: [2022-10-31 Mo 19:49]
+     :LOGBOOK:
+     CLOCK: [2022-10-31 Mo 19:38]--[2022-10-31 Mo 19:49] =>  0:11
+     :END:
+     The web frontend still uses a sync.Pool. Let's fix that.
 **** Major cleanup [1/2]                                           :refactor:
      I need to fix/refactor a couple of things.
 ***** DONE Package
