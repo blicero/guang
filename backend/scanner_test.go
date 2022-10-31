@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 05. 02. 2016 by Benjamin Walkenhorst
 // (c) 2016 Benjamin Walkenhorst
-// Time-stamp: <2022-10-30 20:34:58 krylon>
+// Time-stamp: <2022-10-31 19:20:47 krylon>
 
 package backend
 
@@ -16,15 +16,15 @@ import (
 	"github.com/blicero/krylib"
 )
 
-type scan_target struct {
+type scanTarget struct {
 	Host  data.Host
 	Ports []uint16
 }
 
 // It is a little sparse for now, but I want it to work first.
 // I can easily add more targets later.
-var targets []scan_target = []scan_target{
-	scan_target{
+var targets []scanTarget = []scanTarget{
+	scanTarget{
 		Host: data.Host{
 			ID:      krylib.INVALID_ID,
 			Source:  data.HostSourceUser,
@@ -36,7 +36,7 @@ var targets []scan_target = []scan_target{
 		Ports: []uint16{21, 22, 79, 80},
 	},
 
-	scan_target{
+	scanTarget{
 		Host: data.Host{
 			ID:      krylib.INVALID_ID,
 			Source:  data.HostSourceUser,
@@ -48,7 +48,7 @@ var targets []scan_target = []scan_target{
 		Ports: []uint16{22, 23, 79, 5900},
 	},
 
-	scan_target{
+	scanTarget{
 		Host: data.Host{
 			ID:      krylib.INVALID_ID,
 			Source:  data.HostSourceUser,
@@ -60,7 +60,7 @@ var targets []scan_target = []scan_target{
 		Ports: []uint16{22, 5900},
 	},
 
-	scan_target{
+	scanTarget{
 		Host: data.Host{
 			ID:      krylib.INVALID_ID,
 			Source:  data.HostSourceUser,
@@ -102,23 +102,23 @@ func TestPerformScan(t *testing.T) {
 			target.Host.Name,
 			target.Host.Address.String())
 		fmt.Println(msg)
-		for _, port_no := range target.Ports {
-			result, err = scan_host(&target.Host, port_no)
+		for _, portNo := range target.Ports {
+			result, err = scanHost(&target.Host, portNo)
 			if err != nil {
 				t.Errorf("Error scanning %s:%d - %s",
-					target.Host.Name, port_no, err.Error())
+					target.Host.Name, portNo, err.Error())
 			} else if result == nil {
 				t.Errorf("Error scanning %s:%d - no result!",
-					target.Host.Name, port_no)
+					target.Host.Name, portNo)
 			} else {
-				var reply_str string
+				var replyStr string
 				if result.Reply != nil {
-					reply_str = *result.Reply
+					replyStr = *result.Reply
 				} else {
-					reply_str = "(NULL)"
+					replyStr = "(NULL)"
 				}
 				fmt.Printf("%s:%d -- %s\n",
-					target.Host.Name, port_no, reply_str)
+					target.Host.Name, portNo, replyStr)
 			}
 		}
 	}

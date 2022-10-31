@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 20. 08. 2016 by Benjamin Walkenhorst
 // (c) 2016 Benjamin Walkenhorst
-// Time-stamp: <2022-10-27 21:23:56 krylon>
+// Time-stamp: <2022-10-31 19:04:41 krylon>
 
 package backend
 
@@ -16,7 +16,7 @@ import (
 	"github.com/blicero/krylib"
 )
 
-var test_hosts []data.Host = []data.Host{
+var testHosts []data.Host = []data.Host{
 	data.Host{
 		ID:      1,
 		Address: net.ParseIP("62.153.71.106"),
@@ -29,28 +29,28 @@ var test_hosts []data.Host = []data.Host{
 	},
 }
 
-type host_location struct {
+type hostLocation struct {
 	City    string
 	Country string
 }
 
-var test_locations map[krylib.ID]host_location = map[krylib.ID]host_location{
-	1: host_location{Country: "Deutschland", City: ""},
-	2: host_location{Country: "Deutschland", City: "Frankfurt am Main"},
+var testLocations map[krylib.ID]hostLocation = map[krylib.ID]hostLocation{
+	1: hostLocation{Country: "Deutschland", City: ""},
+	2: hostLocation{Country: "Deutschland", City: "Frankfurt am Main"},
 }
 
-var meta_engine *MetaEngine
+var metaEngine *MetaEngine
 
-func str_ptr(s string) *string {
+func strPtr(s string) *string {
 	return &s
-} // func str_ptr(s string) *string
+} // func strPtr(s string) *string
 
 func TestOpenMeta(t *testing.T) {
 	var err error
 
-	if meta_engine, err = OpenMetaEngine(filepath.Join(os.Getenv("HOME"), "guang.d/GeoLite2-City.mmdb")); err != nil {
+	if metaEngine, err = OpenMetaEngine(filepath.Join(os.Getenv("HOME"), "guang.d/GeoLite2-City.mmdb")); err != nil {
 		t.Fatalf("Error opening meta engine: %s", err.Error())
-	} else if meta_engine == nil {
+	} else if metaEngine == nil {
 		t.Fatal("OpenMetaEngine() returned a nil value!")
 	}
 } // func TestOpenMeta(t *testing.T)
@@ -59,10 +59,10 @@ func TestLookupCountry(t *testing.T) {
 	var err error
 	var country string
 
-	for _, host := range test_hosts {
-		loc := test_locations[host.ID]
+	for _, host := range testHosts {
+		loc := testLocations[host.ID]
 
-		if country, err = meta_engine.LookupCountry(&host); err != nil {
+		if country, err = metaEngine.LookupCountry(&host); err != nil {
 			t.Errorf("Error looking up country for %s: %s",
 				host.Address, err.Error())
 		} else if country != loc.Country {
@@ -76,10 +76,10 @@ func TestLookupCity(t *testing.T) {
 	var err error
 	var city string
 
-	for _, host := range test_hosts {
-		loc := test_locations[host.ID]
+	for _, host := range testHosts {
+		loc := testLocations[host.ID]
 
-		if city, err = meta_engine.LookupCity(&host); err != nil {
+		if city, err = metaEngine.LookupCity(&host); err != nil {
 			t.Errorf("Error looking up city for %s: %s",
 				host.Address, err.Error())
 		} else if city != loc.City {
@@ -90,7 +90,7 @@ func TestLookupCity(t *testing.T) {
 } // func TestLookupCity(t *testing.T)
 
 func TestGuessOperatingSystem(t *testing.T) {
-	var test_hosts_with_ports []data.HostWithPorts = []data.HostWithPorts{
+	var testHostsWithPorts []data.HostWithPorts = []data.HostWithPorts{
 		data.HostWithPorts{
 			Host: data.Host{
 				ID:      1,
@@ -102,21 +102,21 @@ func TestGuessOperatingSystem(t *testing.T) {
 					ID:     krylib.INVALID_ID,
 					HostID: 1,
 					Port:   80,
-					Reply:  str_ptr("Apache 2.0.47 (Ubuntu)"),
+					Reply:  strPtr("Apache 2.0.47 (Ubuntu)"),
 				},
 			},
 		},
 	}
-	var os_map map[krylib.ID]string = map[krylib.ID]string{
+	var osMap map[krylib.ID]string = map[krylib.ID]string{
 		1: "Ubuntu",
 	}
 
-	for _, h := range test_hosts_with_ports {
-		system := meta_engine.LookupOperatingSystem(&h)
-		if system != os_map[h.Host.ID] {
+	for _, h := range testHostsWithPorts {
+		system := metaEngine.LookupOperatingSystem(&h)
+		if system != osMap[h.Host.ID] {
 			t.Errorf("Unexpected Operating System for host %s: Expected %s, Result %s",
 				h.Host.Name,
-				os_map[h.Host.ID],
+				osMap[h.Host.ID],
 				system)
 		}
 	}

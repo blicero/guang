@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 28. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2022-10-30 21:02:51 krylon>
+// Time-stamp: <2022-10-31 19:20:47 krylon>
 //
 // Freitag, 08. 01. 2016, 22:10
 // I kinda feel like I'm not going to write a comprehensive test suite for this
@@ -31,9 +31,9 @@ import (
 	"github.com/miekg/dns"
 )
 
-var www_pat *regexp.Regexp = regexp.MustCompile("(?i)^www")
-var ftp_pat *regexp.Regexp = regexp.MustCompile("(?i)^ftp")
-var mx_pat *regexp.Regexp = regexp.MustCompile("(?i)^(?:mx|mail|smtp|pop|imap)")
+var wwwPat *regexp.Regexp = regexp.MustCompile("(?i)^www")
+var ftpPat *regexp.Regexp = regexp.MustCompile("(?i)^ftp")
+var mxPat *regexp.Regexp = regexp.MustCompile("(?i)^(?:mx|mail|smtp|pop|imap)")
 var newline = regexp.MustCompile("[\r\n]+$")
 
 // Samstag, 05. 07. 2014, 16:40
@@ -46,9 +46,11 @@ var newline = regexp.MustCompile("[\r\n]+$")
 // dass auf deren Firewall Alarm geschlagen wurde.
 // Ich nehme die Ports 1024 und 4444 mal vorsichtshalber raus. Nicht, dass
 // wir noch Ärger bekommen.
-var PORTS []uint16 = []uint16{21, 22, 23, 25, 53, 79, 80, 110, 143, 161, 631 /* 1024, 4444, */, 2525, 5353, 5800, 5900, 8000, 8080, 8081}
 
-func get_scan_port(host *data.Host, ports map[uint16]bool) uint16 {
+// Ports is the list of ports (TCP and UDP) we consider interesting.
+var Ports []uint16 = []uint16{21, 22, 23, 25, 53, 79, 80, 110, 143, 161, 631 /* 1024, 4444, */, 2525, 5353, 5800, 5900, 8000, 8080, 8081}
+
+func getScanPort(host *data.Host, ports map[uint16]bool) uint16 {
 	if host.Source == data.HostSourceMx {
 		if !ports[25] {
 			return 25
@@ -59,15 +61,15 @@ func get_scan_port(host *data.Host, ports map[uint16]bool) uint16 {
 		}
 	} else if (host.Source == data.HostSourceNs) && !ports[53] {
 		return 53
-	} else if www_pat.MatchString(host.Name) && !ports[80] {
+	} else if wwwPat.MatchString(host.Name) && !ports[80] {
 		// Samstag, 05. 07. 2014, 16:37
 		// Ich weiß noch nicht, wie einfach es ist, SSL zu reden, aber
 		// wenn das kein großer Krampf ist, kann ich hier natürlich
 		// auch auf Port 443 prüfen. Dito für die Mail-Protokolle!
 		return 80
-	} else if ftp_pat.MatchString(host.Name) && !ports[21] {
+	} else if ftpPat.MatchString(host.Name) && !ports[21] {
 		return 21
-	} else if mx_pat.MatchString(host.Name) {
+	} else if mxPat.MatchString(host.Name) {
 		if !ports[25] {
 			return 25
 		} else if !ports[110] {
@@ -77,40 +79,42 @@ func get_scan_port(host *data.Host, ports map[uint16]bool) uint16 {
 		}
 	}
 
-	indexlist := rand.Perm(len(PORTS))
+	indexlist := rand.Perm(len(Ports))
 	for _, idx := range indexlist {
-		if !ports[PORTS[idx]] {
-			return PORTS[idx]
+		if !ports[Ports[idx]] {
+			return Ports[idx]
 		}
 	}
 
 	return 0
 } // func get_scan_port(host *Host, ports map[uint16]bool) uint16
 
+// Scanner is a port scanner. Kind of.
 type Scanner struct {
-	db            *database.HostDB
-	scan_queue    chan data.ScanRequest
-	result_queue  chan data.ScanResult
-	control_queue chan data.ControlMessage
-	host_queue    chan data.HostWithPorts
-	log           *log.Logger
-	worker_cnt    int
-	started       int
-	lock          sync.Mutex
-	running       bool
+	db        *database.HostDB
+	scanQ     chan data.ScanRequest
+	resultQ   chan data.ScanResult
+	controlQ  chan data.ControlMessage
+	hostQ     chan data.HostWithPorts
+	log       *log.Logger
+	workerCnt int
+	started   int
+	lock      sync.Mutex
+	running   bool
 }
 
-func CreateScanner(worker_cnt int) (*Scanner, error) {
+// CreateScanner creates a new Scanner.
+func CreateScanner(workerCnt int) (*Scanner, error) {
 	var err error
 	var scanner *Scanner
 	var msg string
 
 	scanner = &Scanner{
-		scan_queue:   make(chan data.ScanRequest, worker_cnt),
-		result_queue: make(chan data.ScanResult, worker_cnt*2),
-		host_queue:   make(chan data.HostWithPorts, worker_cnt*2),
-		worker_cnt:   worker_cnt,
-		started:      0,
+		scanQ:     make(chan data.ScanRequest, workerCnt),
+		resultQ:   make(chan data.ScanResult, workerCnt*2),
+		hostQ:     make(chan data.HostWithPorts, workerCnt*2),
+		workerCnt: workerCnt,
+		started:   0,
 	}
 
 	if scanner.log, err = common.GetLogger("Scanner"); err != nil {
@@ -122,84 +126,93 @@ func CreateScanner(worker_cnt int) (*Scanner, error) {
 		scanner.log.Println(msg)
 		return nil, errors.New(msg)
 	} else if common.Debug {
-		scanner.log.Printf("Created new Scanner, will use %d workers, ready to go.\n", worker_cnt)
+		scanner.log.Printf("Created new Scanner, will use %d workers, ready to go.\n", workerCnt)
 	}
 
 	return scanner, nil
 } // func CreateScanner(worker_cnt int) (*Scanner, error)
 
-func (self *Scanner) Start() {
-	self.lock.Lock()
-	self.running = true
-	self.lock.Unlock()
+// Start starts the Scanner. If it is already running, this method does nothing.
+func (sc *Scanner) Start() {
+	sc.lock.Lock()
+	if sc.running {
+		sc.lock.Unlock()
+		return
+	}
+	sc.running = true
+	sc.lock.Unlock()
 
 	if common.Debug {
-		self.log.Printf("Scanner starting Host feeder and %d workers.\n", self.worker_cnt)
+		sc.log.Printf("Scanner starting Host feeder and %d workers.\n", sc.workerCnt)
 	}
 
-	go self.hostFeeder()
+	go sc.hostFeeder()
 
-	for i := 1; i <= self.worker_cnt; i++ {
-		go self.worker(i)
-		self.started++
+	for i := 1; i <= sc.workerCnt; i++ {
+		go sc.worker(i)
+		sc.started++
 	}
-} // func (self *Scanner) Start()
+} // func (sc *Scanner) Start()
 
-func (self *Scanner) Stop() {
-	self.lock.Lock()
-	self.running = false
-	self.lock.Unlock()
-} // func (self *Scanner) Stop()
+// Stop tells the Scanner to stop.
+func (sc *Scanner) Stop() {
+	sc.lock.Lock()
+	sc.running = false
+	sc.lock.Unlock()
+} // func (sc *Scanner) Stop()
 
-func (self *Scanner) IsRunning() bool {
-	var is_running bool
+// IsRunning returns true if the Scanner is running.
+func (sc *Scanner) IsRunning() bool {
+	var isRunning bool
 
-	self.lock.Lock()
-	is_running = self.running
-	self.lock.Unlock()
+	sc.lock.Lock()
+	isRunning = sc.running
+	sc.lock.Unlock()
 
-	return is_running
-} // func (self *Scanner) IsRunning() bool
+	return isRunning
+} // func (sc *Scanner) IsRunning() bool
 
-func (self *Scanner) PrintStatus() {
+// PrintStatus emits the Scanner's status.
+func (sc *Scanner) PrintStatus() {
 
-} // func (self *Scanner) PrintStatus()
+} // func (sc *Scanner) PrintStatus()
 
-func (self *Scanner) Loop() {
+// Loop is the Scanner's main loop.
+func (sc *Scanner) Loop() {
 	var err error
 	var req data.ScanRequest
 	var res data.ScanResult
 	var msg string
 	var control data.ControlMessage
 
-	req = self.getRandomScanRequest()
+	req = sc.getRandomScanRequest()
 
 	if common.Debug {
-		self.log.Println("Scanner Loop() starting up...")
+		sc.log.Println("Scanner Loop() starting up...")
 	}
 
-	for self.IsRunning() {
+	for sc.IsRunning() {
 		select {
-		case control = <-self.control_queue:
+		case control = <-sc.controlQ:
 			if common.Debug {
-				self.log.Println("Got one control message!")
+				sc.log.Println("Got one control message!")
 			}
 
 			switch control {
 			case data.CtlMsgStop:
-				self.Stop()
+				sc.Stop()
 				return
 			case data.CtlMsgStatus:
-				self.PrintStatus()
+				sc.PrintStatus()
 			}
 
-		case self.scan_queue <- req:
+		case sc.scanQ <- req:
 			if common.Debug {
-				self.log.Println("Scanner Loop dispatched one ScanRequest, getting another one.")
+				sc.log.Println("Scanner Loop dispatched one ScanRequest, getting another one.")
 			}
-			req = self.getRandomScanRequest()
+			req = sc.getRandomScanRequest()
 
-		case res = <-self.result_queue:
+		case res = <-sc.resultQ:
 			// Add Port to database!
 			if common.Debug {
 				var reply string
@@ -210,19 +223,19 @@ func (self *Scanner) Loop() {
 				}
 				msg = fmt.Sprintf("Got ScanResult: %s:%d - %s",
 					res.Host.Name, res.Port, reply)
-				self.log.Println(msg)
+				sc.log.Println(msg)
 			}
 
-			if err = self.db.PortAdd(&res); err != nil {
+			if err = sc.db.PortAdd(&res); err != nil {
 				msg = fmt.Sprintf("Error adding Port to DB: %s", err.Error())
-				self.log.Println(msg)
+				sc.log.Println(msg)
 			}
 		}
 	}
 
-} // func (self *Scanner) Loop()
+} // func (sc *Scanner) Loop()
 
-func (self *Scanner) hostFeeder() {
+func (sc *Scanner) hostFeeder() {
 	var hosts []data.Host
 	var db *database.HostDB
 	var err error
@@ -231,24 +244,24 @@ func (self *Scanner) hostFeeder() {
 	if db, err = database.OpenDB(common.DbPath); err != nil {
 		msg = fmt.Sprintf("Error opening DB at %s for hostFeeder: %s",
 			common.DbPath, err.Error())
-		self.log.Println(msg)
+		sc.log.Println(msg)
 		return
-	} else {
-		defer db.Close()
 	}
+
+	defer db.Close()
 
 	if common.Debug {
-		self.log.Println("hostFeeder() starting up...")
+		sc.log.Println("hostFeeder() starting up...")
 	}
 
-	for self.IsRunning() {
-		if hosts, err = db.HostGetRandom(self.worker_cnt * 10); err != nil {
+	for sc.IsRunning() {
+		if hosts, err = db.HostGetRandom(sc.workerCnt * 10); err != nil {
 			msg = fmt.Sprintf("Error getting (up to) %d random hosts: %s",
-				self.worker_cnt, err.Error())
-			self.log.Println(msg)
+				sc.workerCnt, err.Error())
+			sc.log.Println(msg)
 		} else {
 			if common.Debug {
-				self.log.Printf("hostFeeder retrieved %d hosts from the database.\n",
+				sc.log.Printf("hostFeeder retrieved %d hosts from the database.\n",
 					len(hosts))
 			}
 
@@ -259,40 +272,40 @@ func (self *Scanner) hostFeeder() {
 				if ports, err = db.PortGetByHost(host.ID); err != nil {
 					msg = fmt.Sprintf("Error getting ports for host %s/%s: %s",
 						host.Name, host.Address, err.Error())
-					self.log.Println(msg)
+					sc.log.Println(msg)
 				} else {
 					*phost = host
-					host_with_ports := data.HostWithPorts{
+					hostWithPorts := data.HostWithPorts{
 						Host:  *phost,
 						Ports: ports,
 					}
 
 					if common.Debug {
-						self.log.Printf("Enqueueing host %s/%s as a scan target.\n",
+						sc.log.Printf("Enqueueing host %s/%s as a scan target.\n",
 							host.Address.String(), host.Name)
 					}
 
-					self.host_queue <- host_with_ports
+					sc.hostQ <- hostWithPorts
 				}
 			}
 		}
 	}
-} // func (self *Scanner) hostFeeder()
+} // func (sc *Scanner) hostFeeder()
 
-func (self *Scanner) getRandomScanRequest() data.ScanRequest {
+func (sc *Scanner) getRandomScanRequest() data.ScanRequest {
 	var req data.ScanRequest
 	var portmap map[uint16]bool = make(map[uint16]bool)
 	var hwp data.HostWithPorts
 
 	if common.Debug {
-		self.log.Println("Getting one random scan request from the host queue...")
+		sc.log.Println("Getting one random scan request from the host queue...")
 	}
 
 GET_HOST:
-	hwp = <-self.host_queue
+	hwp = <-sc.hostQ
 
 	if common.Debug {
-		self.log.Printf("\t...got one random scan request from the host queue: %s\n",
+		sc.log.Printf("\t...got one random scan request from the host queue: %s\n",
 			hwp.Host.Name)
 	}
 
@@ -302,51 +315,51 @@ GET_HOST:
 
 	req.Host = hwp.Host
 
-	req.Port = get_scan_port(&req.Host, portmap)
+	req.Port = getScanPort(&req.Host, portmap)
 
 	if req.Port == 0 {
 		goto GET_HOST
 	} else if common.Debug {
-		self.log.Printf("Returning Request to scan %s:%d\n",
+		sc.log.Printf("Returning Request to scan %s:%d\n",
 			req.Host.Name, req.Port)
 	}
 
 	return req
-} // func (self *Scanner) getRandomScanRequest() ScanRequest
+} // func (sc *Scanner) getRandomScanRequest() ScanRequest
 
-func (self *Scanner) worker(id int) {
+func (sc *Scanner) worker(id int) {
 	var request data.ScanRequest
 	var result *data.ScanResult
 	var err error
 
 	defer func() {
-		self.lock.Lock()
-		self.worker_cnt--
-		self.lock.Unlock()
+		sc.lock.Lock()
+		sc.workerCnt--
+		sc.lock.Unlock()
 	}()
 
 	if common.Debug {
-		self.log.Printf("Scanner worker %d starting up...\n",
+		sc.log.Printf("Scanner worker %d starting up...\n",
 			id)
 	}
 
-	for self.IsRunning() {
-		request = <-self.scan_queue
+	for sc.IsRunning() {
+		request = <-sc.scanQ
 
 		//result, err = scan_host(&request.Host, request.Port)
-		if result, err = scan_host(&request.Host, request.Port); err != nil {
+		if result, err = scanHost(&request.Host, request.Port); err != nil {
 			msg := fmt.Sprintf("Error scanning %s:%d -- %s",
 				request.Host.Name,
 				request.Port,
 				err.Error())
-			self.log.Println(msg)
+			sc.log.Println(msg)
 			result = new(data.ScanResult)
 			result.Host = request.Host
 			result.Port = request.Port
 			result.Reply = nil
 			result.Err = errors.New(msg)
 
-			self.result_queue <- *result
+			sc.resultQ <- *result
 		} else {
 			if common.Debug {
 				var reply string
@@ -355,37 +368,37 @@ func (self *Scanner) worker(id int) {
 				} else {
 					reply = *result.Reply
 				}
-				self.log.Printf("Successfully scanned %s:%d - %s\n",
+				sc.log.Printf("Successfully scanned %s:%d - %s\n",
 					request.Host.Name,
 					request.Port,
 					reply)
 			}
 
-			self.result_queue <- *result
+			sc.resultQ <- *result
 		}
 	}
-} // func (self *Scanner) worker(id int)
+} // func (sc *Scanner) worker(id int)
 
-func scan_host(host *data.Host, port uint16) (*data.ScanResult, error) {
+func scanHost(host *data.Host, port uint16) (*data.ScanResult, error) {
 	switch port {
 	case 23:
-		return scan_telnet(host, port)
+		return scanTelnet(host, port)
 	case 21, 22, 25, 110, 2525:
-		return scan_plain(host, port)
+		return scanPlain(host, port)
 	case 53, 5353:
-		return scan_dns(host, port)
+		return scanDNS(host, port)
 	case 79:
-		return scan_finger(host, port)
+		return scanFinger(host, port)
 	case 80, 8000, 8080, 8081, 3128, 3689, 631, 1024, 4444, 5800:
-		return scan_http(host, port)
+		return scanHTTP(host, port)
 	case 161:
-		return scan_snmp(host, port)
+		return scanSNMP(host, port)
 	default:
-		return scan_plain(host, port)
+		return scanPlain(host, port)
 	}
-} // func scan_host(host *Host, port uint16) (*ScanResult, error)
+} // func scanHost(host *Host, port uint16) (*ScanResult, error)
 
-func scan_plain(host *data.Host, port uint16) (*data.ScanResult, error) {
+func scanPlain(host *data.Host, port uint16) (*data.ScanResult, error) {
 	if common.Debug {
 		fmt.Printf("Scanning %s:%d using plain scanner.\n", host.Address.String(), port)
 	}
@@ -394,30 +407,30 @@ func scan_plain(host *data.Host, port uint16) (*data.ScanResult, error) {
 	if err != nil {
 		msg := fmt.Sprintf("Error connecting to %s: %s", srv, err.Error())
 		return nil, errors.New(msg)
-	} else {
-		defer conn.Close()
 	}
+
+	defer conn.Close()
 
 	reader := bufio.NewReader(conn)
 	line, err := reader.ReadString('\n')
 	if err != nil {
 		msg := fmt.Sprintf("Error receiving data from %s: %s", srv, err.Error())
 		return nil, errors.New(msg)
-	} else {
-		line = newline.ReplaceAllString(line, "")
-		res := new(data.ScanResult)
-		res.Host = *host
-		res.Port = port
-		res.Reply = &line
-		if common.Debug {
-			fmt.Printf("Got Reply: %s\n", line)
-		}
-		res.Stamp = time.Now()
-		return res, nil
 	}
+
+	line = newline.ReplaceAllString(line, "")
+	res := new(data.ScanResult)
+	res.Host = *host
+	res.Port = port
+	res.Reply = &line
+	if common.Debug {
+		fmt.Printf("Got Reply: %s\n", line)
+	}
+	res.Stamp = time.Now()
+	return res, nil
 } // func scan_plain(host *Host, port uint16) (*ScanResult, error)
 
-func scan_finger(host *data.Host, port uint16) (*data.ScanResult, error) {
+func scanFinger(host *data.Host, port uint16) (*data.ScanResult, error) {
 	var err error
 	var recvbuffer []byte = make([]byte, 4096)
 	var n int
@@ -433,9 +446,9 @@ func scan_finger(host *data.Host, port uint16) (*data.ScanResult, error) {
 	if err != nil {
 		msg := fmt.Sprintf("Error connecting to %s: %s", srv, err.Error())
 		return nil, errors.New(msg)
-	} else {
-		defer conn.Close()
 	}
+
+	defer conn.Close()
 
 	conn.Write([]byte("root\r\n")) // nolint: errcheck
 
@@ -445,21 +458,21 @@ func scan_finger(host *data.Host, port uint16) (*data.ScanResult, error) {
 		msg := fmt.Sprintf("Error receiving from [%s]:%d - %s",
 			host.Address, port, err.Error())
 		return nil, errors.New(msg)
-	} else {
-		var reply_str *string = new(string)
-		*reply_str = string((recvbuffer[:n]))
-		result := &data.ScanResult{
-			Host:  *host,
-			Port:  port,
-			Reply: reply_str,
-			Stamp: time.Now(),
-			Err:   nil,
-		}
-		return result, nil
 	}
+
+	var replyStr *string = new(string)
+	*replyStr = string((recvbuffer[:n]))
+	result := &data.ScanResult{
+		Host:  *host,
+		Port:  port,
+		Reply: replyStr,
+		Stamp: time.Now(),
+		Err:   nil,
+	}
+	return result, nil
 } // func scan_finger(host *Host, port uint16) (*ScanResult, error)
 
-var dns_reply_pat *regexp.Regexp = regexp.MustCompile("\"([^\"]+)\"")
+var dnsReplyPat *regexp.Regexp = regexp.MustCompile("\"([^\"]+)\"")
 
 // Samstag, 05. 07. 2014, 20:26
 // Den Code habe ich mehr oder weniger aus dem Beispiel im golang-dns Repository
@@ -476,7 +489,7 @@ var dns_reply_pat *regexp.Regexp = regexp.MustCompile("\"([^\"]+)\"")
 // Mmmh, es gibt da ein kleines Problem: Die Replies, die in der Datenbank landen, sehen ungefähr so aus:
 // version.bind.   1476526080      IN      TXT     "Microsoft DNS 6.1.7601 (1DB14556)"
 
-func scan_dns(host *data.Host, port uint16) (*data.ScanResult, error) {
+func scanDNS(host *data.Host, port uint16) (*data.ScanResult, error) {
 	if common.Debug {
 		fmt.Printf("Scanning %s:%d using DNS scanner.\n", host.Address.String(), port)
 	}
@@ -493,23 +506,23 @@ func scan_dns(host *data.Host, port uint16) (*data.ScanResult, error) {
 		reply := in.Answer[0]
 		switch t := reply.(type) {
 		case *dns.TXT:
-			version_string := new(string)
-			*version_string = t.String()
-			match := dns_reply_pat.FindStringSubmatch(*version_string)
+			versionStr := new(string)
+			*versionStr = t.String()
+			match := dnsReplyPat.FindStringSubmatch(*versionStr)
 			if nil != match {
-				*version_string = match[1]
+				*versionStr = match[1]
 			}
 
 			result := new(data.ScanResult)
 			result.Host = *host
 			result.Port = port
-			result.Reply = version_string
+			result.Reply = versionStr
 			result.Stamp = time.Now()
 			if common.Debug {
 				fmt.Printf("Got reply: %s:%d is %s\n",
 					host.Address.String(),
 					port,
-					*version_string)
+					*versionStr)
 			}
 			return result, nil
 		default:
@@ -522,7 +535,7 @@ func scan_dns(host *data.Host, port uint16) (*data.ScanResult, error) {
 	return nil, errors.New("No valid reply was received, but error status was nil")
 } // func scan_dns(host *Host, port uint16) (*ScanResult, error)
 
-func scan_http(host *data.Host, port uint16) (*data.ScanResult, error) {
+func scanHTTP(host *data.Host, port uint16) (*data.ScanResult, error) {
 	if common.Debug {
 		fmt.Printf("Scanning %s:%d using HTTP scanner.\n", host.Address.String(), port)
 	}
@@ -543,19 +556,19 @@ func scan_http(host *data.Host, port uint16) (*data.ScanResult, error) {
 	result := new(data.ScanResult)
 	result.Host = *host
 	result.Port = port
-	var res_string = newline.ReplaceAllString(response.Header.Get("Server"), "")
+	var resStr = newline.ReplaceAllString(response.Header.Get("Server"), "")
 	if common.Debug {
 		fmt.Printf("http://%s:%d/ -> %s\n",
 			host.Address.String(),
 			port,
-			res_string)
+			resStr)
 	}
-	result.Reply = &res_string
+	result.Reply = &resStr
 	result.Stamp = time.Now()
 	return result, nil
 } // func scan_http(host *Host, port uint16) (*ScanResult, error)
 
-func scan_snmp(host *data.Host, port uint16) (*data.ScanResult, error) {
+func scanSNMP(host *data.Host, port uint16) (*data.ScanResult, error) {
 	if common.Debug {
 		fmt.Printf("Scanning %s:%d using SNMP scanner.\n", host.Address.String(), port)
 	}
@@ -567,7 +580,7 @@ func scan_snmp(host *data.Host, port uint16) (*data.ScanResult, error) {
 	result := new(data.ScanResult)
 	result.Host = *host
 	result.Port = port
-	var res_string string
+	var resStr string
 	success := false
 
 	// 3.6.1.2.1.1.1.0
@@ -577,7 +590,7 @@ func scan_snmp(host *data.Host, port uint16) (*data.ScanResult, error) {
 		for _, v := range resp.Variables {
 			switch v.Type {
 			case gosnmp.OctetString:
-				res_string = v.Value.(string)
+				resStr = v.Value.(string)
 				success = true
 				break VARLOOP
 			}
@@ -586,14 +599,14 @@ func scan_snmp(host *data.Host, port uint16) (*data.ScanResult, error) {
 
 	if success {
 		result.Reply = new(string)
-		*result.Reply = res_string
+		*result.Reply = resStr
 		//return result, nil
 	}
 
 	return result, nil
 } // func scan_snmp(host *Host, port uint16) (*ScanResult, error)
 
-func scan_telnet(host *data.Host, port uint16) (*data.ScanResult, error) {
+func scanTelnet(host *data.Host, port uint16) (*data.ScanResult, error) {
 	if common.Debug {
 		fmt.Printf("Scanning %s:%d using Telnet scanner.\n", host.Address.String(), port)
 	}
@@ -614,9 +627,9 @@ func scan_telnet(host *data.Host, port uint16) (*data.ScanResult, error) {
 	conn, err := net.Dial("tcp", target)
 	if err != nil {
 		return nil, fmt.Errorf("Error connecting to %s: %s", host.Name, err.Error())
-	} else {
-		defer conn.Close()
 	}
+
+	defer conn.Close()
 
 	n, err = conn.Read(recvbuffer)
 	if err != nil {
@@ -624,29 +637,29 @@ func scan_telnet(host *data.Host, port uint16) (*data.ScanResult, error) {
 	}
 
 	conn.Write(probe) // nolint: errcheck
-	var snd_fill int
+	var sndFill int
 
 	for {
 		var i int
-		snd_buf := make([]byte, 256)
-		snd_fill = 0
+		sndBuf := make([]byte, 256)
+		sndFill = 0
 
 		for i = 0; i < n; i++ {
 			if recvbuffer[i] == 0xff {
-				snd_buf[snd_fill] = 0xff
-				snd_fill++
+				sndBuf[sndFill] = 0xff
+				sndFill++
 				i++
 				switch recvbuffer[i] {
 				case 0xfb: // WILL
-					snd_buf[snd_fill] = 0xfe
-					snd_fill++
+					sndBuf[sndFill] = 0xfe
+					sndFill++
 				case 0xfd: // DO
-					snd_buf[snd_fill] = 0xfc
-					snd_fill++
+					sndBuf[sndFill] = 0xfc
+					sndFill++
 				}
 				i++
-				snd_buf[snd_fill] = recvbuffer[i]
-				snd_fill++
+				sndBuf[sndFill] = recvbuffer[i]
+				sndFill++
 			} else if recvbuffer[i] < 0x80 {
 				fmt.Printf("Received data from %s: %d/%d\n", host.Name, i, n)
 				//return string(recvbuffer[i:n]), nil
@@ -655,8 +668,8 @@ func scan_telnet(host *data.Host, port uint16) (*data.ScanResult, error) {
 			}
 		}
 
-		if snd_fill > 0 {
-			_, err = conn.Write(snd_buf[:snd_fill])
+		if sndFill > 0 {
+			_, err = conn.Write(sndBuf[:sndFill])
 			if err != nil {
 				msg := fmt.Sprintf("Error sending snd_buf to server: %s\n", err.Error())
 				fmt.Println(msg)
@@ -667,12 +680,10 @@ func scan_telnet(host *data.Host, port uint16) (*data.ScanResult, error) {
 		n, err = conn.Read(recvbuffer)
 		if err != nil {
 			return nil, fmt.Errorf("Error receiving from %s: %s", host.Name, err.Error())
-		} else {
-			fmt.Printf("Received %d bytes of data from server.\n", n)
 		}
-	}
 
-	//return nil, errors.New("No text found in output from server.")
+		fmt.Printf("Received %d bytes of data from server.\n", n)
+	}
 
 TEXT_FOUND:
 	begin := 0

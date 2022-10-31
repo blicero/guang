@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 06. 02. 2016 by Benjamin Walkenhorst
 // (c) 2016 Benjamin Walkenhorst
-// Time-stamp: <2022-10-30 19:59:16 krylon>
+// Time-stamp: <2022-10-31 18:55:36 krylon>
 
 package frontend
 
@@ -19,7 +19,6 @@ import (
 	"regexp"
 	"sync"
 	"text/template"
-	"time"
 
 	"github.com/blicero/guang/backend"
 	"github.com/blicero/guang/common"
@@ -33,83 +32,24 @@ import (
 //go:embed html
 var assets embed.FS
 
-const DEFAULT_CACHE_TIMEOUT = time.Minute * 5
-
+// WebFrontend wraps the web server and its associated state.
 type WebFrontend struct {
-	Port       uint16
-	Hostname   string
-	srv        http.Server
-	router     *mux.Router
-	log        *log.Logger
-	tmpl       *template.Template
-	isRunning  bool         // nolint: unused
-	lock       sync.RWMutex // nolint: unused
-	suffix_re  *regexp.Regexp
-	mime_map   map[string]string
-	host_cache *cache2go.CacheTable // nolint: unused
-	db_pool    sync.Pool
-	nexus      *backend.Nexus
+	Port      uint16
+	Hostname  string
+	srv       http.Server
+	router    *mux.Router
+	log       *log.Logger
+	tmpl      *template.Template
+	isRunning bool         // nolint: unused
+	lock      sync.RWMutex // nolint: unused
+	suffixRe  *regexp.Regexp
+	mimeTypes map[string]string
+	hostCache *cache2go.CacheTable // nolint: unused
+	dbPool    sync.Pool
+	nexus     *backend.Nexus
 }
 
-type tmpl_data_index struct {
-	Debug        bool
-	Title        string
-	Error        []string
-	HostGenCnt   int
-	XFRCnt       int
-	ScanCnt      int
-	HostCnt      int64
-	PortReplyCnt int64
-}
-
-type report_info_port struct {
-	Port    uint16
-	Results []data.ScanResult
-}
-
-// type host_scan_result struct {
-// 	Host  *data.Host
-// 	Ports []data.ScanResult
-// }
-
-type tmpl_data_by_port struct {
-	Debug bool
-	Title string
-	Error []string
-	Count int
-	Ports map[uint16]report_info_port
-}
-
-// Donnerstag, 18. 08. 2016, 21:10
-// Damit ich das in der HTML-Template gescheit verarbeiten kann, müsste ich
-// eigentlich eine Liste von Strukturen haben, wo der Host und die Ports drin
-// liegen.
-// Oder? Ich könnte eine Methode schreiben, die den Host anhand der ID zurück
-// gibt? In den Rohdaten aus der Datenbank steht der ja drin.
-type tmpl_data_by_host struct {
-	Debug bool
-	Title string
-	Error []string
-	Count int
-	Hosts []data.HostWithPorts
-}
-
-type ResultListByHost []data.ScanResult
-
-func (r ResultListByHost) Len() int {
-	return len(r)
-} // func (r ResultListByHost) Len() int
-
-func (r ResultListByHost) Swap(i, j int) {
-	tmp := r[i]
-	r[i] = r[j]
-	r[j] = tmp
-} // func (r ResultListByHost) Swap(i, j int)
-
-func (r ResultListByHost) Less(i, j int) bool {
-	return r[i].Port < r[j].Port
-} // func (r ResultListByHost) Less(i, j int) bool
-
+// CreateFrontend creates a new web frontend.
 func CreateFrontend(addr string, port uint16, nexus *backend.Nexus) (*WebFrontend, error) {
 	var msg string
 	var err error
@@ -121,13 +61,13 @@ func CreateFrontend(addr string, port uint16, nexus *backend.Nexus) (*WebFronten
 
 	frontend := &WebFrontend{
 		Port: port,
-		mime_map: map[string]string{
+		mimeTypes: map[string]string{
 			"css": "text/css",
 			"js":  "text/javascript",
 			"png": "image/png",
 		},
-		nexus:     nexus,
-		suffix_re: regexp.MustCompile("[.]([^.]+)$"),
+		nexus:    nexus,
+		suffixRe: regexp.MustCompile("[.]([^.]+)$"),
 	}
 
 	if frontend.Hostname, err = os.Hostname(); err != nil {
@@ -137,10 +77,10 @@ func CreateFrontend(addr string, port uint16, nexus *backend.Nexus) (*WebFronten
 	}
 
 	frontend.router = mux.NewRouter()
-	frontend.router.HandleFunc("/{pagename:(?:index|start|main)?$}", frontend.HandleIndex)
-	frontend.router.HandleFunc("/by_port", frontend.HandleByPort)
-	frontend.router.HandleFunc("/by_host", frontend.HandleByHost)
-	frontend.router.HandleFunc("/static/{file}", frontend.HandleStaticFile)
+	frontend.router.HandleFunc("/{pagename:(?:index|start|main)?$}", frontend.handleIndex)
+	frontend.router.HandleFunc("/by_port", frontend.handleByPort)
+	frontend.router.HandleFunc("/by_host", frontend.handleByHost)
+	frontend.router.HandleFunc("/static/{file}", frontend.handleStaticFile)
 
 	fmap := template.FuncMap{
 		"sequence": sequenceFunc,
@@ -190,15 +130,15 @@ func CreateFrontend(addr string, port uint16, nexus *backend.Nexus) (*WebFronten
 	frontend.srv.ErrorLog = frontend.log
 	frontend.srv.Handler = frontend.router
 
-	frontend.db_pool = sync.Pool{
+	frontend.dbPool = sync.Pool{
 		New: func() interface{} {
 			var err error
 			var db *database.HostDB
 			if db, err = database.OpenDB(common.DbPath); err != nil {
 				return nil
-			} else {
-				return db
 			}
+
+			return db
 		},
 	}
 
@@ -207,22 +147,23 @@ func CreateFrontend(addr string, port uint16, nexus *backend.Nexus) (*WebFronten
 		if db, err = database.OpenDB(common.DbPath); err != nil {
 			frontend.log.Printf("Error opening database: %s\n", err.Error())
 			return nil, err
-		} else {
-			frontend.db_pool.Put(db)
 		}
+
+		frontend.dbPool.Put(db)
 	}
 
 	return frontend, nil
 } // func CreateFrontend(addr string, port uint16) (*WebFrontend, error)
 
-func (self *WebFrontend) Serve() {
-	self.log.Println("The web server is starting to accept requests now.")
-	http.Handle("/", self.router)
-	self.srv.ListenAndServe() // nolint: errcheck
-} // func (self *WebFrontend) Serve()
+// Serve runs the web server.
+func (srv *WebFrontend) Serve() {
+	srv.log.Println("The web server is starting to accept requests now.")
+	http.Handle("/", srv.router)
+	srv.srv.ListenAndServe() // nolint: errcheck
+} // func (srv *WebFrontend) Serve()
 
-func (self *WebFrontend) GetDB() (*database.HostDB, error) {
-	var tmp = self.db_pool.Get()
+func (srv *WebFrontend) getDB() (*database.HostDB, error) {
+	var tmp = srv.dbPool.Get()
 
 	if tmp == nil {
 		return nil, nil
@@ -233,137 +174,135 @@ func (self *WebFrontend) GetDB() (*database.HostDB, error) {
 		return item, nil
 	default:
 		var msg string = fmt.Sprintf("Unexptected type came out of the HostDB pool: %T", tmp)
-		self.log.Println(msg)
+		srv.log.Println(msg)
 		return nil, errors.New(msg)
 	}
-} // func (self *WebFrontend) GetDB() (*HostDB, error)
+} // func (srv *WebFrontend) getDB() (*HostDB, error)
 
-func (self *WebFrontend) PutDB(db *database.HostDB) {
-	self.db_pool.Put(db)
-} // func (self *WebFrontend) PutDB(db *backend.HostDB)
+func (srv *WebFrontend) putDB(db *database.HostDB) {
+	srv.dbPool.Put(db)
+} // func (srv *WebFrontend) PutDB(db *backend.HostDB)
 
-func (self *WebFrontend) HandleIndex(w http.ResponseWriter, request *http.Request) {
+func (srv *WebFrontend) handleIndex(w http.ResponseWriter, request *http.Request) {
 	var db *database.HostDB
 	var tmpl *template.Template
 	var err error
 	var msg string
-	var index_data tmpl_data_index = tmpl_data_index{
+	var indexData tmplDataIndex = tmplDataIndex{
 		Title: "Guang Web Frontend",
 		Error: make([]string, 0),
 	}
 
 	if common.Debug {
-		self.log.Printf("Handling request for %s", request.RequestURI)
+		srv.log.Printf("Handling request for %s", request.RequestURI)
 	}
 
-	if db, err = self.GetDB(); err != nil {
+	if db, err = srv.getDB(); err != nil {
 		msg = fmt.Sprintf("Error getting database from pool: %s", err.Error())
-		self.log.Println(msg)
-		self.SendErrorMessage(w, msg)
+		srv.log.Println(msg)
+		srv.sendErrorMessage(w, msg)
 		return
-	} else {
-		defer self.PutDB(db)
-		if common.Debug {
-			self.log.Println("Got database from Pool")
-		}
 	}
 
-	if common.Debug {
-		self.log.Println("Getting generator count")
-	}
-	index_data.HostGenCnt = self.nexus.GetGeneratorCount()
-	if common.Debug {
-		self.log.Println("Getting Scanner count")
-	}
-	index_data.ScanCnt = self.nexus.GetScannerCount()
-	if common.Debug {
-		self.log.Println("Getting XFR count")
-	}
-	index_data.XFRCnt = self.nexus.GetXFRCount()
+	defer srv.putDB(db)
+	// if common.Debug {
+	// 	srv.log.Println("Got database from Pool")
+	// }
 
 	if common.Debug {
-		self.log.Println("Getting host count from database.")
+		srv.log.Println("Getting generator count")
 	}
-	if index_data.HostCnt, err = db.HostGetCount(); err != nil {
+	indexData.HostGenCnt = srv.nexus.GetGeneratorCount()
+	if common.Debug {
+		srv.log.Println("Getting Scanner count")
+	}
+	indexData.ScanCnt = srv.nexus.GetScannerCount()
+	if common.Debug {
+		srv.log.Println("Getting XFR count")
+	}
+	indexData.XFRCnt = srv.nexus.GetXFRCount()
+
+	if common.Debug {
+		srv.log.Println("Getting host count from database.")
+	}
+	if indexData.HostCnt, err = db.HostGetCount(); err != nil {
 		msg = fmt.Sprintf("Error getting number of hosts: %s", err.Error())
-		self.log.Println(msg)
-		self.SendErrorMessage(w, msg)
+		srv.log.Println(msg)
+		srv.sendErrorMessage(w, msg)
 		return
-	} else if index_data.PortReplyCnt, err = db.PortGetReplyCount(); err != nil {
+	} else if indexData.PortReplyCnt, err = db.PortGetReplyCount(); err != nil {
 		msg = fmt.Sprintf("Error getting number of scanned ports: %s", err.Error())
-		self.log.Println(msg)
-		self.SendErrorMessage(w, msg)
+		srv.log.Println(msg)
+		srv.sendErrorMessage(w, msg)
 		return
 	}
 
 	if common.Debug {
-		self.log.Println("Looking up template")
+		srv.log.Println("Looking up template")
 	}
-	if tmpl = self.tmpl.Lookup("index"); tmpl == nil {
+	if tmpl = srv.tmpl.Lookup("index"); tmpl == nil {
 		msg = "Template 'index' was not found!"
-		self.log.Println(msg)
-		self.SendErrorMessage(w, msg)
+		srv.log.Println(msg)
+		srv.sendErrorMessage(w, msg)
 	} else {
 		w.WriteHeader(200)
-		if err = tmpl.Execute(w, index_data); err != nil {
+		if err = tmpl.Execute(w, indexData); err != nil {
 			msg = fmt.Sprintf("Error rendering template or sending output to client: %s",
 				err.Error())
-			self.log.Println(msg)
+			srv.log.Println(msg)
 		} else if common.Debug {
-			self.log.Println("We sure showed THAT client a nice index!")
+			srv.log.Println("We sure showed THAT client a nice index!")
 		}
 	}
-} // func (self *WebFrontend) HandleIndex(w http.ResponseWriter, request *http.Request)
+} // func (srv *WebFrontend) HandleIndex(w http.ResponseWriter, request *http.Request)
 
-func (self *WebFrontend) HandleByPort(w http.ResponseWriter, request *http.Request) {
+func (srv *WebFrontend) handleByPort(w http.ResponseWriter, request *http.Request) {
 	var err error
 	var msg string
 	var db *database.HostDB
-	var tmpl_data tmpl_data_by_port
-	var db_res []data.ScanResult
+	var tmplData tmplDataByPort
+	var dbRes []data.ScanResult
 	var tmpl *template.Template
 
-	_ = "breakpoint"
-
 	if common.Debug {
-		self.log.Printf("Handling request for %s\n", request.RequestURI)
-	}
-	if db, err = self.GetDB(); err != nil {
-		msg = fmt.Sprintf("Error getting database from pool: %s", err.Error())
-		self.log.Println(msg)
-		self.SendErrorMessage(w, msg)
-		return
-	} else {
-		defer self.PutDB(db)
+		srv.log.Printf("Handling request for %s\n", request.RequestURI)
 	}
 
-	if db_res, err = db.PortGetOpen(); err != nil {
-		msg = fmt.Sprintf("Error getting list of open ports: %s", err.Error())
-		self.log.Println(msg)
-		self.SendErrorMessage(w, msg)
+	if db, err = srv.getDB(); err != nil {
+		msg = fmt.Sprintf("Error getting database from pool: %s", err.Error())
+		srv.log.Println(msg)
+		srv.sendErrorMessage(w, msg)
 		return
-	} else if tmpl = self.tmpl.Lookup("by_port"); tmpl == nil {
+	}
+
+	defer srv.putDB(db)
+
+	if dbRes, err = db.PortGetOpen(); err != nil {
+		msg = fmt.Sprintf("Error getting list of open ports: %s", err.Error())
+		srv.log.Println(msg)
+		srv.sendErrorMessage(w, msg)
+		return
+	} else if tmpl = srv.tmpl.Lookup("by_port"); tmpl == nil {
 		msg = "Template 'by_port' was not found!"
-		self.log.Println(msg)
-		self.SendErrorMessage(w, msg)
+		srv.log.Println(msg)
+		srv.sendErrorMessage(w, msg)
 		return
 	} else {
-		tmpl_data = tmpl_data_by_port{
+		tmplData = tmplDataByPort{
 			Debug: common.Debug,
 			Title: "Hosts by Port",
 			Error: make([]string, 0),
-			Count: len(db_res),
-			//Ports: make(map[uint16]report_info_port),
+			Count: len(dbRes),
 		}
 
 		if common.Debug {
-			self.log.Println("*Trying* to sort results.")
+			srv.log.Println("*Trying* to sort results.")
 		}
-		results := make(map[uint16]report_info_port)
+		results := make(map[uint16]reportInfoPort)
 
-		for _, res := range db_res {
+		for _, res := range dbRes {
 			if _, found := results[res.Port]; !found {
-				results[res.Port] = report_info_port{
+				results[res.Port] = reportInfoPort{
 					Port:    res.Port,
 					Results: make([]data.ScanResult, 0),
 				}
@@ -374,38 +313,38 @@ func (self *WebFrontend) HandleByPort(w http.ResponseWriter, request *http.Reque
 			results[res.Port] = info
 		}
 
-		tmpl_data.Ports = results
+		tmplData.Ports = results
 
 		w.WriteHeader(200)
-		if err = tmpl.Execute(w, tmpl_data); err != nil {
+		if err = tmpl.Execute(w, tmplData); err != nil {
 			msg = fmt.Sprintf("Error rendering template or sending output to client: %s",
 				err.Error())
-			self.log.Println(msg)
+			srv.log.Println(msg)
 		}
 	}
-} // func (self *WebFrontend) HandleByPort(w http.ResponseWriter, request *http.Request)
+} // func (srv *WebFrontend) HandleByPort(w http.ResponseWriter, request *http.Request)
 
-func (self *WebFrontend) HandleByHost(w http.ResponseWriter, request *http.Request) {
+func (srv *WebFrontend) handleByHost(w http.ResponseWriter, request *http.Request) {
 	var err error
 	var msg string
 	var db *database.HostDB
-	var data tmpl_data_by_host
+	var data tmplDataByHost
 	var tmpl *template.Template
 
 	if common.Debug {
-		self.log.Printf("Handling request for %s\n", request.RequestURI)
+		srv.log.Printf("Handling request for %s\n", request.RequestURI)
 	}
 
-	if db, err = self.GetDB(); err != nil {
+	if db, err = srv.getDB(); err != nil {
 		msg = fmt.Sprintf("Error getting database from Pool: %s", err.Error())
-		self.log.Println(msg)
-		self.SendErrorMessage(w, msg)
+		srv.log.Println(msg)
+		srv.sendErrorMessage(w, msg)
 		return
-	} else {
-		defer self.PutDB(db)
 	}
 
-	data = tmpl_data_by_host{
+	defer srv.putDB(db)
+
+	data = tmplDataByHost{
 		Title: "Scanned Ports by Host",
 		Debug: common.Debug,
 		Error: make([]string, 0),
@@ -415,15 +354,15 @@ func (self *WebFrontend) HandleByHost(w http.ResponseWriter, request *http.Reque
 	if data.Hosts, err = db.HostGetByHostReport(); err != nil {
 		msg = fmt.Sprintf("Error getting open ports grouped by Host: %s",
 			err.Error())
-		self.log.Println(msg)
-		self.SendErrorMessage(w, msg)
+		srv.log.Println(msg)
+		srv.sendErrorMessage(w, msg)
 		return
 	}
 
-	if tmpl = self.tmpl.Lookup("by_host"); tmpl == nil {
+	if tmpl = srv.tmpl.Lookup("by_host"); tmpl == nil {
 		msg = "Error: Template 'by_host' was not found!"
-		self.log.Println(msg)
-		self.SendErrorMessage(w, msg)
+		srv.log.Println(msg)
+		srv.sendErrorMessage(w, msg)
 		return
 	}
 
@@ -431,14 +370,14 @@ func (self *WebFrontend) HandleByHost(w http.ResponseWriter, request *http.Reque
 	if err = tmpl.Execute(w, data); err != nil {
 		msg = fmt.Sprintf("Error rendering template or sending output to client: %s",
 			err.Error())
-		self.log.Println(msg)
+		srv.log.Println(msg)
 	}
-} // func (self *WebFrontend) HandleByHost(w http.ResponseWriter, request *http.Request)
+} // func (srv *WebFrontend) HandleByHost(w http.ResponseWriter, request *http.Request)
 
 // Deliver a static file to the client.
 // Currently, all templates and static "files" are actually compiled into the binary,
 // so there is no actual "file" access involved.
-func (self *WebFrontend) HandleStaticFile(w http.ResponseWriter, request *http.Request) {
+func (srv *WebFrontend) handleStaticFile(w http.ResponseWriter, request *http.Request) {
 	vars := mux.Vars(request)
 	filename := vars["file"]
 
@@ -448,25 +387,25 @@ func (self *WebFrontend) HandleStaticFile(w http.ResponseWriter, request *http.R
 	//         Da ich ja nur ein paar Dateien habe, habe ich mir eine map gebaut,
 	//         die den Dateinamensendungen den jeweiligen MIME-Typen zuweist.
 	//         Nicht besonders elegant, aber funktioniert.
-	var mime_type string
+	var mimeType string
 	// vars := mux.Vars(request)
 	// filename := vars["file"]
 
 	if common.Debug {
-		self.log.Printf("Delivering static file %s to client\n", filename)
+		srv.log.Printf("Delivering static file %s to client\n", filename)
 	}
 
 	var match []string
 
-	if match = self.suffix_re.FindStringSubmatch(filename); match == nil {
-		mime_type = "text/plain"
-	} else if mime, ok := self.mime_map[match[1]]; ok {
-		mime_type = mime
+	if match = srv.suffixRe.FindStringSubmatch(filename); match == nil {
+		mimeType = "text/plain"
+	} else if mime, ok := srv.mimeTypes[match[1]]; ok {
+		mimeType = mime
 	} else {
-		self.log.Printf("Kein MIME-Type gefunden fÃ¼r %s\n", filename)
+		srv.log.Printf("Kein MIME-Type gefunden fÃ¼r %s\n", filename)
 	}
 
-	w.Header().Set("Content-Type", mime_type)
+	w.Header().Set("Content-Type", mimeType)
 
 	var (
 		err  error
@@ -476,7 +415,7 @@ func (self *WebFrontend) HandleStaticFile(w http.ResponseWriter, request *http.R
 
 	if fh, err = assets.Open(path); err != nil {
 		msg := fmt.Sprintf("ERROR - cannot find file %s", path)
-		self.SendErrorMessage(w, msg)
+		srv.sendErrorMessage(w, msg)
 		return
 	}
 
@@ -484,11 +423,11 @@ func (self *WebFrontend) HandleStaticFile(w http.ResponseWriter, request *http.R
 
 	w.WriteHeader(200)
 	io.Copy(w, fh) // nolint: errcheck
-} // func (self *WebFrontend) HandleStaticFile(w http.ResponseWriter, request *http.Request)
+} // func (srv *WebFrontend) HandleStaticFile(w http.ResponseWriter, request *http.Request)
 
 // Meant for cases where something went wrong, render and deliver a simple HTML
 // document with an error message to the client.
-func (self *WebFrontend) SendErrorMessage(w http.ResponseWriter, msg string) {
+func (srv *WebFrontend) sendErrorMessage(w http.ResponseWriter, msg string) {
 	const html = `
 <!DOCTYPE html>
 <html>
@@ -506,65 +445,9 @@ func (self *WebFrontend) SendErrorMessage(w http.ResponseWriter, msg string) {
 </html>
 `
 
-	self.log.Println(msg)
+	srv.log.Println(msg)
 
 	output := fmt.Sprintf(html, msg)
 	w.WriteHeader(500)
 	_, _ = w.Write([]byte(output))
-} // func (self *WebFrontend) SendErrorMessage(msg string, w http.ResponseWriter)
-
-////////////////////////////////////
-// Functions for use in templates //
-////////////////////////////////////
-
-type generator struct {
-	values []string
-	index  int
-	f      func(s []string, i int) string
-}
-
-func (seq *generator) Next() string {
-	s := seq.f(seq.values, seq.index)
-	seq.index++
-	return s
-} // func (seq *generator) Next() string
-
-func sequenceGen(values []string, i int) string {
-	if i >= len(values) {
-		return values[len(values)-1]
-	} else {
-		return values[i]
-	}
-} // func sequenceGen(values []string, i int) string
-
-func cycleGen(values []string, i int) string {
-	return values[i%len(values)]
-} // func cycleGen(values []string, i int) string
-
-func sequenceFunc(values ...string) (*generator, error) {
-	if len(values) == 0 {
-		return nil, errors.New("Sequence must have at least one element")
-	} else {
-		return &generator{
-			values: values,
-			index:  0,
-			f:      sequenceGen,
-		}, nil
-	}
-} // func sequenceFunc(values ...string) (*generator, error)
-
-func cycleFunc(values ...string) (*generator, error) {
-	if len(values) == 0 {
-		return nil, errors.New("Cycle must have at least one element")
-	} else {
-		return &generator{
-			values: values,
-			index:  0,
-			f:      cycleGen,
-		}, nil
-	}
-} // func cycleFunc(values ...string) (*generator, error)
-
-func nowFunc() string {
-	return time.Now().Format("2006-01-02 15:04:05")
-} // func nowFunc() string
+} // func (srv *WebFrontend) SendErrorMessage(msg string, w http.ResponseWriter)

@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 20. 08. 2016 by Benjamin Walkenhorst
 // (c) 2016 Benjamin Walkenhorst
-// Time-stamp: <2022-10-30 19:59:17 krylon>
+// Time-stamp: <2022-10-31 19:02:38 krylon>
 //
 // Sonntag, 21. 08. 2016, 18:25
 // Looking up locations seems to work reasonably well. Whether or not the
@@ -27,11 +27,11 @@ import (
 )
 
 const (
-	GEOIP_CITY_PATH    = "GeoLite2-City.mmdb"
-	GEOIP_COUNTRY_PATH = "GeoLite2-Country.mmdb"
+	geoIPCityPath    = "GeoLite2-City.mmdb"
+	geoIPCountryPath = "GeoLite2-Country.mmdb"
 )
 
-var os_pattern_map map[string][]*regexp.Regexp = map[string][]*regexp.Regexp{
+var osPatterns map[string][]*regexp.Regexp = map[string][]*regexp.Regexp{
 	"Windows": []*regexp.Regexp{
 		regexp.MustCompile("Microsoft"),
 		regexp.MustCompile("Windows"),
@@ -67,25 +67,27 @@ var os_pattern_map map[string][]*regexp.Regexp = map[string][]*regexp.Regexp{
 	},
 }
 
+// MetaEngine processes metadata on Hosts.
 type MetaEngine struct {
 	geodb *geoip2.Reader
 	log   *log.Logger
 } // type MetaEngine struct
 
+// OpenMetaEngine creates a new MetaEngine.
 func OpenMetaEngine(path string) (*MetaEngine, error) {
 	var eng *MetaEngine = new(MetaEngine)
 	var err error
-	var msg, db_path string
+	var msg, dbPath string
 
 	if ex, _ := krylib.Fexists(path); ex {
-		db_path = path
+		dbPath = path
 	} else {
-		db_path = filepath.Join(common.BaseDir, GEOIP_CITY_PATH)
+		dbPath = filepath.Join(common.BaseDir, geoIPCityPath)
 	}
 
 	if eng.log, err = common.GetLogger("MetaEngine"); err != nil {
 		return nil, err
-	} else if eng.geodb, err = geoip2.Open(db_path); err != nil {
+	} else if eng.geodb, err = geoip2.Open(dbPath); err != nil {
 		msg = fmt.Sprintf("Error opening GeoIP database: %s", err.Error())
 		eng.log.Println(msg)
 		return nil, errors.New(msg)
@@ -98,55 +100,61 @@ func OpenMetaEngine(path string) (*MetaEngine, error) {
 	}
 } // func OpenMetaEngine() (*MetaEngine, error)
 
-func (self *MetaEngine) Close() {
-	self.geodb.Close()
-} // func (self *MetaEngine) Close()
+// Close closes the MetaEngine.
+func (m *MetaEngine) Close() {
+	m.geodb.Close()
+} // func (m *MetaEngine) Close()
 
-func (self *MetaEngine) LookupCountry(h *data.Host) (string, error) {
+// LookupCountry attempts to determine what county a Host is located in.
+func (m *MetaEngine) LookupCountry(h *data.Host) (string, error) {
 	var err error
 	var country *geoip2.Country
 
-	if country, err = self.geodb.Country(h.Address); err != nil {
+	if country, err = m.geodb.Country(h.Address); err != nil {
 		return "", err
-	} else {
-		return country.Country.Names["de"], nil
 	}
-} // func (self *MetaEngine) LookupCountry(h *Host) (string, error)
 
-func (self *MetaEngine) LookupCity(h *data.Host) (string, error) {
+	return country.Country.Names["de"], nil
+} // func (m *MetaEngine) LookupCountry(h *Host) (string, error)
+
+// LookupCity attempts to determine what city a Host is located in.
+func (m *MetaEngine) LookupCity(h *data.Host) (string, error) {
 	var err error
 	var city *geoip2.City
 
-	if city, err = self.geodb.City(h.Address); err != nil {
+	if city, err = m.geodb.City(h.Address); err != nil {
 		return "", err
-	} else {
-		return city.City.Names["de"], nil
 	}
-} // func (self *MetaEngine) LookupCity(h *Host) (string, error)
 
-func (self *MetaEngine) LookupOperatingSystem(h *data.HostWithPorts) string {
-	var result_map map[string]int = make(map[string]int)
+	return city.City.Names["de"], nil
+} // func (m *MetaEngine) LookupCity(h *Host) (string, error)
+
+// LookupOperatingSystem attempts to determine what OS a Host is running.
+func (m *MetaEngine) LookupOperatingSystem(h *data.HostWithPorts) string {
+	var results map[string]int = make(map[string]int)
 
 PORT:
 	for _, port := range h.Ports {
-		for os, patterns := range os_pattern_map {
+		for os, patterns := range osPatterns {
 			for _, pattern := range patterns {
 				if port.Reply != nil && pattern.MatchString(*port.Reply) {
-					result_map[os]++
+					results[os]++
 					continue PORT
 				}
 			}
 		}
 	}
 
-	var os string = "Unknown"
-	var hit_cnt int
+	var (
+		os     = "Unknown"
+		hitCnt int
+	)
 
-	for system, cnt := range result_map {
-		if cnt > hit_cnt {
+	for system, cnt := range results {
+		if cnt > hitCnt {
 			os = system
 		}
 	}
 
 	return os
-} // func (self *MetaEngine) LookupOperatingSystem(h *HostWithPorts) string
+} // func (m *MetaEngine) LookupOperatingSystem(h *HostWithPorts) string
