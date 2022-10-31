@@ -1,10 +1,21 @@
 {{define "footer"}}
 {{/* -*- mode: web; coding: utf-8; -*- */}}
-{{/* Time-stamp: <2016-02-06 17:15:05 krylon> */}}
+{{/* Time-stamp: <2022-10-31 22:18:00 krylon> */}}
 <hr />
-
 <div class="footer">
-  Guang Web Frontend<br />
-  &copy; 2016 <a href="mailto:krylon@gmx.net">Benjamin Walkenhorst</a>
+  <footer>
+    {{ app_string }}<br />
+    &copy; 2016
+    {{ if (gt current_year "2016") }}
+    - {{ current_year }}
+    {{ end }}
+    <a href="mailto:benjamin.walkenhorst@posteo.de">
+      Benjamin Walkenhorst
+    </a>
+    {{ if .Debug }}
+    <br />
+    Template rendered on <time>{{ now }}</time>
+    {{ end }}
+  </footer>
 </div>
 {{end}}

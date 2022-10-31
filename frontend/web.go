@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 06. 02. 2016 by Benjamin Walkenhorst
 // (c) 2016 Benjamin Walkenhorst
-// Time-stamp: <2022-10-31 19:46:20 krylon>
+// Time-stamp: <2022-10-31 22:44:31 krylon>
 
 package frontend
 
@@ -84,13 +84,7 @@ func CreateFrontend(addr string, port uint16, nexus *backend.Nexus) (*WebFronten
 	frontend.router.HandleFunc("/by_host", frontend.handleByHost)
 	frontend.router.HandleFunc("/static/{file}", frontend.handleStaticFile)
 
-	fmap := template.FuncMap{
-		"sequence": sequenceFunc,
-		"cycle":    cycleFunc,
-		"now":      nowFunc,
-	}
-
-	frontend.tmpl = template.New("").Funcs(fmap)
+	frontend.tmpl = template.New("").Funcs(funcmap)
 
 	const tmplFolder = "html/templates"
 	var templates []fs.DirEntry

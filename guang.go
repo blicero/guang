@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 27. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2022-10-30 21:38:31 krylon>
+// Time-stamp: <2022-10-31 22:42:23 krylon>
 
 package main
 
@@ -45,7 +45,7 @@ func main() {
 	fmt.Printf("%s %s - built on %s\n",
 		common.AppName,
 		common.Version,
-		common.BuildStamp.Format(common.TimeFormat))
+		common.BuildStamp.Format(common.TimestampFormat))
 
 	flag.IntVar(&gen_cnt, "generators", gen_cnt, "Number of Host Generators to run")
 	flag.IntVar(&xfr_worker_cnt, "xfr", xfr_worker_cnt, "Number of XFR workers to run")

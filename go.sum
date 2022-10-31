@@ -11,10 +11,14 @@ github.com/hashicorp/logutils v1.0.0 h1:dLEQVugN8vlakKOUE3ihGLTZJRB4j+M2cdTm/ORI
 github.com/hashicorp/logutils v1.0.0/go.mod h1:QIAnNjmIWmVIIkWDTG1z5v++HQmx9WQRO+LraFDTW64=
 github.com/mattn/go-sqlite3 v1.14.16 h1:yOQRA0RpS5PFz/oikGwBEqvAWhWg5ufRz4ETLjwpU1Y=
 github.com/mattn/go-sqlite3 v1.14.16/go.mod h1:2eHXhiwb8IkHr+BDWZGa96P6+rkvnG63S2DGjv9HUNg=
+github.com/mborgerson/GoTruncateHtml v0.0.0-20150507032438-125d9154cd1e h1:x+Fx2zSKFLklebiQ+/UDT1BydkU1gOVU3IQ+jUNa4S4=
+github.com/mborgerson/GoTruncateHtml v0.0.0-20150507032438-125d9154cd1e/go.mod h1:mvQlKR3ZWvuE0jR2MLDzvlP2FLVkM+yqkg/+f0kWGPY=
 github.com/miekg/dns v1.1.50 h1:DQUfb9uc6smULcREF09Uc+/Gd46YWqJd5DbpPE9xkcA=
 github.com/miekg/dns v1.1.50/go.mod h1:e3IlAVfNqAllflbibAZEWOXOQ+Ynzk/dDozDxY7XnME=
 github.com/muesli/cache2go v0.0.0-20221011235721-518229cd8021 h1:31Y+Yu373ymebRdJN1cWLLooHH8xAr0MhKTEJGV/87g=
 github.com/muesli/cache2go v0.0.0-20221011235721-518229cd8021/go.mod h1:WERUkUryfUWlrHnFSO/BEUZ+7Ns8aZy7iVOGewxKzcc=
+github.com/odeke-em/go-uuid v0.0.0-20151221120446-b211d769a9aa h1:XEhClAZN5U0GUTFRgRdPNgAKO4mP++S+zbqXH+Pr9nU=
+github.com/odeke-em/go-uuid v0.0.0-20151221120446-b211d769a9aa/go.mod h1:omlfAqAAOXYL53jxw8wG+G2xH7NqbkJPlDeGP9YpP6g=
 github.com/oschwald/geoip2-golang v1.8.0 h1:KfjYB8ojCEn/QLqsDU0AzrJ3R5Qa9vFlx3z6SLNcKTs=
 github.com/oschwald/geoip2-golang v1.8.0/go.mod h1:R7bRvYjOeaoenAp9sKRS8GX5bJWcZ0laWO5+DauEktw=
 github.com/oschwald/maxminddb-golang v1.10.0 h1:Xp1u0ZhqkSuopaKmk1WwHtjF0H9Hd9181uj2MQ5Vndg=
