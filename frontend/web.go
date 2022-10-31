@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 06. 02. 2016 by Benjamin Walkenhorst
 // (c) 2016 Benjamin Walkenhorst
-// Time-stamp: <2022-10-31 18:55:36 krylon>
+// Time-stamp: <2022-10-31 19:46:20 krylon>
 
 package frontend
 
@@ -32,6 +32,8 @@ import (
 //go:embed html
 var assets embed.FS
 
+const dbPoolSize = 2
+
 // WebFrontend wraps the web server and its associated state.
 type WebFrontend struct {
 	Port      uint16
@@ -45,7 +47,7 @@ type WebFrontend struct {
 	suffixRe  *regexp.Regexp
 	mimeTypes map[string]string
 	hostCache *cache2go.CacheTable // nolint: unused
-	dbPool    sync.Pool
+	dbPool    *database.Pool
 	nexus     *backend.Nexus
 }
 
@@ -130,26 +132,11 @@ func CreateFrontend(addr string, port uint16, nexus *backend.Nexus) (*WebFronten
 	frontend.srv.ErrorLog = frontend.log
 	frontend.srv.Handler = frontend.router
 
-	frontend.dbPool = sync.Pool{
-		New: func() interface{} {
-			var err error
-			var db *database.HostDB
-			if db, err = database.OpenDB(common.DbPath); err != nil {
-				return nil
-			}
-
-			return db
-		},
-	}
-
-	for i := 0; i < 3; i++ {
-		var db *database.HostDB
-		if db, err = database.OpenDB(common.DbPath); err != nil {
-			frontend.log.Printf("Error opening database: %s\n", err.Error())
-			return nil, err
-		}
-
-		frontend.dbPool.Put(db)
+	if frontend.dbPool, err = database.NewPool(dbPoolSize); err != nil {
+		msg = fmt.Sprintf("Failed to create database connection pool: %s",
+			err.Error())
+		frontend.log.Printf("[ERROR] %s\n", msg)
+		return nil, errors.New(msg)
 	}
 
 	return frontend, nil
@@ -161,27 +148,6 @@ func (srv *WebFrontend) Serve() {
 	http.Handle("/", srv.router)
 	srv.srv.ListenAndServe() // nolint: errcheck
 } // func (srv *WebFrontend) Serve()
-
-func (srv *WebFrontend) getDB() (*database.HostDB, error) {
-	var tmp = srv.dbPool.Get()
-
-	if tmp == nil {
-		return nil, nil
-	}
-
-	switch item := tmp.(type) {
-	case *database.HostDB:
-		return item, nil
-	default:
-		var msg string = fmt.Sprintf("Unexptected type came out of the HostDB pool: %T", tmp)
-		srv.log.Println(msg)
-		return nil, errors.New(msg)
-	}
-} // func (srv *WebFrontend) getDB() (*HostDB, error)
-
-func (srv *WebFrontend) putDB(db *database.HostDB) {
-	srv.dbPool.Put(db)
-} // func (srv *WebFrontend) PutDB(db *backend.HostDB)
 
 func (srv *WebFrontend) handleIndex(w http.ResponseWriter, request *http.Request) {
 	var db *database.HostDB
@@ -197,17 +163,8 @@ func (srv *WebFrontend) handleIndex(w http.ResponseWriter, request *http.Request
 		srv.log.Printf("Handling request for %s", request.RequestURI)
 	}
 
-	if db, err = srv.getDB(); err != nil {
-		msg = fmt.Sprintf("Error getting database from pool: %s", err.Error())
-		srv.log.Println(msg)
-		srv.sendErrorMessage(w, msg)
-		return
-	}
-
-	defer srv.putDB(db)
-	// if common.Debug {
-	// 	srv.log.Println("Got database from Pool")
-	// }
+	db = srv.dbPool.Get()
+	defer srv.dbPool.Put(db)
 
 	if common.Debug {
 		srv.log.Println("Getting generator count")
@@ -268,14 +225,8 @@ func (srv *WebFrontend) handleByPort(w http.ResponseWriter, request *http.Reques
 		srv.log.Printf("Handling request for %s\n", request.RequestURI)
 	}
 
-	if db, err = srv.getDB(); err != nil {
-		msg = fmt.Sprintf("Error getting database from pool: %s", err.Error())
-		srv.log.Println(msg)
-		srv.sendErrorMessage(w, msg)
-		return
-	}
-
-	defer srv.putDB(db)
+	db = srv.dbPool.Get()
+	defer srv.dbPool.Put(db)
 
 	if dbRes, err = db.PortGetOpen(); err != nil {
 		msg = fmt.Sprintf("Error getting list of open ports: %s", err.Error())
@@ -335,14 +286,8 @@ func (srv *WebFrontend) handleByHost(w http.ResponseWriter, request *http.Reques
 		srv.log.Printf("Handling request for %s\n", request.RequestURI)
 	}
 
-	if db, err = srv.getDB(); err != nil {
-		msg = fmt.Sprintf("Error getting database from Pool: %s", err.Error())
-		srv.log.Println(msg)
-		srv.sendErrorMessage(w, msg)
-		return
-	}
-
-	defer srv.putDB(db)
+	db = srv.dbPool.Get()
+	defer srv.dbPool.Put(db)
 
 	data = tmplDataByHost{
 		Title: "Scanned Ports by Host",
