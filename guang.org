@@ -1,5 +1,5 @@
 # -*- mode: org; fill-column: 78; -*-
-# Time-stamp: <2022-10-31 19:49:32 krylon>
+# Time-stamp: <2022-10-31 19:59:30 krylon>
 #
 #+TAGS: optimize(o) refactor(r) bug(b) feature(f) architecture(a)
 #+TAGS: web(w) database(d) javascript(j)
@@ -11,7 +11,7 @@
 * Guang
 ** Clocktable
    #+BEGIN: clocktable :scope file :maxlevel 20
-   #+CAPTION: Clock summary at [2022-10-31 Mo 19:49]
+   #+CAPTION: Clock summary at [2022-10-31 Mo 19:59]
    | Headline                    | Time    |       |       |      |      |
    |-----------------------------+---------+-------+-------+------+------|
    | *Total time*                | *15:38* |       |       |      |      |
@@ -21,11 +21,11 @@
    | \_    Database              |         |       |  0:58 |      |      |
    | \_      SQLite              |         |       |       | 0:44 |      |
    | \_      Pool                |         |       |       | 0:11 |      |
-   | \_      Major cleanup [1/2] |         |       |       | 0:03 |      |
+   | \_      Major cleanup [2/2] |         |       |       | 0:03 |      |
    | \_        Package           |         |       |       |      | 0:03 |
    | \_    Web interface         |         |       |  4:15 |      |      |
    | \_      Embed               |         |       |       | 4:15 |      |
-   | \_    Refactoring [1/2]     |         |       | 10:25 |      |      |
+   | \_    Refactoring [2/2]     |         |       | 10:25 |      |      |
    | \_      Packages            |         |       |       | 7:38 |      |
    | \_      Linter              |         |       |       | 2:47 |      |
    #+END:
@@ -48,7 +48,7 @@
      CLOCK: [2022-10-31 Mo 19:38]--[2022-10-31 Mo 19:49] =>  0:11
      :END:
      The web frontend still uses a sync.Pool. Let's fix that.
-**** Major cleanup [1/2]                                           :refactor:
+**** Major cleanup [2/2]                                           :refactor:
      I need to fix/refactor a couple of things.
 ***** DONE Package
       CLOSED: [2022-10-27 Do 19:45]
@@ -56,7 +56,8 @@
       CLOCK: [2022-10-27 Do 19:41]--[2022-10-27 Do 19:44] =>  0:03
       :END:
       I need to move the database into a separate package
-***** TODO Names
+***** DONE Names
+      CLOSED: [2022-10-31 Mo 19:57]
       I need to change a bunch of names.
 *** Web interface
 **** DONE Embed
@@ -67,8 +68,9 @@
      I use a Perl script to roll all of my assets into a Go variable, which
      became unneccessary when Go gained go:embed. Still need to make a few
      adjustments to make that step, then I can remove the script.
-*** Refactoring [1/2]                                              :refactor:
-**** TODO Packages
+*** Refactoring [2/2]                                              :refactor:
+**** DONE Packages
+     CLOSED: [2022-10-31 Mo 19:57]
      :LOGBOOK:
      CLOCK: [2022-10-29 Sa 18:01]--[2022-10-30 So 00:33] =>  6:32
      CLOCK: [2022-10-27 Do 19:45]--[2022-10-27 Do 20:51] =>  1:06
