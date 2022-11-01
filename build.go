@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 01. 02. 2021 by Benjamin Walkenhorst
 // (c) 2021 Benjamin Walkenhorst
-// Time-stamp: <2022-10-30 21:17:14 krylon>
+// Time-stamp: <2022-11-01 04:16:55 krylon>
 
 // +build ignore
 
@@ -389,10 +389,10 @@ func worker(n int, op string, pkgq <-chan string, errq chan<- error, wg *sync.Wa
 		if op == "lint" {
 			cmd = exec.Command(lintCommand, pkg)
 		} else if op == "test" {
-			if runtime.GOOS == "openbsd" || runtime.GOARCH == "386" || runtime.GOARCH == "arm" {
-				cmd = exec.Command("go", op, "-v", "-timeout", "30m", pkg)
-			} else {
+			if raceDetect && ((runtime.GOOS == "linux" || runtime.GOOS == "freebsd") && runtime.GOARCH == "amd64") {
 				cmd = exec.Command("go", op, "-v", "-timeout", "30m", "-race", pkg)
+			} else {
+				cmd = exec.Command("go", op, "-v", "-timeout", "30m", pkg)
 			}
 		} else {
 			cmd = exec.Command("go", op, "-v", pkg)
