@@ -1,5 +1,5 @@
 # -*- mode: org; fill-column: 78; -*-
-# Time-stamp: <2022-10-31 19:59:30 krylon>
+# Time-stamp: <2022-11-01 02:52:12 krylon>
 #
 #+TAGS: optimize(o) refactor(r) bug(b) feature(f) architecture(a)
 #+TAGS: web(w) database(d) javascript(j)
@@ -11,23 +11,25 @@
 * Guang
 ** Clocktable
    #+BEGIN: clocktable :scope file :maxlevel 20
-   #+CAPTION: Clock summary at [2022-10-31 Mo 19:59]
-   | Headline                    | Time    |       |       |      |      |
-   |-----------------------------+---------+-------+-------+------+------|
-   | *Total time*                | *15:38* |       |       |      |      |
-   |-----------------------------+---------+-------+-------+------+------|
-   | Guang                       | 15:38   |       |       |      |      |
-   | \_  Components              |         | 15:38 |       |      |      |
-   | \_    Database              |         |       |  0:58 |      |      |
-   | \_      SQLite              |         |       |       | 0:44 |      |
-   | \_      Pool                |         |       |       | 0:11 |      |
-   | \_      Major cleanup [2/2] |         |       |       | 0:03 |      |
-   | \_        Package           |         |       |       |      | 0:03 |
-   | \_    Web interface         |         |       |  4:15 |      |      |
-   | \_      Embed               |         |       |       | 4:15 |      |
-   | \_    Refactoring [2/2]     |         |       | 10:25 |      |      |
-   | \_      Packages            |         |       |       | 7:38 |      |
-   | \_      Linter              |         |       |       | 2:47 |      |
+   #+CAPTION: Clock summary at [2022-11-01 Di 02:52]
+   | Headline                        | Time    |       |       |      |      |
+   |---------------------------------+---------+-------+-------+------+------|
+   | *Total time*                    | *19:46* |       |       |      |      |
+   |---------------------------------+---------+-------+-------+------+------|
+   | Guang                           | 19:46   |       |       |      |      |
+   | \_  Components                  |         | 19:46 |       |      |      |
+   | \_    Database                  |         |       |  0:58 |      |      |
+   | \_      SQLite                  |         |       |       | 0:44 |      |
+   | \_      Pool                    |         |       |       | 0:11 |      |
+   | \_      Major cleanup [2/2]     |         |       |       | 0:03 |      |
+   | \_        Package               |         |       |       |      | 0:03 |
+   | \_    Web interface [1/2]       |         |       |  8:23 |      |      |
+   | \_      Major overhaul [0/1]    |         |       |       | 4:08 |      |
+   | \_        Bootstrap and friends |         |       |       |      | 4:08 |
+   | \_      Embed                   |         |       |       | 4:15 |      |
+   | \_    Refactoring [2/2]         |         |       | 10:25 |      |      |
+   | \_      Packages                |         |       |       | 7:38 |      |
+   | \_      Linter                  |         |       |       | 2:47 |      |
    #+END:
 ** Diary
 *** [2022-10-26 Mi 15:56]
@@ -59,7 +61,22 @@
 ***** DONE Names
       CLOSED: [2022-10-31 Mo 19:57]
       I need to change a bunch of names.
-*** Web interface
+*** Web interface [1/2]
+    :PROPERTIES:
+    :COOKIE_DATA: todo recursive
+    :VISIBILITY: children
+    :END:
+**** Major overhaul [0/1]
+     The web interface is in dire need of a makeover. I'm not a very
+     proficient web developer, but I was even less so when I first wrote this
+     baby, and it is ... embarrassing to look at.
+***** TODO Bootstrap and friends
+      :LOGBOOK:
+      CLOCK: [2022-10-31 Mo 22:57]--[2022-11-01 Di 02:51] =>  3:54
+      CLOCK: [2022-10-31 Mo 20:44]--[2022-10-31 Mo 20:58] =>  0:14
+      :END:
+      In my more recent Go projects, I had some kind of scaffolding for the
+      web interface that I would like to import.
 **** DONE Embed
      CLOSED: [2022-10-26 Mi 20:42]
      :LOGBOOK:
