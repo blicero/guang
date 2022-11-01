@@ -1,20 +1,9 @@
 {{define "index"}}
 {{/* -*- mode: web; coding: utf-8; -*- */}}
-{{/* Time-stamp: <2022-10-31 20:55:37 krylon> */}}
+{{/* Time-stamp: <2022-11-01 00:53:44 krylon> */}}
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>{{.Title}}</title>
-    <link rel="stylesheet" type="text/css" href="/static/style.css" />
-    <script type="text/javascript" src="/static/jquery-3.6.1.min.js">
-    </script>
-
-    <script type="text/javascript" src="/static/underscore.js">
-    </script>
-
-    <script type="text/javascript" src="/static/interact.js">
-    </script>
-  </head>
+  {{ template "head" . }}
 
   <body>
     <h1>{{.Title}}</h1>
@@ -32,6 +21,8 @@
     </div>
     <hr />
     {{end}}
+
+    {{ template "beacon" . }}
 
     {{ template "menu" }}
 

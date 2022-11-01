@@ -1,0 +1,23 @@
+{{ define "head" }}
+{{/* Created on 31. 10. 2022 */}}
+{{/* Time-stamp: <2022-11-01 00:56:17 krylon> */}}
+<head>
+  <title>{{ app_string }}@{{ hostname  }} - {{ .Title }}</title>
+  
+  <meta charset="utf-8">
+
+  <script src="/static/jquery-3.6.1.min.js"></script>
+  <script src="/static/bootstrap.bundle.min.js"></script>
+  {{/*
+  <script src="/static/underscore.js"></script>
+  <script src="/static/sha512.min.js"></script>
+  */}}
+  <script src="/static/settings.js"></script>
+  <script src="/static/interact.js"></script>
+
+  <link rel="stylesheet" type="text/css" href="/static/style.css" />
+  <link rel="stylesheet" type="text/css" href="/static/bootstrap.min.css" />
+  <link rel="stylesheet" href="/static/bootstrap-reboot.min.css" />
+  <link rel="stylesheet" href="/static/bootstrap-utilities.min.css" />
+</head>
+{{ end }}

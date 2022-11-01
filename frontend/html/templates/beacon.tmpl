@@ -1,0 +1,24 @@
+{{ define "beacon" }}
+{{/* Created on 01. 11. 2022 */}}
+{{/* Time-stamp: <2022-11-01 02:18:46 krylon> */}}
+{{ if .Debug }}
+<script>
+ $(document).ready(function() {
+   if (!settings.beacon.active) {
+     $("#beacon")[0].innerHTML = "Beacon is suspended"
+   }
+
+   beaconLoop()
+ });
+</script>
+
+<div class="debug container-fluid">
+  {{ app_string }} running on {{ hostname }} (built on {{ app_build }})<br />
+  Template rendered on <time>{{ now }}</time><br />
+  {{/* Classifier was last trained on {{ fmt_time .TrainStamp }}<br /> */}}
+  <div id="beacon" class="debug" onclick="beaconToggle();">
+    Beacon
+  </div>
+</div>
+{{ end }}
+{{ end }}

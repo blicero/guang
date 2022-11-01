@@ -1,4 +1,4 @@
-/* Time-stamp: <2016-02-13 14:21:06 krylon> */
+/* Time-stamp: <2022-11-01 00:28:31 krylon> */
 
 body { font-family: Arial,Helvetica; }
 
@@ -21,35 +21,8 @@ h2 { text-decoration: underline;
 *.even { background-color: #bdbdbd; }
 *.odd  { background-color: #ffffff; }
 
-div.menu { font-size: 9pt; 
+/* div.menu { font-size: 9pt;  */
            
-         }
-
-tr.guessed_boring {
-    background-color: #EAA5A5; 
-}
-
-tr.rated_boring {
-    background-color: #D66B6B;
-}
-
-tr.guessed_interesting {
-    background-color: #CBE7CC;
-}
-
-tr.rated_interesting {
-    background-color: #5ED762;
-}
-
-tr.unrated {
-    background-color: #cdcdcd;
-}
-
-/* table.horizontal { */
-/*     th { text-align: right; } */
-/*     td { text-align: left; } */
-/* } */
-
 table.horizontal * th { text-align: right; }
 table.horizontal * td { text-align: left; }
 

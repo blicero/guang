@@ -1,11 +1,27 @@
 {{define "menu"}}
 {{/* -*- mode: web; coding: utf-8; -*- */}}
-{{/* Time-stamp: <2016-02-13 20:27:48 krylon> */}}
+{{/* Time-stamp: <2022-11-01 00:31:27 krylon> */}}
 
-<div class="menu">
-  <a href="/">Main</a>
-  <a href="/by_port">Scanned Ports</a>
-  <a href="/by_host">Scanned Hosts</a>
-</div>
+<nav class="navbar navbar-expand-lg navbar-light" style="background-color: #D4D4D4">
+  <div class="container-fluid">
+    <div class="collapse navbar-collapse" id="navbarNavDropdown">
+      <ul class="navbar-nav">
+
+        <li class="nav-item">
+          <a class="nav-link" href="/">Main</a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link" href="/by_port">Scanned Ports</a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link" href="/by_host">Scanned Hosts</a>
+        </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
 <hr />
 {{end}}

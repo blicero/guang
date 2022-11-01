@@ -1,43 +1,9 @@
 {{define "by_port"}}
 {{/* -*- mode: web; coding: utf-8; -*- */}}
-{{/* Time-stamp: <2022-10-31 20:55:59 krylon> */}}
+{{/* Time-stamp: <2022-11-01 01:04:59 krylon> */}}
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>{{.Title}}</title>
-    <link rel="stylesheet" type="text/css" href="/static/style.css" />
-    <script type="text/javascript" src="/static/jquery-3.6.1.min.js">
-    </script>
-
-    <script type="text/javascript" src="/static/underscore.js">
-    </script>
-
-    <script type="text/javascript" src="/static/interact.js">
-    </script>
-
-    <script type="text/javascript">
-     function toggle_port_visibility(n, do_hide) {
-       var row_class = "port_" + n;
-       $(".port_" + n).each(function(x) { 
-         if (do_hide) {
-           $(this).hide();
-         }
-         else {
-           $(this).show();
-         }
-       });
-     }
-
-     
-    </script>
-
-    <script type="text/javascript">
-     $(document).ready(function() {
-       $('.filter_checkbox').each(function () {
-         $(this).checked = false;
-       });
-    </script>
-  </head>
+  {{ template "head" . }}
 
   <body>
     <h1>{{.Title}}</h1>
@@ -55,7 +21,31 @@
     </div>
     {{end}}
 
+    {{ template "beacon" . }}
+
     {{ template "menu" }}
+
+    <script type="text/javascript">
+     function toggle_port_visibility(n, do_hide) {
+       const row_class = ".port_" + n;
+       $(row_class).each(function(x) { 
+         if (do_hide) {
+           $(this).hide()
+         }
+         else {
+           $(this).show()
+         }
+       });
+     }
+    </script>
+
+    <script type="text/javascript">
+     $(document).ready(() => {
+       $('.filter_checkbox').each(() => {
+         $(this).checked = false
+       })
+     })
+    </script>
 
     <table class="horizontal">
       <caption>Table of contents</caption>
@@ -84,7 +74,7 @@
       </tbody>
     </table>
 
-    <table border="1" id="content">
+    <table border="1" id="content" class="table">
       <caption>Open Ports</caption>
       <thead>
       <tr>
@@ -102,8 +92,8 @@
       {{range .Results}}
       <tr class="{{$row_class.Next}} port_{{.Port}}">
         <td>{{.HostName}} ({{.Address}})</td>
-        <td>{{.Stamp}}</td>
-        <td><pre>{{.ReplyString}}</pre></td>
+        <td>{{fmt_time .Stamp}}</td>
+        <td><pre>{{html .ReplyString}}</pre></td>
       </tr>
       {{end}}
       {{end}}

@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 06. 02. 2016 by Benjamin Walkenhorst
 // (c) 2016 Benjamin Walkenhorst
-// Time-stamp: <2022-10-31 22:44:31 krylon>
+// Time-stamp: <2022-11-01 00:48:06 krylon>
 
 package frontend
 
@@ -19,6 +19,7 @@ import (
 	"regexp"
 	"sync"
 	"text/template"
+	"time"
 
 	"github.com/blicero/guang/backend"
 	"github.com/blicero/guang/common"
@@ -82,6 +83,7 @@ func CreateFrontend(addr string, port uint16, nexus *backend.Nexus) (*WebFronten
 	frontend.router.HandleFunc("/{pagename:(?:index|start|main)?$}", frontend.handleIndex)
 	frontend.router.HandleFunc("/by_port", frontend.handleByPort)
 	frontend.router.HandleFunc("/by_host", frontend.handleByHost)
+	frontend.router.HandleFunc("/ajax/beacon", frontend.handleBeacon)
 	frontend.router.HandleFunc("/static/{file}", frontend.handleStaticFile)
 
 	frontend.tmpl = template.New("").Funcs(funcmap)
@@ -313,22 +315,26 @@ func (srv *WebFrontend) handleByHost(w http.ResponseWriter, request *http.Reques
 	}
 } // func (srv *WebFrontend) HandleByHost(w http.ResponseWriter, request *http.Request)
 
-// Deliver a static file to the client.
-// Currently, all templates and static "files" are actually compiled into the binary,
-// so there is no actual "file" access involved.
+func (srv *WebFrontend) handleBeacon(w http.ResponseWriter, r *http.Request) {
+	var timestamp = time.Now().Format(common.TimestampFormat)
+	const appName = common.AppName + " " + common.Version
+	var jstr = fmt.Sprintf(`{ "Status": true, "Message": "%s", "Timestamp": "%s", "Hostname": "%s" }`,
+		appName,
+		timestamp,
+		hostname())
+	var response = []byte(jstr)
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Cache-Control", "no-store, max-age=0")
+	w.WriteHeader(200)
+	w.Write(response) // nolint: errcheck,gosec
+} // func (srv *WebFrontend) handleBeacon(w http.ResponseWriter, r *http.Request)
+
 func (srv *WebFrontend) handleStaticFile(w http.ResponseWriter, request *http.Request) {
 	vars := mux.Vars(request)
 	filename := vars["file"]
 
-	// FIXED - Ich muss irgendwie noch den MIME-Typen ermitteln und mit
-	//         übergeben, sonst nimmt der Browser zumindest den Stylesheet nicht an.
-	//
-	//         Da ich ja nur ein paar Dateien habe, habe ich mir eine map gebaut,
-	//         die den Dateinamensendungen den jeweiligen MIME-Typen zuweist.
-	//         Nicht besonders elegant, aber funktioniert.
 	var mimeType string
-	// vars := mux.Vars(request)
-	// filename := vars["file"]
 
 	if common.Debug {
 		srv.log.Printf("Delivering static file %s to client\n", filename)
