@@ -1,6 +1,6 @@
 {{define "by_port"}}
 {{/* -*- mode: web; coding: utf-8; -*- */}}
-{{/* Time-stamp: <2022-11-01 01:04:59 krylon> */}}
+{{/* Time-stamp: <2022-11-01 18:47:14 krylon> */}}
 <!DOCTYPE html>
 <html>
   {{ template "head" . }}
@@ -60,10 +60,18 @@
       <tbody>
         {{range .Ports}}
         <tr>
-          <td><a href="#port_{{.Port}}">{{.Port}}</a></td>
-          <td>{{len .Results}}</td>
           <td>
-            <input type="checkbox" onchange="toggle_port_visibility({{.Port}}, this.checked)" id="checkbox_{{.Port}}" class="filter_checkbox">
+            <a href="#port_{{.Port}}">{{.Port}}</a>
+          </td>
+          <td>
+            {{len .Results}}
+          </td>
+          <td>
+            <div class="form-check form-switch filter_checkbox">
+              <input class="form-check-input" type="checkbox"
+                     onchange="toggle_port_visibility({{.Port}}, this.checked)" id="checkbox_{{.Port}}"
+                     />
+            </div>
           </td>
         </tr>
         {{end}}
