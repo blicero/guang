@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 23. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2022-10-31 22:42:52 krylon>
+// Time-stamp: <2022-11-01 18:48:24 krylon>
 
 // Package common provides constants, variables and functions used
 // throughout the application.
@@ -34,7 +34,7 @@ import (
 // TimestampFormat is the format string used to render datetime values.
 const (
 	Debug                    = true
-	Version                  = "0.1.0"
+	Version                  = "0.2.0"
 	AppName                  = "Guang"
 	TimestampFormat          = "2006-01-02 15:04:05"
 	TimestampFormatMinute    = "2006-01-02 15:04"
