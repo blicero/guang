@@ -1,6 +1,6 @@
 {{ define "head" }}
 {{/* Created on 31. 10. 2022 */}}
-{{/* Time-stamp: <2022-11-01 00:56:17 krylon> */}}
+{{/* Time-stamp: <2022-11-01 20:35:57 krylon> */}}
 <head>
   <title>{{ app_string }}@{{ hostname  }} - {{ .Title }}</title>
   
@@ -19,5 +19,11 @@
   <link rel="stylesheet" type="text/css" href="/static/bootstrap.min.css" />
   <link rel="stylesheet" href="/static/bootstrap-reboot.min.css" />
   <link rel="stylesheet" href="/static/bootstrap-utilities.min.css" />
+
+  <script>
+   $(document).ready(() => {
+     initSettings()
+   })
+  </script>
 </head>
 {{ end }}
