@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 01. 02. 2021 by Benjamin Walkenhorst
 // (c) 2021 Benjamin Walkenhorst
-// Time-stamp: <2022-11-01 04:16:55 krylon>
+// Time-stamp: <2022-11-01 18:49:28 krylon>
 
 // +build ignore
 
@@ -108,9 +108,12 @@ var cleanPatterns = []*regexp.Regexp{
 	regexp.MustCompile("_gen.go$"),
 }
 
-var errDone = errors.New("Done")
-var verbose bool
-var dbg *log.Logger
+var (
+	errDone    = errors.New("Done")
+	verbose    bool
+	dbg        *log.Logger
+	raceDetect bool
+)
 
 // nolint: gocyclo
 func main() {
@@ -120,7 +123,6 @@ func main() {
 		before, after, t1, t2 time.Time
 		minLevel              = "DEBUG"
 		stepsRaw              string
-		raceDetect            bool
 		steps                 map[string]bool
 		stepList              []string
 		lvlString             = make([]string, len(logLevels))
