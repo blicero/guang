@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 23. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2022-10-30 21:06:09 krylon>
+// Time-stamp: <2022-11-02 23:43:09 krylon>
 
 // Package data provides data types used throughout the application.
 package data
@@ -15,7 +15,7 @@ import (
 	"github.com/blicero/krylib"
 )
 
-//go:generate -type=HostSource
+//go:generate stringer -type=HostSource
 
 // HostSource indicates how a Host ended up in the database.
 type HostSource int
@@ -126,7 +126,7 @@ func (res *ScanResult) ReplyString() string {
 	return *res.Reply
 } // func (self *ScanResult) ReplyString() string
 
-// go:generate stringer -type=ControlMessage
+//go:generate stringer -type=ControlMessage
 
 // ControlMessage is a symbolic constant signifying a message send to
 // the Nexus.
@@ -137,4 +137,6 @@ type ControlMessage int
 const (
 	CtlMsgStop ControlMessage = iota
 	CtlMsgStatus
+	CtlMsgSpawn
+	CtlMsgBye
 )

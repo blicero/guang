@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 23. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2022-11-01 18:48:24 krylon>
+// Time-stamp: <2022-11-03 00:07:43 krylon>
 
 // Package common provides constants, variables and functions used
 // throughout the application.
@@ -32,6 +32,8 @@ import (
 // Version is the version number to display.
 // AppName is the name of the application.
 // TimestampFormat is the format string used to render datetime values.
+// HeartBeat is the interval for worker goroutines to wake up and check
+// their status.
 const (
 	Debug                    = true
 	Version                  = "0.2.0"
@@ -40,6 +42,7 @@ const (
 	TimestampFormatMinute    = "2006-01-02 15:04"
 	TimestampFormatSubSecond = "2006-01-02 15:04:05.0000 MST"
 	TimestampFormatDate      = "2006-01-02"
+	HeartBeat                = time.Millisecond * 500
 )
 
 // LogLevels are the names of the log levels supported by the logger.

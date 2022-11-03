@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 28. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2022-10-31 19:20:47 krylon>
+// Time-stamp: <2022-11-03 00:07:55 krylon>
 //
 // Freitag, 08. 01. 2016, 22:10
 // I kinda feel like I'm not going to write a comprehensive test suite for this
@@ -48,7 +48,29 @@ var newline = regexp.MustCompile("[\r\n]+$")
 // wir noch Ärger bekommen.
 
 // Ports is the list of ports (TCP and UDP) we consider interesting.
-var Ports []uint16 = []uint16{21, 22, 23, 25, 53, 79, 80, 110, 143, 161, 631 /* 1024, 4444, */, 2525, 5353, 5800, 5900, 8000, 8080, 8081}
+var Ports []uint16 = []uint16{
+	21,
+	22,
+	23,
+	25,
+	53,
+	79,
+	80,
+	110,
+	143,
+	161,
+	443,
+	631,
+	1024,
+	4444,
+	2525,
+	5353,
+	5800,
+	5900,
+	8000,
+	8080,
+	8081,
+}
 
 func getScanPort(host *data.Host, ports map[uint16]bool) uint16 {
 	if host.Source == data.HostSourceMx {
@@ -96,10 +118,11 @@ type Scanner struct {
 	resultQ   chan data.ScanResult
 	controlQ  chan data.ControlMessage
 	hostQ     chan data.HostWithPorts
+	mmQ       chan data.ControlMessage
 	log       *log.Logger
 	workerCnt int
 	started   int
-	lock      sync.Mutex
+	lock      sync.RWMutex
 	running   bool
 }
 
@@ -113,6 +136,7 @@ func CreateScanner(workerCnt int) (*Scanner, error) {
 		scanQ:     make(chan data.ScanRequest, workerCnt),
 		resultQ:   make(chan data.ScanResult, workerCnt*2),
 		hostQ:     make(chan data.HostWithPorts, workerCnt*2),
+		mmQ:       make(chan data.ControlMessage),
 		workerCnt: workerCnt,
 		started:   0,
 	}
@@ -139,8 +163,9 @@ func (sc *Scanner) Start() {
 		sc.lock.Unlock()
 		return
 	}
+
 	sc.running = true
-	sc.lock.Unlock()
+	defer sc.lock.Unlock()
 
 	if common.Debug {
 		sc.log.Printf("Scanner starting Host feeder and %d workers.\n", sc.workerCnt)
@@ -165,9 +190,9 @@ func (sc *Scanner) Stop() {
 func (sc *Scanner) IsRunning() bool {
 	var isRunning bool
 
-	sc.lock.Lock()
+	sc.lock.RLock()
 	isRunning = sc.running
-	sc.lock.Unlock()
+	sc.lock.RUnlock()
 
 	return isRunning
 } // func (sc *Scanner) IsRunning() bool
@@ -328,9 +353,16 @@ GET_HOST:
 } // func (sc *Scanner) getRandomScanRequest() ScanRequest
 
 func (sc *Scanner) worker(id int) {
-	var request data.ScanRequest
-	var result *data.ScanResult
-	var err error
+	var (
+		err     error
+		request data.ScanRequest
+		result  *data.ScanResult
+		pulse   *time.Ticker
+		msg     data.ControlMessage
+	)
+
+	pulse = time.NewTicker(common.HeartBeat)
+	defer pulse.Stop()
 
 	defer func() {
 		sc.lock.Lock()
@@ -339,42 +371,53 @@ func (sc *Scanner) worker(id int) {
 	}()
 
 	if common.Debug {
-		sc.log.Printf("Scanner worker %d starting up...\n",
+		sc.log.Printf("[DEBUG] Scanner worker %d starting up...\n",
 			id)
 	}
 
 	for sc.IsRunning() {
-		request = <-sc.scanQ
-
-		//result, err = scan_host(&request.Host, request.Port)
-		if result, err = scanHost(&request.Host, request.Port); err != nil {
-			msg := fmt.Sprintf("Error scanning %s:%d -- %s",
-				request.Host.Name,
-				request.Port,
-				err.Error())
-			sc.log.Println(msg)
-			result = new(data.ScanResult)
-			result.Host = request.Host
-			result.Port = request.Port
-			result.Reply = nil
-			result.Err = errors.New(msg)
-
-			sc.resultQ <- *result
-		} else {
-			if common.Debug {
-				var reply string
-				if result.Reply == nil {
-					reply = "(NULL)"
-				} else {
-					reply = *result.Reply
-				}
-				sc.log.Printf("Successfully scanned %s:%d - %s\n",
+		select {
+		case msg = <-sc.mmQ:
+			switch msg {
+			case data.CtlMsgStop:
+				return
+			default:
+				sc.log.Printf("[DEBUG] Scanner Worker #%d ignoring message %s\n",
+					id,
+					msg)
+			}
+		case request = <-sc.scanQ:
+			if result, err = scanHost(&request.Host, request.Port); err != nil {
+				msg := fmt.Sprintf("Error scanning %s:%d -- %s",
 					request.Host.Name,
 					request.Port,
-					reply)
-			}
+					err.Error())
+				sc.log.Println(msg)
+				result = new(data.ScanResult)
+				result.Host = request.Host
+				result.Port = request.Port
+				result.Reply = nil
+				result.Err = errors.New(msg)
 
-			sc.resultQ <- *result
+				sc.resultQ <- *result
+			} else {
+				if common.Debug {
+					var reply string
+					if result.Reply == nil {
+						reply = "(NULL)"
+					} else {
+						reply = *result.Reply
+					}
+					sc.log.Printf("Successfully scanned %s:%d - %s\n",
+						request.Host.Name,
+						request.Port,
+						reply)
+				}
+
+				sc.resultQ <- *result
+			}
+		case <-pulse.C:
+			continue
 		}
 	}
 } // func (sc *Scanner) worker(id int)
@@ -389,7 +432,7 @@ func scanHost(host *data.Host, port uint16) (*data.ScanResult, error) {
 		return scanDNS(host, port)
 	case 79:
 		return scanFinger(host, port)
-	case 80, 8000, 8080, 8081, 3128, 3689, 631, 1024, 4444, 5800:
+	case 80, 443, 8000, 8080, 8081, 3128, 3689, 631, 1024, 4444, 5800:
 		return scanHTTP(host, port)
 	case 161:
 		return scanSNMP(host, port)
@@ -539,9 +582,11 @@ func scanHTTP(host *data.Host, port uint16) (*data.ScanResult, error) {
 	if common.Debug {
 		fmt.Printf("Scanning %s:%d using HTTP scanner.\n", host.Address.String(), port)
 	}
+
 	transport := &http.Transport{
 		Proxy: nil,
 	}
+
 	client := new(http.Client)
 	client.Transport = transport
 	client.Timeout = 15 * time.Second
