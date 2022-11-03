@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 06. 02. 2016 by Benjamin Walkenhorst
 // (c) 2016 Benjamin Walkenhorst
-// Time-stamp: <2022-11-01 00:48:06 krylon>
+// Time-stamp: <2022-11-03 01:40:46 krylon>
 
 package frontend
 
@@ -37,19 +37,20 @@ const dbPoolSize = 2
 
 // WebFrontend wraps the web server and its associated state.
 type WebFrontend struct {
-	Port      uint16
-	Hostname  string
-	srv       http.Server
-	router    *mux.Router
-	log       *log.Logger
-	tmpl      *template.Template
-	isRunning bool         // nolint: unused
-	lock      sync.RWMutex // nolint: unused
-	suffixRe  *regexp.Regexp
-	mimeTypes map[string]string
-	hostCache *cache2go.CacheTable // nolint: unused
-	dbPool    *database.Pool
-	nexus     *backend.Nexus
+	Port        uint16
+	Hostname    string
+	srv         http.Server
+	router      *mux.Router
+	log         *log.Logger
+	tmpl        *template.Template
+	isRunning   bool         // nolint: unused
+	lock        sync.RWMutex // nolint: unused
+	suffixRe    *regexp.Regexp
+	mimeTypes   map[string]string
+	hostCache   *cache2go.CacheTable // nolint: unused
+	dbPool      *database.Pool
+	nexus       *backend.Nexus
+	ckPortStamp time.Time
 }
 
 // CreateFrontend creates a new web frontend.
@@ -261,6 +262,7 @@ func (srv *WebFrontend) handleByPort(w http.ResponseWriter, request *http.Reques
 		}
 
 		tmplData.Ports = results
+		srv.updateCkPortstamp(time.Now())
 
 		w.WriteHeader(200)
 		if err = tmpl.Execute(w, tmplData); err != nil {
@@ -314,21 +316,6 @@ func (srv *WebFrontend) handleByHost(w http.ResponseWriter, request *http.Reques
 		srv.log.Println(msg)
 	}
 } // func (srv *WebFrontend) HandleByHost(w http.ResponseWriter, request *http.Request)
-
-func (srv *WebFrontend) handleBeacon(w http.ResponseWriter, r *http.Request) {
-	var timestamp = time.Now().Format(common.TimestampFormat)
-	const appName = common.AppName + " " + common.Version
-	var jstr = fmt.Sprintf(`{ "Status": true, "Message": "%s", "Timestamp": "%s", "Hostname": "%s" }`,
-		appName,
-		timestamp,
-		hostname())
-	var response = []byte(jstr)
-
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Cache-Control", "no-store, max-age=0")
-	w.WriteHeader(200)
-	w.Write(response) // nolint: errcheck,gosec
-} // func (srv *WebFrontend) handleBeacon(w http.ResponseWriter, r *http.Request)
 
 func (srv *WebFrontend) handleStaticFile(w http.ResponseWriter, request *http.Request) {
 	vars := mux.Vars(request)
