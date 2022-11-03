@@ -1,5 +1,5 @@
 # -*- mode: org; fill-column: 78; -*-
-# Time-stamp: <2022-11-01 02:52:12 krylon>
+# Time-stamp: <2022-11-03 03:55:05 krylon>
 #
 #+TAGS: optimize(o) refactor(r) bug(b) feature(f) architecture(a)
 #+TAGS: web(w) database(d) javascript(j)
@@ -11,25 +11,26 @@
 * Guang
 ** Clocktable
    #+BEGIN: clocktable :scope file :maxlevel 20
-   #+CAPTION: Clock summary at [2022-11-01 Di 02:52]
-   | Headline                        | Time    |       |       |      |      |
-   |---------------------------------+---------+-------+-------+------+------|
-   | *Total time*                    | *19:46* |       |       |      |      |
-   |---------------------------------+---------+-------+-------+------+------|
-   | Guang                           | 19:46   |       |       |      |      |
-   | \_  Components                  |         | 19:46 |       |      |      |
-   | \_    Database                  |         |       |  0:58 |      |      |
-   | \_      SQLite                  |         |       |       | 0:44 |      |
-   | \_      Pool                    |         |       |       | 0:11 |      |
-   | \_      Major cleanup [2/2]     |         |       |       | 0:03 |      |
-   | \_        Package               |         |       |       |      | 0:03 |
-   | \_    Web interface [1/2]       |         |       |  8:23 |      |      |
-   | \_      Major overhaul [0/1]    |         |       |       | 4:08 |      |
-   | \_        Bootstrap and friends |         |       |       |      | 4:08 |
-   | \_      Embed                   |         |       |       | 4:15 |      |
-   | \_    Refactoring [2/2]         |         |       | 10:25 |      |      |
-   | \_      Packages                |         |       |       | 7:38 |      |
-   | \_      Linter                  |         |       |       | 2:47 |      |
+   #+CAPTION: Clock summary at [2022-11-03 Do 03:54]
+   | Headline                        | Time      |         |       |       |      |
+   |---------------------------------+-----------+---------+-------+-------+------|
+   | *Total time*                    | *1d 3:44* |         |       |       |      |
+   |---------------------------------+-----------+---------+-------+-------+------|
+   | Guang                           | 1d 3:44   |         |       |       |      |
+   | \_  Components                  |           | 1d 3:44 |       |       |      |
+   | \_    Database                  |           |         |  0:58 |       |      |
+   | \_      SQLite                  |           |         |       |  0:44 |      |
+   | \_      Pool                    |           |         |       |  0:11 |      |
+   | \_      Major cleanup [2/2]     |           |         |       |  0:03 |      |
+   | \_        Package               |           |         |       |       | 0:03 |
+   | \_    Web interface [2/4]       |           |         | 16:21 |       |      |
+   | \_      Major overhaul [1/3]    |           |         |       | 12:06 |      |
+   | \_        Live updates          |           |         |       |       | 7:58 |
+   | \_        Bootstrap and friends |           |         |       |       | 4:08 |
+   | \_      Embed                   |           |         |       |  4:15 |      |
+   | \_    Refactoring [2/2]         |           |         | 10:25 |       |      |
+   | \_      Packages                |           |         |       |  7:38 |      |
+   | \_      Linter                  |           |         |       |  2:47 |      |
    #+END:
 ** Diary
 *** [2022-10-26 Mi 15:56]
@@ -61,16 +62,27 @@
 ***** DONE Names
       CLOSED: [2022-10-31 Mo 19:57]
       I need to change a bunch of names.
-*** Web interface [1/2]
+*** Web interface [2/4]
     :PROPERTIES:
     :COOKIE_DATA: todo recursive
     :VISIBILITY: children
     :END:
-**** Major overhaul [0/1]
+**** Major overhaul [1/3]
      The web interface is in dire need of a makeover. I'm not a very
      proficient web developer, but I was even less so when I first wrote this
      baby, and it is ... embarrassing to look at.
-***** TODO Bootstrap and friends
+***** TODO Live updates
+      :LOGBOOK:
+      CLOCK: [2022-11-02 Mi 19:56]--[2022-11-03 Do 03:54] =>  7:58
+      :END:
+      I want to update the web interface continually as the backend is running.
+***** TODO Knobs and Switches
+      I want to be able to basically micro-manage the backend from the web
+      interface. For starts, I want to spawn or discard worker goroutines for
+      the various components on the fly. I have done /a little/ preliminary
+      work for that, but it needs a whole lot of follow-through.
+***** DONE Bootstrap and friends
+      CLOSED: [2022-11-02 Mi 19:54]
       :LOGBOOK:
       CLOCK: [2022-10-31 Mo 22:57]--[2022-11-01 Di 02:51] =>  3:54
       CLOCK: [2022-10-31 Mo 20:44]--[2022-10-31 Mo 20:58] =>  0:14
