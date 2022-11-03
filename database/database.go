@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 23. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2022-10-30 21:09:26 krylon>
+// Time-stamp: <2022-11-03 00:59:00 krylon>
 //
 // Samstag, 20. 08. 2016, 21:27
 // Ich würde für Hosts gern a) anhand der Antworten, die ich erhalte, das
@@ -33,117 +33,15 @@ import (
 	"github.com/muesli/cache2go"
 )
 
-var openLock sync.Mutex
+var (
+	openLock sync.Mutex
+	retryPat *regexp.Regexp = regexp.MustCompile("(?i)(database is locked|busy)")
+)
 
-var initQueries []string = []string{
-	`
-CREATE TABLE host (id INTEGER PRIMARY KEY,
-                   addr TEXT UNIQUE NOT NULL,
-                   name TEXT NOT NULL,
-                   source INTEGER NOT NULL,
-                   add_stamp INTEGER NOT NULL)`,
-
-	`
-CREATE TABLE port (id INTEGER PRIMARY KEY,
-                   host_id INTEGER NOT NULL,
-                   port INTEGER NOT NULL,
-                   timestamp INTEGER NOT NULL,
-                   reply TEXT,
-                   UNIQUE (host_id, port),
-                   FOREIGN KEY (host_id) REFERENCES host (id))`,
-
-	`
-CREATE TABLE xfr (id INTEGER PRIMARY KEY,
-                  zone TEXT UNIQUE NOT NULL,
-                  start INTEGER NOT NULL,
-                  end INTEGER NOT NULL DEFAULT 0,
-                  status INTEGER NOT NULL DEFAULT 0)`,
-
-	"CREATE INDEX host_addr_idx ON host (addr)",
-	"CREATE INDEX host_name_idx ON host (name)",
-
-	"CREATE INDEX port_host_idx ON port (host_id)",
-	"CREATE INDEX port_port_idx ON port (port)",
-
-	"CREATE INDEX xfr_zone_idx ON xfr (zone)",
-	"CREATE INDEX xfr_status_idx ON xfr (status)",
-}
-
-var dbQueries map[query.ID]string = map[query.ID]string{
-	query.HostAdd: `
-INSERT INTO host (addr, name, source, add_stamp)
-          VALUES (   ?,    ?,      ?,         ?)
-`,
-	query.HostGetByID: "SELECT addr, name, source, add_stamp FROM host WHERE id = ?",
-
-	//STMT_HOST_GET_RANDOM: "SELECT id, addr, name, source, add_stamp FROM host WHERE RANDOM() > 8301034833169298432 LIMIT ?",
-	query.HostGetRandom: `
-SELECT id,
-       addr,
-       name,
-       source,
-       add_stamp
-FROM host
-LIMIT ?
-OFFSET ABS(RANDOM()) % MAX((SELECT COUNT(*) FROM host), 1)
-`,
-
-	query.HostGetCnt: "SELECT COUNT(id) FROM host",
-
-	query.HostExists: "SELECT COUNT(id) FROM host WHERE addr = ?",
-
-	query.HostPortByPort: `
-SELECT 
-  P.id,
-  P.host_id,
-  P.port,
-  P.timestamp,
-  P.reply
-  H.adddr,
-  H.name
-FROM port P
-INNER JOIN host H ON port.host_id = host.id
-WHERE port.reply IS NOT NULL
-`,
-
-	query.PortAdd: `
-INSERT INTO port (host_id, port, timestamp, reply)
-          VALUES (      ?,    ?,         ?,     ?)
-`,
-
-	query.PortGetByHost: "SELECT id, port, timestamp, reply FROM port WHERE host_id = ?",
-
-	query.XfrAdd:       "INSERT INTO xfr (zone, start, status) VALUES (?, ?, 0)",
-	query.XfrGetByZone: "SELECT id, start, end, status FROM xfr WHERE zone = ?",
-	query.XfrFinish:    "UPDATE xfr SET end = ?, status = ? WHERE id = ?",
-	query.XfrGetUnfinished: `
-SELECT id, 
-       zone, 
-       start, 
-       end, 
-       status
-FROM xfr
-WHERE status = 0
-`,
-	query.PortGetReplyCnt: "SELECT COUNT(id) FROM port WHERE reply IS NOT NULL",
-
-	query.PortGetOpen: `
-SELECT 
-  id, 
-  host_id, 
-  port, 
-  timestamp, 
-  reply
-FROM port
-WHERE reply IS NOT NULL
-ORDER BY port`,
-}
-
-var retryPat *regexp.Regexp = regexp.MustCompile("(?i)(database is locked|busy)")
-
-const retryDelay = 10 * time.Millisecond
-
-const cacheTimeout = time.Second * 1200
+const (
+	retryDelay   = 10 * time.Millisecond
+	cacheTimeout = time.Second * 1200
+)
 
 // HostDB is a wrapper around the database connection.
 type HostDB struct {
@@ -1091,6 +989,98 @@ EXEC_QUERY:
 
 	return result, nil
 } // func (db *HostDB) PortGetOpen() ([]ScanResult, error)
+
+func (db *HostDB) PortGetRecent(ref time.Time) ([]data.ScanResult, error) {
+	var (
+		msg       string
+		err       error
+		stmt      *sql.Stmt
+		rows      *sql.Rows
+		result    []data.ScanResult
+		hostCache map[krylib.ID]*data.Host
+	)
+
+GET_QUERY:
+	if stmt, err = db.getStatement(query.PortGetOpen); err != nil {
+		if db.worthARetry(err) {
+			time.Sleep(retryDelay)
+			goto GET_QUERY
+		} else {
+			msg = fmt.Sprintf("Error getting query STMT_PORT_GET_OPEN: %s", err.Error())
+			db.log.Println(msg)
+			return nil, errors.New(msg)
+		}
+	} else if db.tx != nil {
+		stmt = db.tx.Stmt(stmt)
+	}
+
+EXEC_QUERY:
+	if rows, err = stmt.Query(ref.Unix()); err != nil {
+		if db.worthARetry(err) {
+			time.Sleep(retryDelay)
+			goto EXEC_QUERY
+		} else {
+			msg = fmt.Sprintf("Error querying for open ports: %s",
+				err.Error())
+			db.log.Println(msg)
+			return nil, errors.New(msg)
+		}
+	} else {
+		defer rows.Close()
+	}
+
+	result = make([]data.ScanResult, 0)
+	hostCache = make(map[krylib.ID]*data.Host)
+
+	for rows.Next() {
+		var id, hostID, timestamp, port int64
+		var reply string
+
+	SCAN_ROW:
+		if err = rows.Scan(&id, &hostID, &port, &timestamp, &reply); err != nil {
+			if db.worthARetry(err) {
+				time.Sleep(retryDelay)
+				goto SCAN_ROW
+			} else {
+				msg = fmt.Sprintf("Error scanning result set: %s",
+					err.Error())
+				db.log.Println(msg)
+				return nil, errors.New(msg)
+			}
+		} else {
+			var host *data.Host // = new(Host)
+			var ok bool
+			if host, ok = hostCache[krylib.ID(hostID)]; !ok {
+				if host, err = db.HostGetByID(krylib.ID(hostID)); err != nil {
+					// CANTHAPPEN!!!
+					msg = fmt.Sprintf("CANTHAPPEN: Error looking up host for port: %s",
+						err.Error())
+					db.log.Println(msg)
+					continue
+				} else if host == nil {
+					// CANTHAPPEN!!!
+					db.log.Printf("CANTHAPPEN: Did not find host for port #%d (Host #%d)\n",
+						id, hostID)
+					continue
+				} else {
+					hostCache[krylib.ID(hostID)] = host
+				}
+			}
+
+			var res data.ScanResult = data.ScanResult{
+				Host:  *host,
+				Port:  uint16(port),
+				Reply: &reply,
+				Stamp: time.Unix(timestamp, 0),
+				Err:   nil,
+			}
+
+			result = append(result, res)
+		}
+	}
+
+	return result, nil
+} // func (db *HostDB) PortGetRecent() ([]ScanResult, error)
 
 // HostGetCount returns the number of Hosts in the database.
 func (db *HostDB) HostGetCount() (int64, error) {

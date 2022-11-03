@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 27. 10. 2022 by Benjamin Walkenhorst
 // (c) 2022 Benjamin Walkenhorst
-// Time-stamp: <2022-10-30 21:10:02 krylon>
+// Time-stamp: <2022-11-03 00:47:08 krylon>
 
 // Package query provides symbolic constants for the various
 // database queries/operations.
@@ -25,6 +25,7 @@ const (
 	PortGetByHost
 	PortGetReplyCnt
 	PortGetOpen
+	PortGetRecent
 	XfrAdd
 	XfrGetByZone
 	XfrFinish
