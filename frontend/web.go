@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 06. 02. 2016 by Benjamin Walkenhorst
 // (c) 2016 Benjamin Walkenhorst
-// Time-stamp: <2022-11-03 01:40:46 krylon>
+// Time-stamp: <2022-11-04 18:40:58 krylon>
 
 package frontend
 
@@ -33,7 +33,10 @@ import (
 //go:embed html
 var assets embed.FS
 
-const dbPoolSize = 2
+const (
+	dbPoolSize   = 2
+	cacheControl = "no-store, max-age=0"
+)
 
 // WebFrontend wraps the web server and its associated state.
 type WebFrontend struct {
@@ -84,8 +87,11 @@ func CreateFrontend(addr string, port uint16, nexus *backend.Nexus) (*WebFronten
 	frontend.router.HandleFunc("/{pagename:(?:index|start|main)?$}", frontend.handleIndex)
 	frontend.router.HandleFunc("/by_port", frontend.handleByPort)
 	frontend.router.HandleFunc("/by_host", frontend.handleByHost)
-	frontend.router.HandleFunc("/ajax/beacon", frontend.handleBeacon)
 	frontend.router.HandleFunc("/static/{file}", frontend.handleStaticFile)
+
+	// AJAX handlers
+	frontend.router.HandleFunc("/ajax/beacon", frontend.handleBeacon)
+	frontend.router.HandleFunc("/ajax/port_recent", frontend.handlePortsRecent)
 
 	frontend.tmpl = template.New("").Funcs(funcmap)
 
@@ -219,7 +225,7 @@ func (srv *WebFrontend) handleByPort(w http.ResponseWriter, request *http.Reques
 	var tmpl *template.Template
 
 	if common.Debug {
-		srv.log.Printf("Handling request for %s\n", request.RequestURI)
+		srv.log.Printf("[TRACE] Handling request for %s\n", request.RequestURI)
 	}
 
 	db = srv.dbPool.Get()

@@ -14,6 +14,7 @@ require (
 	github.com/muesli/cache2go v0.0.0-20221011235721-518229cd8021
 	github.com/odeke-em/go-uuid v0.0.0-20151221120446-b211d769a9aa
 	github.com/oschwald/geoip2-golang v1.8.0
+	github.com/pquerna/ffjson v0.0.0-20190930134022-aa0246cd15f7
 	github.com/tonnerre/golang-dns v0.0.0-20130925195549-c07f3c3cc475
 )
 
