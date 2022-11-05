@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 03. 11. 2022 by Benjamin Walkenhorst
 // (c) 2022 Benjamin Walkenhorst
-// Time-stamp: <2022-11-04 18:39:42 krylon>
+// Time-stamp: <2022-11-05 01:22:19 krylon>
 
 package frontend
 
@@ -69,18 +69,35 @@ func (srv *WebFrontend) handlePortsRecent(w http.ResponseWriter, r *http.Request
 		goto RESPOND
 	}
 
-	// ...
+	res.Results = make(map[uint16][]data.ScanResult, len(dbRes))
+
+	for _, r := range dbRes {
+		var (
+			ok bool
+		)
+
+		if _, ok = res.Results[r.Port]; !ok {
+			res.Results[r.Port] = make([]data.ScanResult, 0, 64)
+		}
+
+		res.Results[r.Port] = append(res.Results[r.Port], r)
+	}
+
+	res.Status = true
 
 RESPOND:
 	if outbuf, err = ffjson.Marshal(&res); err != nil {
-		res.Message = fmt.Sprintf("Error ")
+		res.Message = fmt.Sprintf("Error serializing Response to %s: %s",
+			r.RemoteAddr,
+			err.Error())
+		srv.log.Printf("[ERROR] %s\n", res.Message)
+	} else {
+		defer ffjson.Pool(outbuf)
 	}
-
-	defer ffjson.Pool(outbuf)
 
 	w.Header().Set("Content-Length", strconv.FormatInt(int64(len(outbuf)), 10))
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Cache-Control", cacheControl)
 	w.WriteHeader(200)
-	w.Write(outbuf)
+	w.Write(outbuf) // nolint: errcheck
 } // func (srv *WebFrontend) handlePortsRecent(w http.ResponseWriter, r *http.Request)

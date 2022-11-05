@@ -1,6 +1,6 @@
 {{define "by_port"}}
 {{/* -*- mode: web; coding: utf-8; -*- */}}
-{{/* Time-stamp: <2022-11-01 18:47:14 krylon> */}}
+{{/* Time-stamp: <2022-11-05 02:45:53 krylon> */}}
 <!DOCTYPE html>
 <html>
   {{ template "head" . }}
@@ -27,15 +27,12 @@
 
     <script type="text/javascript">
      function toggle_port_visibility(n, do_hide) {
-       const row_class = ".port_" + n;
-       $(row_class).each(function(x) { 
-         if (do_hide) {
-           $(this).hide()
-         }
-         else {
-           $(this).show()
-         }
-       });
+       const containerID = `#content_port_${n}`
+       if (do_hide) {
+         $(containerID).hide()
+       } else {
+         $(containerID).show()
+       }
      }
     </script>
 
@@ -47,13 +44,13 @@
      })
     </script>
 
-    <table class="horizontal">
+    <table class="horizontal caption-top">
       <caption>Table of contents</caption>
       <thead>
         <tr>
           <th>Port</th>
           <th>No. of hosts</th>
-          <th>Ausblenden?</th>
+          <th>Hide?</th>
         </tr>
       </thead>
 
@@ -82,31 +79,33 @@
       </tbody>
     </table>
 
-    <table border="1" id="content" class="table">
-      <caption>Open Ports</caption>
-      <thead>
-      <tr>
-        <th>Host</th>
-        <th>Stamp</th>
-        <th>Reply</th>
-      </tr>
-      </thead>
-      <tbody>
-      {{range .Ports}}
-      <tr class="port_{{.Port}}">
-        <td colspan="3"><a name="port_{{.Port}}"><h2>{{.Port}}</h2></a></td>
-      </tr>
-      {{$row_class := cycle "even" "odd"}}      
-      {{range .Results}}
-      <tr class="{{$row_class.Next}} port_{{.Port}}">
-        <td>{{.HostName}} ({{.Address}})</td>
-        <td>{{fmt_time .Stamp}}</td>
-        <td><pre>{{html .ReplyString}}</pre></td>
-      </tr>
-      {{end}}
-      {{end}}
-      </tbody>
-    </table>
+    {{ range .Ports }}
+    <div id="content_port_{{.Port}}">
+      <hr />
+
+      <table class="table caption-top">
+        <thead>
+          <caption>Port {{ .Port }}</caption>
+          <tr>
+            <th>Host</th>
+            <th>Stamp</th>
+            <th>Reply</th>
+          </tr>
+        </thead>
+
+        <tbody id="tbody{{.Port}}">
+          {{$row_class := cycle "even" "odd"}}
+          {{ range .Results }}
+          <tr class="{{$row_class.Next}} port_{{ .Port }}">
+            <td>{{.HostName}} ({{.Address}})</td>
+            <td>{{fmt_time .Stamp}}</td>
+            <td><pre>{{html .ReplyString}}</pre></td>
+          </tr>
+          {{ end }}
+        </tbody>
+      </table>
+    </div>
+    {{ end }}
 
     {{template "footer"}}
   </body>
