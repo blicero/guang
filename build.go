@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 01. 02. 2021 by Benjamin Walkenhorst
 // (c) 2021 Benjamin Walkenhorst
-// Time-stamp: <2022-11-01 18:49:28 krylon>
+// Time-stamp: <2022-11-04 21:27:45 krylon>
 
 // +build ignore
 
@@ -61,12 +61,14 @@ var candidates = map[string][]string{
 	"generate": []string{
 		"common",
 		"logdomain",
+		"data",
 		"database/query",
 		"xfr/xfrstatus",
 	},
 	"test": []string{
 		"backend",
 		"blacklist",
+		"data",
 		"database",
 		"frontend",
 		"generator",
