@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 03. 11. 2022 by Benjamin Walkenhorst
 // (c) 2022 Benjamin Walkenhorst
-// Time-stamp: <2022-11-05 01:22:19 krylon>
+// Time-stamp: <2022-11-07 20:02:07 krylon>
 
 package frontend
 
@@ -15,6 +15,7 @@ import (
 	"github.com/blicero/guang/common"
 	"github.com/blicero/guang/data"
 	"github.com/blicero/guang/database"
+	"github.com/gorilla/mux"
 	"github.com/pquerna/ffjson/ffjson"
 )
 
@@ -41,6 +42,8 @@ func (srv *WebFrontend) handleBeacon(w http.ResponseWriter, r *http.Request) {
 func (srv *WebFrontend) handlePortsRecent(w http.ResponseWriter, r *http.Request) {
 	var (
 		err     error
+		tstr    string
+		tstamp  int64
 		db      *database.HostDB
 		dbRes   []data.ScanResult
 		refTime time.Time
@@ -56,11 +59,24 @@ func (srv *WebFrontend) handlePortsRecent(w http.ResponseWriter, r *http.Request
 		srv.log.Printf("[TRACE] Handling request for %s\n", r.RequestURI)
 	}
 
+	args := mux.Vars(r)
+	tstr = args["stamp"]
+
+	if tstamp, err = strconv.ParseInt(tstr, 10, 64); err != nil {
+		res.Message = fmt.Sprintf("Could not parse timestamp %q: %s",
+			tstr,
+			err.Error())
+		srv.log.Printf("[ERROR] %s\n",
+			res.Message)
+		goto RESPOND
+	}
+
 	db = srv.dbPool.Get()
 	defer srv.dbPool.Put(db)
 
-	refTime = srv.getCkPortstamp()
-	srv.updateCkPortstamp(time.Now())
+	// refTime = srv.getCkPortstamp()
+	// srv.updateCkPortstamp(time.Now())
+	refTime = time.Unix(tstamp, 0)
 
 	if dbRes, err = db.PortGetRecent(refTime); err != nil {
 		srv.log.Printf("[ERROR] Failed to load recently scanned ports from database: %s\n",
@@ -81,6 +97,7 @@ func (srv *WebFrontend) handlePortsRecent(w http.ResponseWriter, r *http.Request
 		}
 
 		res.Results[r.Port] = append(res.Results[r.Port], r)
+		res.Count++
 	}
 
 	res.Status = true

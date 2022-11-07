@@ -1,4 +1,4 @@
-// Time-stamp: <2021-02-22 18:13:15 krylon>
+// Time-stamp: <2022-11-07 19:11:26 krylon>
 // -*- mode: javascript; coding: utf-8; -*-
 // Copyright 2020 Benjamin Walkenhorst <krylon@gmx.net>
 
@@ -8,6 +8,11 @@ var settings = {
     "beacon": {
         "active": false,
         "interval": 1000,
+    },
+
+    "update": {
+        "active": true,
+        "interval": 5000,
     },
 
     "messages": {
@@ -23,13 +28,20 @@ var settings = {
 };
 
 function initSettings() {
-    var item;
+    let item;
     
     settings.beacon.active =
         JSON.parse(localStorage.getItem("beacon.active")) ? true : false;
     item = JSON.parse(localStorage.getItem("beacon.interval"));
     if (Number.isInteger(item)) {
         settings.beacon.interval = item;
+    }
+
+    settings.update.active =
+        JSON.parse(localStorage.getItem("update.active")) ? true : false
+    item = JSON.parse(localStorage.getItem("update.interval"))
+    if (Number.isInteger(item)) {
+        settings.update.interval = item
     }
 
     settings.messages.queryEnabled =

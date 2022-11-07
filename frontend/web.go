@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 06. 02. 2016 by Benjamin Walkenhorst
 // (c) 2016 Benjamin Walkenhorst
-// Time-stamp: <2022-11-04 18:40:58 krylon>
+// Time-stamp: <2022-11-05 20:55:31 krylon>
 
 package frontend
 
@@ -91,7 +91,7 @@ func CreateFrontend(addr string, port uint16, nexus *backend.Nexus) (*WebFronten
 
 	// AJAX handlers
 	frontend.router.HandleFunc("/ajax/beacon", frontend.handleBeacon)
-	frontend.router.HandleFunc("/ajax/port_recent", frontend.handlePortsRecent)
+	frontend.router.HandleFunc("/ajax/port_recent/{stamp:(?:\\d+$)}", frontend.handlePortsRecent)
 
 	frontend.tmpl = template.New("").Funcs(funcmap)
 

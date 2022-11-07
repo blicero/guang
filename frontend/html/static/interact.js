@@ -1,4 +1,4 @@
-// Time-stamp: <2022-11-01 00:44:48 krylon>
+// Time-stamp: <2022-11-07 19:30:13 krylon>
 // -*- mode: javascript; coding: utf-8; -*-
 // Copyright 2015 Benjamin Walkenhorst <krylon@gmx.net>
 
@@ -17,6 +17,10 @@ function defined (x) {
 function fmtDateNumber (n) {
     return (n < 10 ? '0' : '') + n.toString()
 } // function fmtDateNumber(n)
+
+function timeStampUnix() {
+    return Math.floor((new Date()).valueOf() / 1000)
+} // function timeStampUnix()
 
 function timeStampString (t) {
     if ((typeof t) === 'string') {
