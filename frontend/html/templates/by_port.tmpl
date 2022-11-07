@@ -1,6 +1,6 @@
 {{define "by_port"}}
 {{/* -*- mode: web; coding: utf-8; -*- */}}
-{{/* Time-stamp: <2022-11-07 21:33:18 krylon> */}}
+{{/* Time-stamp: <2022-11-07 23:01:13 krylon> */}}
 <!DOCTYPE html>
 <html>
   {{ template "head" . }}
@@ -25,6 +25,8 @@
 
     {{ template "menu" }}
 
+    <script src="/static/update.js" />
+
     <script>
      function toggle_port_visibility(n, do_hide) {
        const containerID = `#content_port_${n}`
@@ -34,58 +36,6 @@
          $(containerID).show()
        }
      }
-
-     let updateStamp = timeStampUnix()
-
-     function update_results() {
-       try {
-         if (!settings.update.active) {
-           return
-         }
-         
-         // const timestamp = timeStampUnix()
-         const addr = `/ajax/port_recent/${updateStamp}`
-
-         const req = $.get(addr,
-                           {},
-                           (response) => {
-           if (response.Status) {
-             for (const [port, responses] of Object.entries(response.Results)) {
-               const tid = `#tbody_${port}`
-               const tbody = $(tid)[0]
-
-               for (const r of responses.values()) {
-                 console.log(r)
-                 
-                 const row = `<tr>
-                 <td>${r.Host.Name} (${r.Host.Address})</td>
-                 <td>${r.Stamp}</td>
-                 <td><pre>${r.Reply}</pre></td>
-                 </tr>`
-
-                 tbody.innerHTML += row
-               }
-             }
-
-             updateStamp = timeStampUnix()
-           }
-         },
-                           'json'
-                           ).fail((reply, status, text) => {
-           const msg = `Failed to load update: ${status} -- ${reply} -- ${text}`
-           console.log(msg)
-           alert(msg)
-         })
-
-       } finally {
-         window.setTimeout(update_results, settings.update.interval)
-       }
-     } // function update_results ()
-
-     function updateToggle () {
-       settings.update.active = !settings.update.active
-       saveSetting('update', 'active', settings.update.active)
-     } // function updateToggle ()
 
      $(document).ready(() => {
        $('.filter_checkbox').each(() => {
