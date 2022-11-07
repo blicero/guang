@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 23. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2022-11-03 00:59:00 krylon>
+// Time-stamp: <2022-11-07 19:27:14 krylon>
 //
 // Samstag, 20. 08. 2016, 21:27
 // Ich würde für Hosts gern a) anhand der Antworten, die ich erhalte, das
@@ -991,6 +991,7 @@ EXEC_QUERY:
 } // func (db *HostDB) PortGetOpen() ([]ScanResult, error)
 
 func (db *HostDB) PortGetRecent(ref time.Time) ([]data.ScanResult, error) {
+	const qid = query.PortGetRecent
 	var (
 		msg       string
 		err       error
@@ -1001,7 +1002,7 @@ func (db *HostDB) PortGetRecent(ref time.Time) ([]data.ScanResult, error) {
 	)
 
 GET_QUERY:
-	if stmt, err = db.getStatement(query.PortGetOpen); err != nil {
+	if stmt, err = db.getStatement(qid); err != nil {
 		if db.worthARetry(err) {
 			time.Sleep(retryDelay)
 			goto GET_QUERY
