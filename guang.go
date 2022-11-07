@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 27. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2022-11-05 01:41:29 krylon>
+// Time-stamp: <2022-11-07 19:35:06 krylon>
 
 package main
 
@@ -53,11 +53,12 @@ func main() {
 
 	flag.Parse()
 
+	fmt.Printf("%s %s - built on %s\n",
+		common.AppName,
+		common.Version,
+		common.BuildStamp.Format(common.TimestampFormat))
+
 	if showVersion {
-		fmt.Printf("%s %s - built on %s\n",
-			common.AppName,
-			common.Version,
-			common.BuildStamp.Format(common.TimestampFormat))
 		os.Exit(0)
 	}
 
