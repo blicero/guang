@@ -1,4 +1,4 @@
-// Time-stamp: <2022-11-07 23:06:49 krylon>
+// Time-stamp: <2022-11-08 00:31:32 krylon>
 
 'use strict;'
 
@@ -22,6 +22,7 @@ function update_results() {
                                       for (const r of responses.values()) {
                                           console.log(r)
 
+                                          // Eventually, I will have to think about how to render that timestamp properly.
                                           const row = `<tr>
                  <td>${r.Host.Name} (${r.Host.Address})</td>
                  <td>${r.Stamp}</td>

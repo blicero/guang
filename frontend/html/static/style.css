@@ -1,4 +1,4 @@
-/* Time-stamp: <2022-11-01 00:28:31 krylon> */
+/* Time-stamp: <2022-11-08 00:46:00 krylon> */
 
 body { font-family: Arial,Helvetica; }
 
@@ -15,7 +15,8 @@ h2 { text-decoration: underline;
 }
 
 *.error {
-    color: #FF0000;
+    background-color: #FF0000;
+    color: #000000;
 }
 
 *.even { background-color: #bdbdbd; }
@@ -26,3 +27,8 @@ h2 { text-decoration: underline;
 table.horizontal * th { text-align: right; }
 table.horizontal * td { text-align: left; }
 
+caption {
+    font-size: 16pt;
+    text-decoration: underline;
+    font-weight: bold;
+}
