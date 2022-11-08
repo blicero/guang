@@ -1,5 +1,5 @@
 # -*- mode: org; fill-column: 78; -*-
-# Time-stamp: <2022-11-08 02:16:29 krylon>
+# Time-stamp: <2022-11-08 18:54:24 krylon>
 #
 #+TAGS: optimize(o) refactor(r) bug(b) feature(f) architecture(a)
 #+TAGS: web(w) database(d) javascript(j)
@@ -11,26 +11,26 @@
 * Guang
 ** Clocktable
    #+BEGIN: clocktable :scope file :maxlevel 20
-   #+CAPTION: Clock summary at [2022-11-08 Di 02:16]
-   | Headline                        | Time      |         |          |         |         |
-   |---------------------------------+-----------+---------+----------+---------+---------|
-   | *Total time*                    | *2d 1:18* |         |          |         |         |
-   |---------------------------------+-----------+---------+----------+---------+---------|
-   | Guang                           | 2d 1:18   |         |          |         |         |
-   | \_  Components                  |           | 2d 1:18 |          |         |         |
-   | \_    Database                  |           |         |     0:58 |         |         |
-   | \_      SQLite                  |           |         |          |    0:44 |         |
-   | \_      Pool                    |           |         |          |    0:11 |         |
-   | \_      Major cleanup [2/2]     |           |         |          |    0:03 |         |
-   | \_        Package               |           |         |          |         |    0:03 |
-   | \_    Web interface [2/4]       |           |         | 1d 13:55 |         |         |
-   | \_      Major overhaul [1/3]    |           |         |          | 1d 9:40 |         |
-   | \_        Live updates          |           |         |          |         | 1d 5:32 |
-   | \_        Bootstrap and friends |           |         |          |         |    4:08 |
-   | \_      Embed                   |           |         |          |    4:15 |         |
-   | \_    Refactoring [2/2]         |           |         |    10:25 |         |         |
-   | \_      Packages                |           |         |          |    7:38 |         |
-   | \_      Linter                  |           |         |          |    2:47 |         |
+   #+CAPTION: Clock summary at [2022-11-08 Di 18:54]
+   | Headline                        | Time      |         |          |          |         |
+   |---------------------------------+-----------+---------+----------+----------+---------|
+   | *Total time*                    | *2d 3:56* |         |          |          |         |
+   |---------------------------------+-----------+---------+----------+----------+---------|
+   | Guang                           | 2d 3:56   |         |          |          |         |
+   | \_  Components                  |           | 2d 3:56 |          |          |         |
+   | \_    Database                  |           |         |     0:58 |          |         |
+   | \_      SQLite                  |           |         |          |     0:44 |         |
+   | \_      Pool                    |           |         |          |     0:11 |         |
+   | \_      Major cleanup [2/2]     |           |         |          |     0:03 |         |
+   | \_        Package               |           |         |          |          |    0:03 |
+   | \_    Web interface [3/4]       |           |         | 1d 16:33 |          |         |
+   | \_      Major overhaul [2/3]    |           |         |          | 1d 12:18 |         |
+   | \_        Live updates          |           |         |          |          | 1d 8:10 |
+   | \_        Bootstrap and friends |           |         |          |          |    4:08 |
+   | \_      Embed                   |           |         |          |     4:15 |         |
+   | \_    Refactoring [2/2]         |           |         |    10:25 |          |         |
+   | \_      Packages                |           |         |          |     7:38 |         |
+   | \_      Linter                  |           |         |          |     2:47 |         |
    #+END:
 ** Diary
 *** [2022-10-26 Mi 15:56]
@@ -62,17 +62,19 @@
 ***** DONE Names
       CLOSED: [2022-10-31 Mo 19:57]
       I need to change a bunch of names.
-*** Web interface [2/4]
+*** Web interface [3/4]
     :PROPERTIES:
     :COOKIE_DATA: todo recursive
     :VISIBILITY: children
     :END:
-**** Major overhaul [1/3]
+**** Major overhaul [2/3]
      The web interface is in dire need of a makeover. I'm not a very
      proficient web developer, but I was even less so when I first wrote this
      baby, and it is ... embarrassing to look at.
-***** TODO Live updates
+***** DONE Live updates
+      CLOSED: [2022-11-08 Di 18:54]
       :LOGBOOK:
+      CLOCK: [2022-11-08 Di 16:16]--[2022-11-08 Di 18:54] =>  2:38
       CLOCK: [2022-11-07 Mo 18:41]--[2022-11-08 Di 02:16] =>  7:35
       CLOCK: [2022-11-05 Sa 20:10]--[2022-11-06 So 03:16] =>  7:06
       CLOCK: [2022-11-04 Fr 21:00]--[2022-11-05 Sa 03:15] =>  6:15
@@ -80,7 +82,15 @@
       CLOCK: [2022-11-03 Do 19:05]--[2022-11-03 Do 19:08] =>  0:03
       CLOCK: [2022-11-02 Mi 19:56]--[2022-11-03 Do 03:54] =>  7:58
       :END:
-      I want to update the web interface continually as the backend is running.
+      I want to update the web interface continually as the backend is
+      running.
+
+      [2022-11-08 Di 18:51]
+      That mostly works now, I like it. *But* what if it is the first time a
+      port has been scanned successfully, and no entry in the ToC nor table of
+      results exists for the port? Do I want to handle that special case?
+      I'm thinking this should be a very rare occurrence, so I treat is as
+      negligible for now.
 ***** TODO Knobs and Switches
       I want to be able to basically micro-manage the backend from the web
       interface. For starts, I want to spawn or discard worker goroutines for
