@@ -1,5 +1,5 @@
 # -*- mode: org; fill-column: 78; -*-
-# Time-stamp: <2022-11-05 03:15:11 krylon>
+# Time-stamp: <2022-11-08 02:16:29 krylon>
 #
 #+TAGS: optimize(o) refactor(r) bug(b) feature(f) architecture(a)
 #+TAGS: web(w) database(d) javascript(j)
@@ -11,26 +11,26 @@
 * Guang
 ** Clocktable
    #+BEGIN: clocktable :scope file :maxlevel 20
-   #+CAPTION: Clock summary at [2022-11-05 Sa 03:15]
-   | Headline                        | Time       |          |       |       |       |
-   |---------------------------------+------------+----------+-------+-------+-------|
-   | *Total time*                    | *1d 10:37* |          |       |       |       |
-   |---------------------------------+------------+----------+-------+-------+-------|
-   | Guang                           | 1d 10:37   |          |       |       |       |
-   | \_  Components                  |            | 1d 10:37 |       |       |       |
-   | \_    Database                  |            |          |  0:58 |       |       |
-   | \_      SQLite                  |            |          |       |  0:44 |       |
-   | \_      Pool                    |            |          |       |  0:11 |       |
-   | \_      Major cleanup [2/2]     |            |          |       |  0:03 |       |
-   | \_        Package               |            |          |       |       |  0:03 |
-   | \_    Web interface [2/4]       |            |          | 23:14 |       |       |
-   | \_      Major overhaul [1/3]    |            |          |       | 18:59 |       |
-   | \_        Live updates          |            |          |       |       | 14:51 |
-   | \_        Bootstrap and friends |            |          |       |       |  4:08 |
-   | \_      Embed                   |            |          |       |  4:15 |       |
-   | \_    Refactoring [2/2]         |            |          | 10:25 |       |       |
-   | \_      Packages                |            |          |       |  7:38 |       |
-   | \_      Linter                  |            |          |       |  2:47 |       |
+   #+CAPTION: Clock summary at [2022-11-08 Di 02:16]
+   | Headline                        | Time      |         |          |         |         |
+   |---------------------------------+-----------+---------+----------+---------+---------|
+   | *Total time*                    | *2d 1:18* |         |          |         |         |
+   |---------------------------------+-----------+---------+----------+---------+---------|
+   | Guang                           | 2d 1:18   |         |          |         |         |
+   | \_  Components                  |           | 2d 1:18 |          |         |         |
+   | \_    Database                  |           |         |     0:58 |         |         |
+   | \_      SQLite                  |           |         |          |    0:44 |         |
+   | \_      Pool                    |           |         |          |    0:11 |         |
+   | \_      Major cleanup [2/2]     |           |         |          |    0:03 |         |
+   | \_        Package               |           |         |          |         |    0:03 |
+   | \_    Web interface [2/4]       |           |         | 1d 13:55 |         |         |
+   | \_      Major overhaul [1/3]    |           |         |          | 1d 9:40 |         |
+   | \_        Live updates          |           |         |          |         | 1d 5:32 |
+   | \_        Bootstrap and friends |           |         |          |         |    4:08 |
+   | \_      Embed                   |           |         |          |    4:15 |         |
+   | \_    Refactoring [2/2]         |           |         |    10:25 |         |         |
+   | \_      Packages                |           |         |          |    7:38 |         |
+   | \_      Linter                  |           |         |          |    2:47 |         |
    #+END:
 ** Diary
 *** [2022-10-26 Mi 15:56]
@@ -73,6 +73,8 @@
      baby, and it is ... embarrassing to look at.
 ***** TODO Live updates
       :LOGBOOK:
+      CLOCK: [2022-11-07 Mo 18:41]--[2022-11-08 Di 02:16] =>  7:35
+      CLOCK: [2022-11-05 Sa 20:10]--[2022-11-06 So 03:16] =>  7:06
       CLOCK: [2022-11-04 Fr 21:00]--[2022-11-05 Sa 03:15] =>  6:15
       CLOCK: [2022-11-04 Fr 18:45]--[2022-11-04 Fr 19:20] =>  0:35
       CLOCK: [2022-11-03 Do 19:05]--[2022-11-03 Do 19:08] =>  0:03
