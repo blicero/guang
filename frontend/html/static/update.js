@@ -1,4 +1,4 @@
-// Time-stamp: <2022-11-08 00:31:32 krylon>
+// Time-stamp: <2022-11-08 18:18:29 krylon>
 
 'use strict;'
 
@@ -15,9 +15,18 @@ function update_results() {
                           {},
                           (response) => {
                               if (response.Status) {
+                                  let cntTotal = 0
                                   for (const [port, responses] of Object.entries(response.Results)) {
                                       const tid = `#tbody_${port}`
                                       const tbody = $(tid)[0]
+                                      const cnt = responses.length
+
+                                      const cell = $(`#port_cnt_${port}`)[0]
+                                      const cntOld = parseInt(cell.innerText)
+                                      const cntNew = cntOld + cnt
+
+                                      cell.innerText = cntNew
+                                      cntTotal += cnt
 
                                       for (const r of responses.values()) {
                                           console.log(r)
@@ -34,6 +43,13 @@ function update_results() {
                                   }
 
                                   updateStamp = timeStampUnix()
+
+                                  if (cntTotal > 0) {
+                                      const cell = $('#toc_total')[0]
+                                      const cntOld = parseInt(cell.innerText)
+                                      const cntNew = cntOld + cntTotal
+                                      cell.innerText = cntNew
+                                  }
                               }
                           },
                           'json'
@@ -61,3 +77,8 @@ function updateIntervalSet (val) {
         console.log(`Invalid argument: ${val} is not an integer`)
     }
 } // function updateIntervalSet ()
+
+function updateIntervalEdit () {
+    const interval = $('#update_interval_edit')[0].value * 1000
+    updateIntervalSet(interval)
+} // function updateIntervalEdit()

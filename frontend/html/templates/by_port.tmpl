@@ -1,6 +1,6 @@
 {{define "by_port"}}
 {{/* -*- mode: web; coding: utf-8; -*- */}}
-{{/* Time-stamp: <2022-11-07 23:01:13 krylon> */}}
+{{/* Time-stamp: <2022-11-08 18:39:27 krylon> */}}
 <!DOCTYPE html>
 <html>
   {{ template "head" . }}
@@ -8,10 +8,6 @@
   <body>
     <h1>{{.Title}}</h1>
     <hr />
-
-    {{if .Debug}}
-    Page was rendered on {{now}}
-    {{end}}
 
     {{if (gt (len .Error) 0)}}
     <div class="error">
@@ -23,9 +19,11 @@
 
     {{ template "beacon" . }}
 
+    <p>&nbsp;</p>
+
     {{ template "menu" }}
 
-    <script src="/static/update.js" />
+    <script src="/static/update.js"></script>
 
     <script>
      function toggle_port_visibility(n, do_hide) {
@@ -38,74 +36,92 @@
      }
 
      $(document).ready(() => {
+       console.log('Initialize page elements...')
        $('.filter_checkbox').each(() => {
          $(this).checked = false
        })
-
        $('.port_results').show()
        $('#toggle_update')[0].checked = settings.update.active
+       $('#update_interval_edit')[0].value = settings.update.interval / 1000
        window.setTimeout(update_results, settings.update.interval)
      })
     </script>
 
     <hr />
 
-    <div class="container">
-      <div class="row">
-        <div class="col col-sm-4">
-          <table class="table horizontal">
-            <tr>
-              <th>Refresh?</th>
-              <td>
-                <div class="form-check form-switch filter_checkbox">
-                  <input class="form-check-input" type="checkbox"
-                         onchange="updateToggle()"
-                         id="toggle_update"
-                         />
-                </div>
-              </td>
-            </tr>
-          </table>
+    <details>
+      <summary>Auto-Refresh</summary>
+      <div class="container">
+        <div class="row">
+          <div class="col col-sm-4">
+            <table class="table horizontal">
+              <tr>
+                <th>Refresh?</th>
+                <td>
+                  <div class="form-check form-switch filter_checkbox">
+                    <input class="form-check-input" type="checkbox"
+                           onchange="updateToggle()"
+                           id="toggle_update"
+                           />
+                  </div>
+                </td>
+
+                <th>Interval (sec):</th>
+                <td>
+                  <input
+                  id="update_interval_edit"
+                  type="number"
+                  min="1"
+                  value="5"
+                  onchange="updateIntervalEdit()"
+                  />
+                </td>
+              </tr>
+            </table>
+          </div>
         </div>
       </div>
-    </div>
+    </details>
 
     <hr />
 
-    <table class="horizontal caption-top">
-      <caption>Table of contents</caption>
-      <thead>
-        <tr>
-          <th>Port</th>
-          <th>No. of hosts</th>
-          <th>Hide?</th>
-        </tr>
-      </thead>
+    <details>
+      <summary>Table of Contents</summary>
+      <table class="horizontal caption-top">
+        <caption>Table of contents</caption>
+        <thead>
+          <tr>
+            <th>Port</th>
+            <th>No. of hosts</th>
+            <th>Hide?</th>
+          </tr>
+        </thead>
 
-      <tbody>
-        {{range .Ports}}
-        <tr id="toc_{{.Port}}">
-          <td>
-            <a href="#port_{{.Port}}">{{.Port}}</a>
-          </td>
-          <td>
-            {{len .Results}}
-          </td>
-          <td>
-            <div class="form-check form-switch filter_checkbox">
-              <input class="form-check-input" type="checkbox"
-                     onchange="toggle_port_visibility({{.Port}}, this.checked)" id="checkbox_{{.Port}}"
-                     />
-            </div>
-          </td>
-        </tr>
-        {{end}}
-        <tr>
-          <th>Total</td>
-          <td id="toc_total"><b>{{.Count}}</b></td>
-        </tr>
-      </tbody>
-    </table>
+        <tbody>
+          {{range .Ports}}
+          <tr id="toc_{{.Port}}">
+            <td>
+              <a href="#port_{{.Port}}">{{.Port}}</a>
+            </td>
+            <td id="port_cnt_{{.Port}}">
+              {{len .Results}}
+            </td>
+            <td>
+              <div class="form-check form-switch">
+                <input class="form-check-input filter_checkbox" type="checkbox"
+                       onchange="toggle_port_visibility({{.Port}}, this.checked)" id="checkbox_{{.Port}}"
+                       />
+              </div>
+            </td>
+          </tr>
+          {{end}}
+          <tr>
+            <th>Total</td>
+              <td id="toc_total"><b>{{.Count}}</b></td>
+          </tr>
+        </tbody>
+      </table>
+    </details>
 
     {{ range .Ports }}
     <div id="content_port_{{.Port}}" class="port_results">
@@ -113,7 +129,7 @@
 
       <table class="table caption-top">
         <thead>
-          <caption>Port {{ .Port }}</caption>
+          <caption><a id="port_{{.Port}}">Port {{ .Port }}</a></caption>
           <tr>
             <th>Host</th>
             <th>Stamp</th>
