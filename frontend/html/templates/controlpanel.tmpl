@@ -1,0 +1,40 @@
+{{ define "controlpanel" }}
+{{/* Created on 08. 11. 2022 */}}
+{{/* Time-stamp: <2022-11-09 00:56:14 krylon> */}}
+<div id="controlpanel" class="container-fluid">
+  <table class="table horizontal caption-top">
+    <tr>
+      <th>
+        Generators
+      </th>
+      <td>
+        <input type="number"
+               id="cnt_generator"
+               min="0"
+               max="1024"
+               />
+      </td>
+    </tr>
+    <tr>
+      <th>XFR</th>
+      <td>
+        <input type="number"
+               id="cnt_xfr"
+               min="0"
+               max="1024"
+               />
+      </td>
+    </tr>
+    <tr>
+      <th>Scanners</th>
+      <td>
+        <input type="number"
+               id="cnt_scan"
+               min="0"
+               max="1024"
+               />
+      </td>
+    </tr>
+  </table>
+</div>
+{{ end }}
