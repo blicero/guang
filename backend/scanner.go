@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 28. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2022-11-03 00:07:55 krylon>
+// Time-stamp: <2022-11-10 21:27:39 krylon>
 //
 // Freitag, 08. 01. 2016, 22:10
 // I kinda feel like I'm not going to write a comprehensive test suite for this
@@ -116,7 +116,7 @@ type Scanner struct {
 	db        *database.HostDB
 	scanQ     chan data.ScanRequest
 	resultQ   chan data.ScanResult
-	controlQ  chan data.ControlMessage
+	RC        chan data.ControlMessage
 	hostQ     chan data.HostWithPorts
 	mmQ       chan data.ControlMessage
 	log       *log.Logger
@@ -138,7 +138,6 @@ func CreateScanner(workerCnt int) (*Scanner, error) {
 		hostQ:     make(chan data.HostWithPorts, workerCnt*2),
 		mmQ:       make(chan data.ControlMessage),
 		workerCnt: workerCnt,
-		started:   0,
 	}
 
 	if scanner.log, err = common.GetLogger("Scanner"); err != nil {
@@ -150,7 +149,7 @@ func CreateScanner(workerCnt int) (*Scanner, error) {
 		scanner.log.Println(msg)
 		return nil, errors.New(msg)
 	} else if common.Debug {
-		scanner.log.Printf("Created new Scanner, will use %d workers, ready to go.\n", workerCnt)
+		scanner.log.Printf("[DEBUG] Created new Scanner, will use %d workers, ready to go.\n", workerCnt)
 	}
 
 	return scanner, nil
@@ -186,6 +185,25 @@ func (sc *Scanner) Stop() {
 	sc.lock.Unlock()
 } // func (sc *Scanner) Stop()
 
+func (sc *Scanner) Count() int {
+	sc.lock.RLock()
+	var cnt = sc.started
+	sc.lock.RUnlock()
+	return cnt
+} // func (sc *Scanner) Count() int
+
+func (sc *Scanner) cntInc() {
+	sc.lock.Lock()
+	sc.started++
+	sc.lock.Unlock()
+} // func (sc *Scanner) cntInc()
+
+func (sc *Scanner) cntDec() {
+	sc.lock.Lock()
+	sc.started--
+	sc.lock.Unlock()
+} // func (sc *Scanner) cntDec()
+
 // IsRunning returns true if the Scanner is running.
 func (sc *Scanner) IsRunning() bool {
 	var isRunning bool
@@ -204,11 +222,13 @@ func (sc *Scanner) PrintStatus() {
 
 // Loop is the Scanner's main loop.
 func (sc *Scanner) Loop() {
-	var err error
-	var req data.ScanRequest
-	var res data.ScanResult
-	var msg string
-	var control data.ControlMessage
+	var (
+		err error
+		req data.ScanRequest
+		res data.ScanResult
+		msg string
+		ctl data.ControlMessage
+	)
 
 	req = sc.getRandomScanRequest()
 
@@ -218,15 +238,20 @@ func (sc *Scanner) Loop() {
 
 	for sc.IsRunning() {
 		select {
-		case control = <-sc.controlQ:
-			if common.Debug {
-				sc.log.Println("Got one control message!")
-			}
+		case ctl = <-sc.RC:
+			sc.log.Printf("[DEBUG] Got one control message: %s\n",
+				ctl)
 
-			switch control {
-			case data.CtlMsgStop:
+			switch ctl {
+			case data.CtlMsgShutdown:
 				sc.Stop()
 				return
+			case data.CtlMsgStop:
+				sc.log.Printf("[DEBUG] Telling one worker to stop.\n")
+				sc.mmQ <- data.CtlMsgStop
+			case data.CtlMsgSpawn:
+				sc.log.Printf("[DEBUG] Spawning one additional worker\n")
+				go sc.worker(sc.Count())
 			case data.CtlMsgStatus:
 				sc.PrintStatus()
 			}
@@ -364,11 +389,8 @@ func (sc *Scanner) worker(id int) {
 	pulse = time.NewTicker(common.HeartBeat)
 	defer pulse.Stop()
 
-	defer func() {
-		sc.lock.Lock()
-		sc.workerCnt--
-		sc.lock.Unlock()
-	}()
+	sc.cntInc()
+	defer sc.cntDec()
 
 	if common.Debug {
 		sc.log.Printf("[DEBUG] Scanner worker %d starting up...\n",
@@ -380,6 +402,8 @@ func (sc *Scanner) worker(id int) {
 		case msg = <-sc.mmQ:
 			switch msg {
 			case data.CtlMsgStop:
+				sc.log.Printf("[DEBUG] Worker #%d is quitting as ordered.\n",
+					id)
 				return
 			default:
 				sc.log.Printf("[DEBUG] Scanner Worker #%d ignoring message %s\n",

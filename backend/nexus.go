@@ -2,14 +2,16 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 12. 02. 2016 by Benjamin Walkenhorst
 // (c) 2016 Benjamin Walkenhorst
-// Time-stamp: <2022-10-31 19:13:10 krylon>
+// Time-stamp: <2022-11-10 23:25:56 krylon>
 
 package backend
 
 import (
 	"log"
 
+	"github.com/blicero/guang/backend/facility"
 	"github.com/blicero/guang/common"
+	"github.com/blicero/guang/data"
 	"github.com/blicero/guang/generator"
 	"github.com/blicero/guang/xfr"
 )
@@ -55,20 +57,45 @@ func (nx *Nexus) GetScannerCount() int {
 
 // GetXFRCount returns the number of XFR workers.
 func (nx *Nexus) GetXFRCount() int {
-	return nx.xfr.WorkerCount()
+	return nx.xfr.Count()
 } // func (nx *Nexus) GetXFRCount() int
 
-// StartScanner starts the Scanner.
-func (nx *Nexus) StartScanner() {
-	nx.scanner.Start()
-} // func (nx *Nexus) StartScanner()
+func (nx *Nexus) SpawnWorker(f facility.Facility, n int) {
+	var c chan data.ControlMessage
 
-// StartGenerator starts the HostGenerator.
-func (nx *Nexus) StartGenerator() {
-	nx.generator.Start()
-} // func (Nx *Nexus) StartGenerator()
+	switch f {
+	case facility.Generator:
+		c = nx.generator.RC
+	case facility.Scanner:
+		c = nx.generator.RC
+	case facility.XFR:
+		c = nx.generator.RC
+	default:
+		nx.log.Printf("[ERROR] Don't know how to spawn more workers for %s\n",
+			f)
+	}
 
-// StartXFR starts the XFR workers.
-func (nx *Nexus) StartXFR(cnt int) {
-	nx.xfr.Start(cnt)
-} // func (nx *Nexus) StartXFR()
+	for i := 0; i < n; i++ {
+		c <- data.CtlMsgSpawn
+	}
+} // func (nx *Nexus) SpawnWorker(f facility.Facility, n int)
+
+func (nx *Nexus) StopWorker(f facility.Facility, n int) {
+	var c chan data.ControlMessage
+
+	switch f {
+	case facility.Generator:
+		c = nx.generator.RC
+	case facility.Scanner:
+		c = nx.generator.RC
+	case facility.XFR:
+		c = nx.generator.RC
+	default:
+		nx.log.Printf("[ERROR] Don't know how to stop workers for %s\n",
+			f)
+	}
+
+	for i := 0; i < n; i++ {
+		c <- data.CtlMsgStop
+	}
+} // func (nx *Nexus) StopWorker(f facility.Facility, n int)

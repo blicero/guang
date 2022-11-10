@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 01. 02. 2021 by Benjamin Walkenhorst
 // (c) 2021 Benjamin Walkenhorst
-// Time-stamp: <2022-11-04 21:27:45 krylon>
+// Time-stamp: <2022-11-10 22:44:05 krylon>
 
 // +build ignore
 
@@ -61,6 +61,7 @@ var candidates = map[string][]string{
 	"generate": []string{
 		"common",
 		"logdomain",
+		"backend/facility",
 		"data",
 		"database/query",
 		"xfr/xfrstatus",
@@ -76,6 +77,7 @@ var candidates = map[string][]string{
 	},
 	"vet": []string{
 		"backend",
+		"backend/facility",
 		"blacklist",
 		"common",
 		"data",
@@ -88,6 +90,7 @@ var candidates = map[string][]string{
 	},
 	"lint": []string{
 		"backend",
+		"backend/facility",
 		"blacklist",
 		"common",
 		"data",

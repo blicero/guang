@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 25. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2022-10-30 21:44:35 krylon>
+// Time-stamp: <2022-11-09 23:08:14 krylon>
 
 package xfr
 
@@ -38,12 +38,14 @@ const (
 type Client struct {
 	res          *dns.Client
 	requestQueue chan string
+	RC           chan data.ControlMessage
 	log          *log.Logger
 	hostRe       *regexp.Regexp
 	nameBL       *blacklist.NameBlacklist
 	addrBL       *blacklist.IPBlacklist
 	workerCnt    int
-	lock         sync.Mutex
+	lock         sync.RWMutex
+	isRunning    bool
 }
 
 // MakeXFRClient creates a new XFRClient
@@ -51,6 +53,7 @@ func MakeXFRClient(queue chan string) (*Client, error) {
 	var err error
 	var client *Client = &Client{
 		requestQueue: queue,
+		RC:           make(chan data.ControlMessage, 4),
 		hostRe:       regexp.MustCompile(hostRePat),
 		nameBL:       blacklist.DefaultNameBlacklist(),
 		addrBL:       blacklist.DefaultIPBlacklist(),
@@ -72,35 +75,62 @@ func (xfrc *Client) Start(cnt int) {
 	xfrc.lock.Lock()
 	defer xfrc.lock.Unlock()
 
+	xfrc.isRunning = true
+
 	for i := 1; i <= cnt; i++ {
 		if common.Debug {
 			xfrc.log.Printf("Starting XFR Worker #%d\n", i)
 		}
 		go xfrc.worker(i)
-		xfrc.workerCnt++
+		//xfrc.workerCnt++
 	}
 } // func (xfrc *XFRClient) Start(cnt int)
 
-// WorkerCount returns the number of workers.
-func (xfrc *Client) WorkerCount() int {
+func (xfrc *Client) Stop() {
 	xfrc.lock.Lock()
-	var c = xfrc.workerCnt
+	xfrc.isRunning = false
 	xfrc.lock.Unlock()
+} // func (xfrc *Client) Stop()
+
+func (xfrc *Client) IsRunning() bool {
+	xfrc.lock.RLock()
+	var r = xfrc.isRunning
+	xfrc.lock.RUnlock()
+	return r
+} // func (xfrc *Client) IsRunning() bool
+
+// Count returns the number of workers.
+func (xfrc *Client) Count() int {
+	xfrc.lock.RLock()
+	var c = xfrc.workerCnt
+	xfrc.lock.RUnlock()
 	return c
 } // func (xfrc *XFRClient) WorkerCount() int
 
-func (xfrc *Client) worker(workerID int) {
-	var hostname, zone, msg string
-	var err error
-	var xfr *data.XFR
-	var submatch []string
-	var db *database.HostDB
+func (xfrc *Client) cntInc() {
+	xfrc.lock.Lock()
+	xfrc.workerCnt++
+	xfrc.lock.Unlock()
+} // func (xfrc *HostXfrcerator) cntInc()
 
-	defer func() {
-		xfrc.lock.Lock()
-		xfrc.workerCnt--
-		xfrc.lock.Unlock()
-	}()
+func (xfrc *Client) cntDec() {
+	xfrc.lock.Lock()
+	xfrc.workerCnt--
+	xfrc.lock.Unlock()
+} // func (xfrc *Client) cntDec()
+
+func (xfrc *Client) worker(workerID int) {
+	var (
+		hostname, zone, msg string
+		err                 error
+		xfr                 *data.XFR
+		submatch            []string
+		db                  *database.HostDB
+		pulse               *time.Ticker
+	)
+
+	xfrc.cntInc()
+	defer xfrc.cntDec()
 
 	if db, err = database.OpenDB(common.DbPath); err != nil {
 		msg = fmt.Sprintf("Error opening database at %s: %s",
@@ -111,9 +141,29 @@ func (xfrc *Client) worker(workerID int) {
 
 	defer db.Close()
 
+	pulse = time.NewTicker(common.RCTimeout)
+	defer pulse.Stop()
+
 LOOP:
-	for {
-		hostname = <-xfrc.requestQueue
+	for xfrc.IsRunning() {
+		select {
+		case hostname = <-xfrc.requestQueue:
+			// Alrighty, then
+		case ctl := <-xfrc.RC:
+			switch ctl {
+			case data.CtlMsgStop:
+				return
+			case data.CtlMsgShutdown:
+				xfrc.Stop()
+				return
+			case data.CtlMsgSpawn:
+				var cnt = xfrc.Count()
+				go xfrc.worker(cnt + 1)
+			}
+			continue
+		case <-pulse.C:
+			continue
+		}
 
 		if common.Debug {
 			xfrc.log.Printf("XFR Worker #%d got request for host %s\n",

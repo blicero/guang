@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 23. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2022-10-30 21:14:53 krylon>
+// Time-stamp: <2022-11-10 21:16:32 krylon>
 //
 // IIRC, throughput never was much of an issue with this part of the program.
 // But if it were, there are a few tricks on could pull here.
@@ -30,10 +30,11 @@ import (
 // HostGenerator generates random Hosts
 type HostGenerator struct {
 	HostQueue chan data.Host
+	RC        chan data.ControlMessage
 	nameBL    *blacklist.NameBlacklist
 	addrBL    *blacklist.IPBlacklist
 	cache     *kc.DB
-	lock      sync.Mutex
+	lock      sync.RWMutex
 	running   bool
 	workerCnt int
 	log       *log.Logger
@@ -46,10 +47,11 @@ func CreateGenerator(workerCnt int) (*HostGenerator, error) {
 
 	gen := &HostGenerator{
 		HostQueue: make(chan data.Host, workerCnt*2),
+		RC:        make(chan data.ControlMessage, 2),
 		running:   true,
-		workerCnt: workerCnt,
 		nameBL:    blacklist.DefaultNameBlacklist(),
 		addrBL:    blacklist.DefaultIPBlacklist(),
+		workerCnt: workerCnt,
 	}
 
 	if gen.log, err = common.GetLogger("Generator"); err != nil {
@@ -76,9 +78,10 @@ func (gen *HostGenerator) Start() {
 
 // IsRunning returns true if the HostGenerator is running.
 func (gen *HostGenerator) IsRunning() bool {
-	gen.lock.Lock()
-	defer gen.lock.Unlock()
-	return gen.running
+	gen.lock.RLock()
+	var r = gen.running
+	gen.lock.RUnlock()
+	return r
 } // func (gen *HostGenerator) IsRunning() bool
 
 // Stop tells the HostGenerator to stop.
@@ -96,21 +99,53 @@ func (gen *HostGenerator) Count() int {
 	return cnt
 } // func (gen *HostGenerator) Count() int
 
-func (gen *HostGenerator) worker(id int) {
-	defer func() {
-		gen.lock.Lock()
-		gen.workerCnt--
-		gen.lock.Unlock()
-	}()
+func (gen *HostGenerator) cntInc() {
+	gen.lock.Lock()
+	gen.workerCnt++
+	gen.lock.Unlock()
+} // func (gen *HostGenerator) cntInc()
 
-	var msg, astr string
-	var err error
-	var rng *rand.Rand = rand.New(rand.NewSource(time.Now().UnixNano()))
-	var addr net.IP
-	var namelist []string
+func (gen *HostGenerator) cntDec() {
+	gen.lock.Lock()
+	gen.workerCnt--
+	gen.lock.Unlock()
+} // func (gen *HostGenerator) cntDec()
+
+func (gen *HostGenerator) worker(id int) {
+	gen.cntInc()
+	defer gen.cntDec()
+
+	var (
+		msg, astr string
+		err       error
+		rng       *rand.Rand = rand.New(rand.NewSource(time.Now().UnixNano()))
+		addr      net.IP
+		namelist  []string
+		metronom  *time.Ticker
+	)
+
+	metronom = time.NewTicker(common.RCTimeout)
+	defer metronom.Stop()
 
 MAIN_LOOP:
 	for gen.IsRunning() {
+		var ctl data.ControlMessage
+		select {
+		case ctl = <-gen.RC:
+			switch ctl {
+			case data.CtlMsgStop:
+				return
+			case data.CtlMsgShutdown:
+				gen.Stop()
+				return
+			case data.CtlMsgSpawn:
+				var newID = gen.Count()
+				go gen.worker(newID)
+			}
+		case <-metronom.C:
+			// Whatever.
+		}
+
 		var host data.Host
 		for addr = gen.getRandIP(rng); gen.addrBL.MatchesIP(addr); addr = gen.getRandIP(rng) {
 			// This loop has no body.

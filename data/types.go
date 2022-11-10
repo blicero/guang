@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 23. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2022-11-02 23:43:09 krylon>
+// Time-stamp: <2022-11-09 22:08:20 krylon>
 
 // Package data provides data types used throughout the application.
 package data
@@ -136,6 +136,7 @@ type ControlMessage int
 // CtlMsgStatus asks the Nexus for information on its current status.
 const (
 	CtlMsgStop ControlMessage = iota
+	CtlMsgShutdown
 	CtlMsgStatus
 	CtlMsgSpawn
 	CtlMsgBye
