@@ -1,6 +1,6 @@
 {{define "by_port"}}
 {{/* -*- mode: web; coding: utf-8; -*- */}}
-{{/* Time-stamp: <2022-11-08 18:39:27 krylon> */}}
+{{/* Time-stamp: <2022-11-11 23:54:19 krylon> */}}
 <!DOCTYPE html>
 <html>
   {{ template "head" . }}
@@ -46,6 +46,10 @@
        window.setTimeout(update_results, settings.update.interval)
      })
     </script>
+
+    <hr />
+
+    {{ template "controlpanel" . }}
 
     <hr />
 

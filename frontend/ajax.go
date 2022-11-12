@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 03. 11. 2022 by Benjamin Walkenhorst
 // (c) 2022 Benjamin Walkenhorst
-// Time-stamp: <2022-11-07 20:02:07 krylon>
+// Time-stamp: <2022-11-11 20:56:48 krylon>
 
 package frontend
 
@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/blicero/guang/backend/facility"
 	"github.com/blicero/guang/common"
 	"github.com/blicero/guang/data"
 	"github.com/blicero/guang/database"
@@ -118,3 +119,149 @@ RESPOND:
 	w.WriteHeader(200)
 	w.Write(outbuf) // nolint: errcheck
 } // func (srv *WebFrontend) handlePortsRecent(w http.ResponseWriter, r *http.Request)
+
+func (srv *WebFrontend) handleWorkerSpawn(w http.ResponseWriter, r *http.Request) {
+	var (
+		err                error
+		facStr, cntStr     string
+		oldCnt, cnt, facID int64
+		fac                facility.Facility
+		res                = ajaxCtlResponse{
+			ajaxData: ajaxData{
+				Timestamp: time.Now(),
+			},
+		}
+	)
+
+	srv.log.Printf("[TRACE] Handling request for %s\n", r.RequestURI)
+
+	vars := mux.Vars(r)
+
+	facStr = vars["facility"]
+	cntStr = vars["cnt"]
+
+	if cnt, err = strconv.ParseInt(cntStr, 10, 64); err != nil {
+		res.Message = fmt.Sprintf("Cannot parse number of workers to spawn (%q): %s",
+			cntStr,
+			err.Error())
+		srv.log.Printf("[ERROR] %s\n", res.Message)
+		goto RESPOND
+	} else if facID, err = strconv.ParseInt(facStr, 10, 8); err != nil {
+		res.Message = fmt.Sprintf("Cannot parse facility ID %q: %s",
+			facStr,
+			err.Error())
+		srv.log.Printf("[ERROR] %s\n", res.Message)
+		goto RESPOND
+	}
+
+	fac = facility.Facility(facID)
+
+	if cnt < 1 {
+		res.Message = fmt.Sprintf("Invalid number of %s workers to spawn: %d",
+			fac,
+			cnt)
+		srv.log.Printf("[ERROR] %s\n", res.Message)
+		goto RESPOND
+	}
+
+	oldCnt = int64(srv.nexus.WorkerCount(fac))
+
+	srv.nexus.SpawnWorker(fac, int(cnt))
+
+	res.NewCnt = int(oldCnt + cnt)
+	res.Status = true
+
+RESPOND:
+	var outbuf []byte
+
+	if outbuf, err = ffjson.Marshal(&res); err != nil {
+		res.Message = fmt.Sprintf("Error serializing Response to %s: %s",
+			r.RemoteAddr,
+			err.Error())
+		srv.log.Printf("[ERROR] %s\n", res.Message)
+	} else {
+		defer ffjson.Pool(outbuf)
+	}
+
+	w.Header().Set("Content-Length", strconv.FormatInt(int64(len(outbuf)), 10))
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Cache-Control", cacheControl)
+	w.WriteHeader(200)
+	w.Write(outbuf) // nolint: errcheck
+} // func (srv *WebFrontend) handleWorkerSpawn(w http.ResponseWriter, r *http.Request)
+
+func (srv *WebFrontend) handleWorkerStop(w http.ResponseWriter, r *http.Request) {
+	var (
+		err                error
+		facStr, cntStr     string
+		oldCnt, cnt, facID int64
+		fac                facility.Facility
+		res                = ajaxCtlResponse{
+			ajaxData: ajaxData{
+				Timestamp: time.Now(),
+			},
+		}
+	)
+
+	srv.log.Printf("[TRACE] Handling request for %s\n", r.RequestURI)
+
+	vars := mux.Vars(r)
+
+	facStr = vars["facility"]
+	cntStr = vars["cnt"]
+
+	if cnt, err = strconv.ParseInt(cntStr, 10, 64); err != nil {
+		res.Message = fmt.Sprintf("Cannot parse number of workers to spawn (%q): %s",
+			cntStr,
+			err.Error())
+		srv.log.Printf("[ERROR] %s\n", res.Message)
+		goto RESPOND
+	} else if facID, err = strconv.ParseInt(facStr, 10, 8); err != nil {
+		res.Message = fmt.Sprintf("Cannot parse facility ID %q: %s",
+			facStr,
+			err.Error())
+		srv.log.Printf("[ERROR] %s\n", res.Message)
+		goto RESPOND
+	}
+
+	fac = facility.Facility(facID)
+	oldCnt = int64(srv.nexus.WorkerCount(fac))
+
+	if cnt < 1 {
+		res.Message = fmt.Sprintf("Invalid number of %s workers to stop: %d",
+			fac,
+			cnt)
+		srv.log.Printf("[ERROR] %s\n", res.Message)
+		goto RESPOND
+	} else if cnt > oldCnt {
+		res.Message = fmt.Sprintf("Too many %s workers to stop: %d but only %d are running",
+			fac,
+			cnt,
+			oldCnt)
+		srv.log.Printf("[ERROR] %s\n", res.Message)
+		goto RESPOND
+	}
+
+	srv.nexus.StopWorker(fac, int(cnt))
+
+	res.NewCnt = int(oldCnt - cnt)
+	res.Status = true
+
+RESPOND:
+	var outbuf []byte
+
+	if outbuf, err = ffjson.Marshal(&res); err != nil {
+		res.Message = fmt.Sprintf("Error serializing Response to %s: %s",
+			r.RemoteAddr,
+			err.Error())
+		srv.log.Printf("[ERROR] %s\n", res.Message)
+	} else {
+		defer ffjson.Pool(outbuf)
+	}
+
+	w.Header().Set("Content-Length", strconv.FormatInt(int64(len(outbuf)), 10))
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Cache-Control", cacheControl)
+	w.WriteHeader(200)
+	w.Write(outbuf) // nolint: errcheck
+} // func (srv *WebFrontend) handleWorkerStop(w http.ResponseWriter, r *http.Request)

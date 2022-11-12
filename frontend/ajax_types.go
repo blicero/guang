@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 03. 11. 2022 by Benjamin Walkenhorst
 // (c) 2022 Benjamin Walkenhorst
-// Time-stamp: <2022-11-07 20:01:10 krylon>
+// Time-stamp: <2022-11-11 18:50:52 krylon>
 
 package frontend
 
@@ -24,4 +24,9 @@ type ajaxDataPorts struct {
 	ajaxData
 	Count   int64
 	Results map[uint16][]data.ScanResult
+}
+
+type ajaxCtlResponse struct {
+	ajaxData
+	NewCnt int
 }

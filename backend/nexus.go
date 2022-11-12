@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 12. 02. 2016 by Benjamin Walkenhorst
 // (c) 2016 Benjamin Walkenhorst
-// Time-stamp: <2022-11-10 23:25:56 krylon>
+// Time-stamp: <2022-11-11 19:20:03 krylon>
 
 package backend
 
@@ -99,3 +99,16 @@ func (nx *Nexus) StopWorker(f facility.Facility, n int) {
 		c <- data.CtlMsgStop
 	}
 } // func (nx *Nexus) StopWorker(f facility.Facility, n int)
+
+func (nx *Nexus) WorkerCount(f facility.Facility) int {
+	switch f {
+	case facility.Generator:
+		return nx.generator.Count()
+	case facility.Scanner:
+		return nx.scanner.Count()
+	case facility.XFR:
+		return nx.xfr.Count()
+	default:
+		return 0
+	}
+} // func (nx *Nexus) WorkerCount(f facility.Facility) int64
