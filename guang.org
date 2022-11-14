@@ -1,5 +1,5 @@
 # -*- mode: org; fill-column: 78; -*-
-# Time-stamp: <2022-11-12 23:20:40 krylon>
+# Time-stamp: <2022-11-14 23:07:21 krylon>
 #
 #+TAGS: optimize(o) refactor(r) bug(b) feature(f) architecture(a)
 #+TAGS: web(w) database(d) javascript(j)
@@ -11,28 +11,28 @@
 * Guang
 ** Clocktable
    #+BEGIN: clocktable :scope file :maxlevel 20
-   #+CAPTION: Clock summary at [2022-11-12 Sa 23:20]
-   | Headline                           | Time      |         |          |         |         |       |
-   |------------------------------------+-----------+---------+----------+---------+---------+-------|
-   | *Total time*                       | *3d 1:27* |         |          |         |         |       |
-   |------------------------------------+-----------+---------+----------+---------+---------+-------|
-   | Guang                              | 3d 1:27   |         |          |         |         |       |
-   | \_  Components                     |           | 3d 1:27 |          |         |         |       |
-   | \_    Database                     |           |         |     0:58 |         |         |       |
-   | \_      SQLite                     |           |         |          |    0:44 |         |       |
-   | \_      Pool                       |           |         |          |    0:11 |         |       |
-   | \_      Major cleanup [2/2]        |           |         |          |    0:03 |         |       |
-   | \_        Package                  |           |         |          |         |    0:03 |       |
-   | \_    Web interface [3/6]          |           |         | 2d 14:04 |         |         |       |
-   | \_      Major overhaul [2/5]       |           |         |          | 2d 9:49 |         |       |
-   | \_        Live updates             |           |         |          |         | 1d 8:10 |       |
-   | \_        Knobs and Switches [0/2] |           |         |          |         |   21:31 |       |
-   | \_          UI                     |           |         |          |         |         | 21:31 |
-   | \_        Bootstrap and friends    |           |         |          |         |    4:08 |       |
-   | \_      Embed                      |           |         |          |    4:15 |         |       |
-   | \_    Refactoring [2/2]            |           |         |    10:25 |         |         |       |
-   | \_      Packages                   |           |         |          |    7:38 |         |       |
-   | \_      Linter                     |           |         |          |    2:47 |         |       |
+   #+CAPTION: Clock summary at [2022-11-14 Mo 23:07]
+   | Headline                           | Time       |          |         |          |         |         |
+   |------------------------------------+------------+----------+---------+----------+---------+---------|
+   | *Total time*                       | *3d 12:45* |          |         |          |         |         |
+   |------------------------------------+------------+----------+---------+----------+---------+---------|
+   | Guang                              | 3d 12:45   |          |         |          |         |         |
+   | \_  Components                     |            | 3d 12:45 |         |          |         |         |
+   | \_    Database                     |            |          |    0:58 |          |         |         |
+   | \_      SQLite                     |            |          |         |     0:44 |         |         |
+   | \_      Pool                       |            |          |         |     0:11 |         |         |
+   | \_      Major cleanup [2/2]        |            |          |         |     0:03 |         |         |
+   | \_        Package                  |            |          |         |          |    0:03 |         |
+   | \_    Web interface [3/6]          |            |          | 3d 1:22 |          |         |         |
+   | \_      Major overhaul [2/5]       |            |          |         | 2d 21:07 |         |         |
+   | \_        Live updates             |            |          |         |          | 1d 8:10 |         |
+   | \_        Knobs and Switches [0/2] |            |          |         |          | 1d 8:49 |         |
+   | \_          UI                     |            |          |         |          |         | 1d 8:49 |
+   | \_        Bootstrap and friends    |            |          |         |          |    4:08 |         |
+   | \_      Embed                      |            |          |         |     4:15 |         |         |
+   | \_    Refactoring [2/2]            |            |          |   10:25 |          |         |         |
+   | \_      Packages                   |            |          |         |     7:38 |         |         |
+   | \_      Linter                     |            |          |         |     2:47 |         |         |
    #+END:
 ** Diary
 *** [2022-10-26 Mi 15:56]
@@ -106,6 +106,8 @@
       out.
 ****** TODO UI
        :LOGBOOK:
+       CLOCK: [2022-11-14 Mo 16:09]--[2022-11-14 Mo 23:06] =>  6:57
+       CLOCK: [2022-11-13 So 16:03]--[2022-11-13 So 20:24] =>  4:21
        CLOCK: [2022-11-12 Sa 19:15]--[2022-11-12 Sa 23:20] =>  4:05
        CLOCK: [2022-11-11 Fr 18:39]--[2022-11-12 Sa 02:44] =>  8:05
        CLOCK: [2022-11-10 Do 20:07]--[2022-11-11 Fr 00:11] =>  4:04
@@ -113,6 +115,7 @@
        CLOCK: [2022-11-09 Mi 18:47]--[2022-11-09 Mi 19:17] =>  0:30
        :END:
        I need a kind of "control panel", basically a few spinbuttons.
+       [2022-11-14 Mo 23:07] -- mostly works, but it looks a bit ugly.
 ****** TODO Backend
        But I also need a way to reliably spawn and terminate workers in the
        backend.
