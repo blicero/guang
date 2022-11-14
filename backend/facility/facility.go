@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 10. 11. 2022 by Benjamin Walkenhorst
 // (c) 2022 Benjamin Walkenhorst
-// Time-stamp: <2022-11-10 22:43:23 krylon>
+// Time-stamp: <2022-11-13 17:01:15 krylon>
 
 // Package facility provides symbolic constants to enumerate the compoentns
 // of the application.
@@ -19,6 +19,13 @@ const (
 	Generator Facility = iota
 	Scanner
 	XFR
-	Nexus
-	Web
 )
+
+// All returns all Facilities.
+func All() []Facility {
+	return []Facility{
+		Generator,
+		Scanner,
+		XFR,
+	}
+} // func All() []Facility

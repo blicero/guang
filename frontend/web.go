@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 06. 02. 2016 by Benjamin Walkenhorst
 // (c) 2016 Benjamin Walkenhorst
-// Time-stamp: <2022-11-11 20:58:32 krylon>
+// Time-stamp: <2022-11-14 20:18:26 krylon>
 
 package frontend
 
@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/blicero/guang/backend"
+	"github.com/blicero/guang/backend/facility"
 	"github.com/blicero/guang/common"
 	"github.com/blicero/guang/data"
 	"github.com/blicero/guang/database"
@@ -92,8 +93,9 @@ func CreateFrontend(addr string, port uint16, nexus *backend.Nexus) (*WebFronten
 	// AJAX handlers
 	frontend.router.HandleFunc("/ajax/beacon", frontend.handleBeacon)
 	frontend.router.HandleFunc("/ajax/port_recent/{stamp:(?:\\d+$)}", frontend.handlePortsRecent)
-	frontend.router.HandleFunc("/ajax/spawn_worker/{facility:(?:\\d+)}/{cnt:(?:\\d+$)", frontend.handleWorkerSpawn)
-	frontend.router.HandleFunc("/ajax/stop_worker/{facility:(?:\\d+)}/{cnt:(?:\\d+$)", frontend.handleWorkerStop)
+	frontend.router.HandleFunc("/ajax/spawn_worker/{facility:(?:\\d+)}/{cnt:(?:\\d+)}", frontend.handleWorkerSpawn)
+	frontend.router.HandleFunc("/ajax/stop_worker/{facility:(?:\\d+)}/{cnt:(?:\\d+$))", frontend.handleWorkerStop)
+	frontend.router.HandleFunc("/ajax/worker_count", frontend.handleWorkerCount)
 
 	frontend.tmpl = template.New("").Funcs(funcmap)
 
@@ -160,8 +162,9 @@ func (srv *WebFrontend) handleIndex(w http.ResponseWriter, request *http.Request
 	var err error
 	var msg string
 	var indexData tmplDataIndex = tmplDataIndex{
-		Title: "Guang Web Frontend",
-		Error: make([]string, 0),
+		Title:      "Guang Web Frontend",
+		Error:      make([]string, 0),
+		Facilities: facility.All(),
 	}
 
 	if common.Debug {
@@ -245,10 +248,11 @@ func (srv *WebFrontend) handleByPort(w http.ResponseWriter, request *http.Reques
 		return
 	} else {
 		tmplData = tmplDataByPort{
-			Debug: common.Debug,
-			Title: "Hosts by Port",
-			Error: make([]string, 0),
-			Count: len(dbRes),
+			Debug:      common.Debug,
+			Title:      "Hosts by Port",
+			Facilities: facility.All(),
+			Error:      make([]string, 0),
+			Count:      len(dbRes),
 		}
 
 		if common.Debug {
@@ -296,10 +300,11 @@ func (srv *WebFrontend) handleByHost(w http.ResponseWriter, request *http.Reques
 	defer srv.dbPool.Put(db)
 
 	data = tmplDataByHost{
-		Title: "Scanned Ports by Host",
-		Debug: common.Debug,
-		Error: make([]string, 0),
-		Count: len(data.Hosts),
+		Title:      "Scanned Ports by Host",
+		Debug:      common.Debug,
+		Facilities: facility.All(),
+		Error:      make([]string, 0),
+		Count:      len(data.Hosts),
 	}
 
 	if data.Hosts, err = db.HostGetByHostReport(); err != nil {

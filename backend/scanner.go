@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 28. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2022-11-10 21:27:39 krylon>
+// Time-stamp: <2022-11-14 23:04:06 krylon>
 //
 // Freitag, 08. 01. 2016, 22:10
 // I kinda feel like I'm not going to write a comprehensive test suite for this
@@ -174,7 +174,6 @@ func (sc *Scanner) Start() {
 
 	for i := 1; i <= sc.workerCnt; i++ {
 		go sc.worker(i)
-		sc.started++
 	}
 } // func (sc *Scanner) Start()
 

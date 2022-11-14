@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 23. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2022-11-10 21:16:32 krylon>
+// Time-stamp: <2022-11-14 22:53:15 krylon>
 //
 // IIRC, throughput never was much of an issue with this part of the program.
 // But if it were, there are a few tricks on could pull here.
@@ -29,15 +29,16 @@ import (
 
 // HostGenerator generates random Hosts
 type HostGenerator struct {
-	HostQueue chan data.Host
-	RC        chan data.ControlMessage
-	nameBL    *blacklist.NameBlacklist
-	addrBL    *blacklist.IPBlacklist
-	cache     *kc.DB
-	lock      sync.RWMutex
-	running   bool
-	workerCnt int
-	log       *log.Logger
+	HostQueue  chan data.Host
+	RC         chan data.ControlMessage
+	nameBL     *blacklist.NameBlacklist
+	addrBL     *blacklist.IPBlacklist
+	cache      *kc.DB
+	lock       sync.RWMutex
+	running    bool
+	workerCnt  int
+	runningCnt int
+	log        *log.Logger
 }
 
 // CreateGenerator creates a new HostGenerator.
@@ -94,20 +95,20 @@ func (gen *HostGenerator) Stop() {
 // Count returns the number of workers.
 func (gen *HostGenerator) Count() int {
 	gen.lock.Lock()
-	var cnt = gen.workerCnt
+	var cnt = gen.runningCnt
 	gen.lock.Unlock()
 	return cnt
 } // func (gen *HostGenerator) Count() int
 
 func (gen *HostGenerator) cntInc() {
 	gen.lock.Lock()
-	gen.workerCnt++
+	gen.runningCnt++
 	gen.lock.Unlock()
 } // func (gen *HostGenerator) cntInc()
 
 func (gen *HostGenerator) cntDec() {
 	gen.lock.Lock()
-	gen.workerCnt--
+	gen.runningCnt--
 	gen.lock.Unlock()
 } // func (gen *HostGenerator) cntDec()
 

@@ -1,6 +1,6 @@
 {{ define "head" }}
 {{/* Created on 31. 10. 2022 */}}
-{{/* Time-stamp: <2022-11-01 20:35:57 krylon> */}}
+{{/* Time-stamp: <2022-11-13 17:17:04 krylon> */}}
 <head>
   <title>{{ app_string }}@{{ hostname  }} - {{ .Title }}</title>
   
@@ -21,6 +21,10 @@
   <link rel="stylesheet" href="/static/bootstrap-utilities.min.css" />
 
   <script>
+   const facilities = {
+     {{ range .Facilities }}"{{ .String }}": {{ printf "%d" . }},{{ end}}
+   }
+   
    $(document).ready(() => {
      initSettings()
    })
