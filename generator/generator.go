@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 23. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2022-11-14 22:53:15 krylon>
+// Time-stamp: <2022-11-23 22:23:54 krylon>
 //
 // IIRC, throughput never was much of an issue with this part of the program.
 // But if it were, there are a few tricks on could pull here.
@@ -135,13 +135,18 @@ MAIN_LOOP:
 		case ctl = <-gen.RC:
 			switch ctl {
 			case data.CtlMsgStop:
+				gen.log.Printf("[INFO] Generator worker #%d is quitting\n",
+					id)
 				return
 			case data.CtlMsgShutdown:
 				gen.Stop()
 				return
 			case data.CtlMsgSpawn:
-				var newID = gen.Count()
+				var newID = gen.Count() + 1
 				go gen.worker(newID)
+			default:
+				gen.log.Printf("[INFO] Don't know how to handle command %s\n",
+					ctl)
 			}
 		case <-metronom.C:
 			// Whatever.

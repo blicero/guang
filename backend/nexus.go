@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 12. 02. 2016 by Benjamin Walkenhorst
 // (c) 2016 Benjamin Walkenhorst
-// Time-stamp: <2022-11-11 19:20:03 krylon>
+// Time-stamp: <2022-11-24 00:44:40 krylon>
 
 package backend
 
@@ -67,12 +67,13 @@ func (nx *Nexus) SpawnWorker(f facility.Facility, n int) {
 	case facility.Generator:
 		c = nx.generator.RC
 	case facility.Scanner:
-		c = nx.generator.RC
+		c = nx.scanner.RC
 	case facility.XFR:
-		c = nx.generator.RC
+		c = nx.xfr.RC
 	default:
 		nx.log.Printf("[ERROR] Don't know how to spawn more workers for %s\n",
 			f)
+		return
 	}
 
 	for i := 0; i < n; i++ {
@@ -87,17 +88,26 @@ func (nx *Nexus) StopWorker(f facility.Facility, n int) {
 	case facility.Generator:
 		c = nx.generator.RC
 	case facility.Scanner:
-		c = nx.generator.RC
+		c = nx.scanner.RC
 	case facility.XFR:
-		c = nx.generator.RC
+		c = nx.xfr.RC
 	default:
 		nx.log.Printf("[ERROR] Don't know how to stop workers for %s\n",
 			f)
+		return
 	}
+
+	nx.log.Printf("[INFO] Stopping %d %s workers\n",
+		n,
+		f)
 
 	for i := 0; i < n; i++ {
 		c <- data.CtlMsgStop
 	}
+
+	nx.log.Printf("[INFO] Sent %d stop messages to %s\n",
+		n,
+		f)
 } // func (nx *Nexus) StopWorker(f facility.Facility, n int)
 
 func (nx *Nexus) WorkerCount(f facility.Facility) int {

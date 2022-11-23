@@ -1,6 +1,6 @@
 // /home/krylon/go/src/github.com/blicero/guang/frontend/html/static/controlpanel.js
 // -*- mode: javascript; coding: utf-8; -*-
-// Time-stamp: <2022-11-14 22:06:05 krylon>
+// Time-stamp: <2022-11-23 22:38:34 krylon>
 // Copyright 2022 Benjamin Walkenhorst
 
 'use strict'
@@ -17,7 +17,7 @@ const cntID = {
     'XFR': '#cnt_xfr',
 }
 
-function spawn(fac) {
+function workerSpawn(fac) {
     const addr = `/ajax/spawn_worker/${facilities[fac]}/1`
 
     const req = $.get(addr,
@@ -33,13 +33,13 @@ function spawn(fac) {
                       },
                       'json'
                      ).fail((reply, status, txt) => {
-                         const msg = `Failed to load update: ${status} -- ${reply} -- ${text}`
+                         const msg = `Failed to load update: ${status} -- ${reply} -- ${txt}`
                          console.log(msg)
                          alert(msg)
                      })
 } // function spawn(fac)
 
-function stop(fac) {
+function workerStop(fac) {
     const addr = `/ajax/stop_worker/${facilities[fac]}/1`
 
     const req = $.get(
@@ -57,7 +57,7 @@ function stop(fac) {
         },
         'json'
     ).fail((reply, status, txt) => {
-        const msg = `Failed to load update: ${status} -- ${reply} -- ${text}`
+        const msg = `Failed to load update: ${status} -- ${reply} -- ${txt}`
         console.log(msg)
         alert(msg)
     })
@@ -65,7 +65,8 @@ function stop(fac) {
 
 function loadWorkerCount() {
     const addr = '/ajax/worker_count'
-    
+
+    try {
     let req = $.get(
         addr,
         {},
@@ -81,9 +82,12 @@ function loadWorkerCount() {
             }
         },
         'json'
-    ).fail((reply, status, text) => {
-        const msg = `Failed to load worker count: ${status} -- ${reply} -- ${text}`
+    ).fail((reply, status, txt) => {
+        const msg = `Failed to load worker count: ${status} -- ${reply} -- ${txt}`
         console.log(msg)
         alert(msg)
     })
+    } finally {
+        window.setTimeout(loadWorkerCount, 2500)
+    }
 } // function loadWorkerCount()

@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 28. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2022-11-14 23:04:06 krylon>
+// Time-stamp: <2022-11-24 00:42:49 krylon>
 //
 // Freitag, 08. 01. 2016, 22:10
 // I kinda feel like I'm not going to write a comprehensive test suite for this
@@ -135,8 +135,9 @@ func CreateScanner(workerCnt int) (*Scanner, error) {
 	scanner = &Scanner{
 		scanQ:     make(chan data.ScanRequest, workerCnt),
 		resultQ:   make(chan data.ScanResult, workerCnt*2),
-		hostQ:     make(chan data.HostWithPorts, workerCnt*2),
-		mmQ:       make(chan data.ControlMessage),
+		hostQ:     make(chan data.HostWithPorts, workerCnt),
+		mmQ:       make(chan data.ControlMessage, workerCnt),
+		RC:        make(chan data.ControlMessage, 2),
 		workerCnt: workerCnt,
 	}
 
@@ -304,7 +305,7 @@ func (sc *Scanner) hostFeeder() {
 	}
 
 	for sc.IsRunning() {
-		if hosts, err = db.HostGetRandom(sc.workerCnt * 10); err != nil {
+		if hosts, err = db.HostGetRandom(sc.workerCnt); err != nil {
 			msg = fmt.Sprintf("Error getting (up to) %d random hosts: %s",
 				sc.workerCnt, err.Error())
 			sc.log.Println(msg)
@@ -401,7 +402,7 @@ func (sc *Scanner) worker(id int) {
 		case msg = <-sc.mmQ:
 			switch msg {
 			case data.CtlMsgStop:
-				sc.log.Printf("[DEBUG] Worker #%d is quitting as ordered.\n",
+				sc.log.Printf("[INFO] Worker #%d is quitting as ordered.\n",
 					id)
 				return
 			default:

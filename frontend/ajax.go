@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 03. 11. 2022 by Benjamin Walkenhorst
 // (c) 2022 Benjamin Walkenhorst
-// Time-stamp: <2022-11-14 20:17:32 krylon>
+// Time-stamp: <2022-11-23 22:59:34 krylon>
 
 package frontend
 
@@ -239,6 +239,10 @@ func (srv *WebFrontend) handleWorkerStop(w http.ResponseWriter, r *http.Request)
 		srv.log.Printf("[ERROR] %s\n", res.Message)
 		goto RESPOND
 	}
+
+	srv.log.Printf("[INFO] Stopping %d %s workers\n",
+		cnt,
+		fac)
 
 	srv.nexus.StopWorker(fac, int(cnt))
 

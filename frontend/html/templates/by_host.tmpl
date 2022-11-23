@@ -1,6 +1,6 @@
 {{ define "by_host" }}
 {{/* -*- mode: web; coding: utf-8; -*- */}}
-{{/* Time-stamp: <2022-11-01 00:53:57 krylon> */}}
+{{/* Time-stamp: <2022-11-23 20:00:36 krylon> */}}
 <!DOCTYPE html>
 <html>
   {{ template "head" . }}
@@ -16,6 +16,8 @@
     {{ template "beacon" . }}
 
     {{ template "menu" }}
+
+    {{ template "controlpanel" . }}
 
     <table class="table">
       <thead>

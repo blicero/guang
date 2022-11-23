@@ -1,6 +1,6 @@
 {{ define "controlpanel" }}
 {{/* Created on 08. 11. 2022 */}}
-{{/* Time-stamp: <2022-11-14 23:05:44 krylon> */}}
+{{/* Time-stamp: <2022-11-23 22:34:46 krylon> */}}
 <div id="controlpanel" class="container-fluid">
   <script src="/static/controlpanel.js"></script>
   <script>
@@ -18,12 +18,12 @@
       </td>
       <td>
         <button class="btn btn-light pushbutton"
-                onclick="spawn('Generator')">
+                onclick="workerSpawn('Generator');">
           <img src="/static/icons8-plus-math-60.png" width=32" height="32" />
         </button>
         &nbsp;
         <button class="btn btn-light pushbutton"
-                onclick="stop('Generator')">
+                onclick="workerStop('Generator');">
           <img src="/static/icons8-minus-48.png" width=32" height="32" />
         </button>
       </td>
@@ -37,12 +37,12 @@
       </td>
       <td>
         <button class="btn btn-light pushbutton"
-                onclick="spawn('XFR')">
+                onclick="workerSpawn('XFR');">
           <img src="/static/icons8-plus-math-60.png" width=32" height="32" />
         </button>
         &nbsp;
         <button class="btn btn-light pushbutton"
-                onclick="stop('XFR')">
+                onclick="workerStop('XFR');">
           <img src="/static/icons8-minus-48.png" width=32" height="32" />
         </button>
       </td>
@@ -56,12 +56,12 @@
       </td>
       <td>
         <button class="btn btn-light pushbutton"
-                onclick="spawn('Scanner')">
+                onclick="workerSpawn('Scanner');">
           <img src="/static/icons8-plus-math-60.png" width=32" height="32" />
         </button>
         &nbsp;
         <button class="btn btn-light pushbutton"
-                onclick="stop('Scanner')">
+                onclick="workerStop('Scanner');">
           <img src="/static/icons8-minus-48.png" width=32" height="32" />
         </button>
       </td>

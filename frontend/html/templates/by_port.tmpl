@@ -1,6 +1,6 @@
 {{define "by_port"}}
 {{/* -*- mode: web; coding: utf-8; -*- */}}
-{{/* Time-stamp: <2022-11-11 23:54:19 krylon> */}}
+{{/* Time-stamp: <2022-11-17 17:12:21 krylon> */}}
 <!DOCTYPE html>
 <html>
   {{ template "head" . }}
@@ -104,7 +104,7 @@
         <tbody>
           {{range .Ports}}
           <tr id="toc_{{.Port}}">
-            <td>
+            <td style="text-align:right">
               <a href="#port_{{.Port}}">{{.Port}}</a>
             </td>
             <td id="port_cnt_{{.Port}}">

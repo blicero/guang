@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 25. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2022-11-09 23:08:14 krylon>
+// Time-stamp: <2022-11-23 22:18:11 krylon>
 
 package xfr
 
@@ -152,6 +152,8 @@ LOOP:
 		case ctl := <-xfrc.RC:
 			switch ctl {
 			case data.CtlMsgStop:
+				xfrc.log.Printf("[INFO] XFR worker %d is quitting.\n",
+					workerID)
 				return
 			case data.CtlMsgShutdown:
 				xfrc.Stop()
@@ -159,8 +161,11 @@ LOOP:
 			case data.CtlMsgSpawn:
 				var cnt = xfrc.Count()
 				go xfrc.worker(cnt + 1)
+			default:
+				xfrc.log.Printf("[INFO] Don't know how to handle command %s\n",
+					ctl)
 			}
-			continue
+			continue LOOP
 		case <-pulse.C:
 			continue
 		}

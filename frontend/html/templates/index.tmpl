@@ -1,6 +1,6 @@
 {{define "index"}}
 {{/* -*- mode: web; coding: utf-8; -*- */}}
-{{/* Time-stamp: <2022-11-01 00:53:44 krylon> */}}
+{{/* Time-stamp: <2022-11-23 20:00:19 krylon> */}}
 <!DOCTYPE html>
 <html>
   {{ template "head" . }}
@@ -25,6 +25,8 @@
     {{ template "beacon" . }}
 
     {{ template "menu" }}
+
+    {{ template "controlpanel" . }}
 
     Current state of Guang:
     <table class="horizontal">
