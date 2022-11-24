@@ -1,5 +1,5 @@
 # -*- mode: org; fill-column: 78; -*-
-# Time-stamp: <2022-11-24 00:49:41 krylon>
+# Time-stamp: <2022-11-24 21:01:51 krylon>
 #
 #+TAGS: optimize(o) refactor(r) bug(b) feature(f) architecture(a)
 #+TAGS: web(w) database(d) javascript(j)
@@ -11,28 +11,28 @@
 * Guang
 ** Clocktable
    #+BEGIN: clocktable :scope file :maxlevel 20
-   #+CAPTION: Clock summary at [2022-11-24 Do 00:49]
-   | Headline                           | Time       |          |          |         |          |          |
-   |------------------------------------+------------+----------+----------+---------+----------+----------|
-   | *Total time*                       | *3d 22:42* |          |          |         |          |          |
-   |------------------------------------+------------+----------+----------+---------+----------+----------|
-   | Guang                              | 3d 22:42   |          |          |         |          |          |
-   | \_  Components                     |            | 3d 22:42 |          |         |          |          |
-   | \_    Database                     |            |          |     0:58 |         |          |          |
-   | \_      SQLite                     |            |          |          |    0:44 |          |          |
-   | \_      Pool                       |            |          |          |    0:11 |          |          |
-   | \_      Major cleanup [2/2]        |            |          |          |    0:03 |          |          |
-   | \_        Package                  |            |          |          |         |     0:03 |          |
-   | \_    Web interface [4/6]          |            |          | 3d 11:19 |         |          |          |
-   | \_      Major overhaul [3/5]       |            |          |          | 3d 7:04 |          |          |
-   | \_        Live updates             |            |          |          |         |  1d 8:10 |          |
-   | \_        Knobs and Switches [1/2] |            |          |          |         | 1d 18:46 |          |
-   | \_          UI                     |            |          |          |         |          | 1d 18:46 |
-   | \_        Bootstrap and friends    |            |          |          |         |     4:08 |          |
-   | \_      Embed                      |            |          |          |    4:15 |          |          |
-   | \_    Refactoring [2/2]            |            |          |    10:25 |         |          |          |
-   | \_      Packages                   |            |          |          |    7:38 |          |          |
-   | \_      Linter                     |            |          |          |    2:47 |          |          |
+   #+CAPTION: Clock summary at [2022-11-24 Do 21:01]
+   | Headline                           | Time      |         |          |         |          |          |
+   |------------------------------------+-----------+---------+----------+---------+----------+----------|
+   | *Total time*                       | *4d 1:07* |         |          |         |          |          |
+   |------------------------------------+-----------+---------+----------+---------+----------+----------|
+   | Guang                              | 4d 1:07   |         |          |         |          |          |
+   | \_  Components                     |           | 4d 1:07 |          |         |          |          |
+   | \_    Database                     |           |         |     0:58 |         |          |          |
+   | \_      SQLite                     |           |         |          |    0:44 |          |          |
+   | \_      Pool                       |           |         |          |    0:11 |          |          |
+   | \_      Major cleanup [2/2]        |           |         |          |    0:03 |          |          |
+   | \_        Package                  |           |         |          |         |     0:03 |          |
+   | \_    Web interface [5/6]          |           |         | 3d 13:44 |         |          |          |
+   | \_      Major overhaul [4/5]       |           |         |          | 3d 9:29 |          |          |
+   | \_        Live updates             |           |         |          |         |  1d 8:10 |          |
+   | \_        Knobs and Switches [2/2] |           |         |          |         | 1d 21:11 |          |
+   | \_          UI                     |           |         |          |         |          | 1d 21:11 |
+   | \_        Bootstrap and friends    |           |         |          |         |     4:08 |          |
+   | \_      Embed                      |           |         |          |    4:15 |          |          |
+   | \_    Refactoring [2/2]            |           |         |    10:25 |         |          |          |
+   | \_      Packages                   |           |         |          |    7:38 |          |          |
+   | \_      Linter                     |           |         |          |    2:47 |          |          |
    #+END:
 ** Diary
 *** [2022-10-26 Mi 15:56]
@@ -64,12 +64,12 @@
 ***** DONE Names
       CLOSED: [2022-10-31 Mo 19:57]
       I need to change a bunch of names.
-*** Web interface [4/6]
+*** Web interface [5/6]
     :PROPERTIES:
     :COOKIE_DATA: todo recursive
     :VISIBILITY: children
     :END:
-**** Major overhaul [3/5]
+**** Major overhaul [4/5]
      The web interface is in dire need of a makeover. I'm not a very
      proficient web developer, but I was even less so when I first wrote this
      baby, and it is ... embarrassing to look at.
@@ -93,7 +93,7 @@
       results exists for the port? Do I want to handle that special case?
       I'm thinking this should be a very rare occurrence, so I treat is as
       negligible for now.
-***** TODO Knobs and Switches [1/2]
+***** TODO Knobs and Switches [2/2]
       I want to be able to basically micro-manage the backend from the web
       interface. For starts, I want to spawn or discard worker goroutines for
       the various components on the fly. I have done /a little/ preliminary
@@ -104,8 +104,10 @@
       ...
       Strike that. It doesn't work like that, I need work my from the inside
       out.
-****** TODO UI
+****** DONE UI
+       CLOSED: [2022-11-24 Do 21:01]
        :LOGBOOK:
+       CLOCK: [2022-11-24 Do 18:36]--[2022-11-24 Do 21:01] =>  2:25
        CLOCK: [2022-11-23 Mi 19:58]--[2022-11-24 Do 00:49] =>  4:51
        CLOCK: [2022-11-17 Do 16:44]--[2022-11-17 Do 21:50] =>  5:06
        CLOCK: [2022-11-14 Mo 16:09]--[2022-11-14 Mo 23:06] =>  6:57
