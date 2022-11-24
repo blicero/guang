@@ -1,6 +1,6 @@
 // /home/krylon/go/src/github.com/blicero/guang/frontend/html/static/controlpanel.js
 // -*- mode: javascript; coding: utf-8; -*-
-// Time-stamp: <2022-11-23 22:38:34 krylon>
+// Time-stamp: <2022-11-24 20:10:37 krylon>
 // Copyright 2022 Benjamin Walkenhorst
 
 'use strict'
@@ -17,9 +17,15 @@ const cntID = {
     'XFR': '#cnt_xfr',
 }
 
-function workerSpawn(fac) {
-    const addr = `/ajax/spawn_worker/${facilities[fac]}/1`
+const amtID = {
+    'Generator': '#amt_gen',
+    'Scanner': '#amt_scan',
+    'XFR': '#amt_xfr',
+}
 
+function workerSpawn(fac) {
+    const amt = $(amtID[fac])[0].value
+    const addr = `/ajax/spawn_worker/${facilities[fac]}/${amt}`
     const req = $.get(addr,
                       {},
                       (res) => {
@@ -40,7 +46,8 @@ function workerSpawn(fac) {
 } // function spawn(fac)
 
 function workerStop(fac) {
-    const addr = `/ajax/stop_worker/${facilities[fac]}/1`
+    const amt = $(amtID[fac])[0].value
+    const addr = `/ajax/stop_worker/${facilities[fac]}/${amt}`
 
     const req = $.get(
         addr,
@@ -67,26 +74,26 @@ function loadWorkerCount() {
     const addr = '/ajax/worker_count'
 
     try {
-    let req = $.get(
-        addr,
-        {},
-        (res) => {
-            if (res.Status) {
-                for (const [fac, id] of Object.entries(cntID)) {
-                    $(id)[0].innerHTML = res[fac]
+        let req = $.get(
+            addr,
+            {},
+            (res) => {
+                if (res.Status) {
+                    for (const [fac, id] of Object.entries(cntID)) {
+                        $(id)[0].innerHTML = res[fac]
+                    }
+                } else {
+                    const msg = `${res.Timestamp} - Error requesting worker count: ${res.Message}`
+                    console.log(msg)
+                    alert(msg)
                 }
-            } else {
-                const msg = `${res.Timestamp} - Error requesting worker count: ${res.Message}`
-                console.log(msg)
-                alert(msg)
-            }
-        },
-        'json'
-    ).fail((reply, status, txt) => {
-        const msg = `Failed to load worker count: ${status} -- ${reply} -- ${txt}`
-        console.log(msg)
-        alert(msg)
-    })
+            },
+            'json'
+        ).fail((reply, status, txt) => {
+            const msg = `Failed to load worker count: ${status} -- ${reply} -- ${txt}`
+            console.log(msg)
+            alert(msg)
+        })
     } finally {
         window.setTimeout(loadWorkerCount, 2500)
     }

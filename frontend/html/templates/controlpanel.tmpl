@@ -1,6 +1,6 @@
 {{ define "controlpanel" }}
 {{/* Created on 08. 11. 2022 */}}
-{{/* Time-stamp: <2022-11-23 22:34:46 krylon> */}}
+{{/* Time-stamp: <2022-11-24 19:32:30 krylon> */}}
 <div id="controlpanel" class="container-fluid">
   <script src="/static/controlpanel.js"></script>
   <script>
@@ -27,6 +27,9 @@
           <img src="/static/icons8-minus-48.png" width=32" height="32" />
         </button>
       </td>
+      <td>
+        <input type="number" min="1" max="100" id="amt_gen" value="1" />
+      </td>
     </tr>
     <tr>
       <th>XFR</th>
@@ -46,6 +49,9 @@
           <img src="/static/icons8-minus-48.png" width=32" height="32" />
         </button>
       </td>
+      <td>
+        <input type="number" min="1" max="100" id="amt_xfr" value="1" />
+      </td>
     </tr>
     <tr>
       <th>Scanners</th>
@@ -64,6 +70,9 @@
                 onclick="workerStop('Scanner');">
           <img src="/static/icons8-minus-48.png" width=32" height="32" />
         </button>
+      </td>
+      <td>
+        <input type="number" min="1" max="100" id="amt_scan" value="1" />
       </td>
     </tr>
   </table>
