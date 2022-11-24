@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 27. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2022-11-07 22:05:54 krylon>
+// Time-stamp: <2022-11-24 18:49:03 krylon>
 
 package main
 
@@ -43,7 +43,7 @@ func main() {
 		baseDir                       = common.BaseDir
 	)
 
-	flag.IntVar(&genCnt, "generators", genCnt, "Number of Host Generators to run")
+	flag.IntVar(&genCnt, "generator", genCnt, "Number of Host Generators to run")
 	flag.IntVar(&xfrCnt, "xfr", xfrCnt, "Number of XFR workers to run")
 	flag.IntVar(&scanCnt, "scanner", scanCnt, "Number of scanner workers to run")
 	flag.BoolVar(&doProfile, "profile", doProfile, "Run the builtin profiling server")
