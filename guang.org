@@ -1,5 +1,5 @@
 # -*- mode: org; fill-column: 78; -*-
-# Time-stamp: <2022-11-24 21:01:51 krylon>
+# Time-stamp: <2022-11-25 01:42:20 krylon>
 #
 #+TAGS: optimize(o) refactor(r) bug(b) feature(f) architecture(a)
 #+TAGS: web(w) database(d) javascript(j)
@@ -11,28 +11,29 @@
 * Guang
 ** Clocktable
    #+BEGIN: clocktable :scope file :maxlevel 20
-   #+CAPTION: Clock summary at [2022-11-24 Do 21:01]
-   | Headline                           | Time      |         |          |         |          |          |
-   |------------------------------------+-----------+---------+----------+---------+----------+----------|
-   | *Total time*                       | *4d 1:07* |         |          |         |          |          |
-   |------------------------------------+-----------+---------+----------+---------+----------+----------|
-   | Guang                              | 4d 1:07   |         |          |         |          |          |
-   | \_  Components                     |           | 4d 1:07 |          |         |          |          |
-   | \_    Database                     |           |         |     0:58 |         |          |          |
-   | \_      SQLite                     |           |         |          |    0:44 |          |          |
-   | \_      Pool                       |           |         |          |    0:11 |          |          |
-   | \_      Major cleanup [2/2]        |           |         |          |    0:03 |          |          |
-   | \_        Package                  |           |         |          |         |     0:03 |          |
-   | \_    Web interface [5/6]          |           |         | 3d 13:44 |         |          |          |
-   | \_      Major overhaul [4/5]       |           |         |          | 3d 9:29 |          |          |
-   | \_        Live updates             |           |         |          |         |  1d 8:10 |          |
-   | \_        Knobs and Switches [2/2] |           |         |          |         | 1d 21:11 |          |
-   | \_          UI                     |           |         |          |         |          | 1d 21:11 |
-   | \_        Bootstrap and friends    |           |         |          |         |     4:08 |          |
-   | \_      Embed                      |           |         |          |    4:15 |          |          |
-   | \_    Refactoring [2/2]            |           |         |    10:25 |         |          |          |
-   | \_      Packages                   |           |         |          |    7:38 |          |          |
-   | \_      Linter                     |           |         |          |    2:47 |          |          |
+   #+CAPTION: Clock summary at [2022-11-25 Fr 01:42]
+   | Headline                           | Time      |         |          |          |          |          |
+   |------------------------------------+-----------+---------+----------+----------+----------+----------|
+   | *Total time*                       | *4d 4:44* |         |          |          |          |          |
+   |------------------------------------+-----------+---------+----------+----------+----------+----------|
+   | Guang                              | 4d 4:44   |         |          |          |          |          |
+   | \_  Components                     |           | 4d 4:44 |          |          |          |          |
+   | \_    Database                     |           |         |     0:58 |          |          |          |
+   | \_      SQLite                     |           |         |          |     0:44 |          |          |
+   | \_      Pool                       |           |         |          |     0:11 |          |          |
+   | \_      Major cleanup [2/2]        |           |         |          |     0:03 |          |          |
+   | \_        Package                  |           |         |          |          |     0:03 |          |
+   | \_    Web interface [5/7]          |           |         | 3d 17:21 |          |          |          |
+   | \_      Major overhaul [4/6]       |           |         |          | 3d 13:06 |          |          |
+   | \_        Cache for Generator      |           |         |          |          |     3:37 |          |
+   | \_        Live updates             |           |         |          |          |  1d 8:10 |          |
+   | \_        Knobs and Switches [2/2] |           |         |          |          | 1d 21:11 |          |
+   | \_          UI                     |           |         |          |          |          | 1d 21:11 |
+   | \_        Bootstrap and friends    |           |         |          |          |     4:08 |          |
+   | \_      Embed                      |           |         |          |     4:15 |          |          |
+   | \_    Refactoring [2/2]            |           |         |    10:25 |          |          |          |
+   | \_      Packages                   |           |         |          |     7:38 |          |          |
+   | \_      Linter                     |           |         |          |     2:47 |          |          |
    #+END:
 ** Diary
 *** [2022-10-26 Mi 15:56]
@@ -64,15 +65,30 @@
 ***** DONE Names
       CLOSED: [2022-10-31 Mo 19:57]
       I need to change a bunch of names.
-*** Web interface [5/6]
+*** Web interface [5/7]
     :PROPERTIES:
     :COOKIE_DATA: todo recursive
     :VISIBILITY: children
     :END:
-**** Major overhaul [4/5]
+**** Major overhaul [4/6]
      The web interface is in dire need of a makeover. I'm not a very
      proficient web developer, but I was even less so when I first wrote this
      baby, and it is ... embarrassing to look at.
+***** TODO Cache for Generator
+      :LOGBOOK:
+      CLOCK: [2022-11-24 Do 22:05]--[2022-11-25 Fr 01:42] =>  3:37
+      :END:
+      I would like to replace the cache used by the Generator. I currently use
+      KyotoCabinet, because it was the first key-value store I could find when
+      I wrote luang in C that was safe to use from multiple threads and
+      supported transactions.
+      But that library is not available everywhere, sometimes it's a pain to
+      get it installed, and I'm almost certain it has been deprecated several
+      times over by now.
+      So I would like to replace it with something written in pure Go so I get
+      rid of the external dependency.
+      I'm thinking of boltdb, or its fork bbolt, but I'd like something that
+      supports a few more data types than just byte slices. 
 ***** DONE Live updates
       CLOSED: [2022-11-08 Di 18:54]
       :LOGBOOK:
