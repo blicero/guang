@@ -21,6 +21,7 @@ require (
 require (
 	github.com/alouca/gologger v0.0.0-20120904114645-7d4b7291de9c // indirect
 	github.com/oschwald/maxminddb-golang v1.10.0 // indirect
+	go.etcd.io/bbolt v1.3.6 // indirect
 	golang.org/x/mod v0.4.2 // indirect
 	golang.org/x/net v0.0.0-20210726213435-c6fcb2dbf985 // indirect
 	golang.org/x/sys v0.0.0-20220804214406-8e32c043e418 // indirect
