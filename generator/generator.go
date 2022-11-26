@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 23. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2022-11-23 22:23:54 krylon>
+// Time-stamp: <2022-11-25 21:34:28 krylon>
 //
 // IIRC, throughput never was much of an issue with this part of the program.
 // But if it were, there are a few tricks on could pull here.
@@ -24,7 +24,6 @@ import (
 	"github.com/blicero/guang/blacklist"
 	"github.com/blicero/guang/common"
 	"github.com/blicero/guang/data"
-	"github.com/fsouza/gokabinet/kc"
 )
 
 // HostGenerator generates random Hosts
@@ -33,7 +32,7 @@ type HostGenerator struct {
 	RC         chan data.ControlMessage
 	nameBL     *blacklist.NameBlacklist
 	addrBL     *blacklist.IPBlacklist
-	cache      *kc.DB
+	cache      cache
 	lock       sync.RWMutex
 	running    bool
 	workerCnt  int
@@ -60,7 +59,8 @@ func CreateGenerator(workerCnt int) (*HostGenerator, error) {
 			err.Error())
 		return nil, err
 		//} else if err = gen.cache.Open(HOST_CACHE_PATH, cabinet.KCOWRITER|cabinet.KCOCREATE|cabinet.KCOAUTOTRAN|cabinet.KCOAUTOSYNC); err != nil {
-	} else if gen.cache, err = kc.Open(common.HostCachePath, kc.WRITE); err != nil {
+		// } else if gen.cache, err = kc.Open(common.HostCachePath, kc.WRITE); err != nil {
+	} else if gen.cache, err = openKyotoCache(common.HostCachePath); err != nil {
 		msg = fmt.Sprintf("Error opening Host cache at %s: %s",
 			common.HostCachePath, err.Error())
 		gen.log.Println(msg)
@@ -121,6 +121,7 @@ func (gen *HostGenerator) worker(id int) {
 		err       error
 		rng       *rand.Rand = rand.New(rand.NewSource(time.Now().UnixNano()))
 		addr      net.IP
+		known     bool
 		namelist  []string
 		metronom  *time.Ticker
 	)
@@ -160,15 +161,22 @@ MAIN_LOOP:
 
 		astr = addr.String()
 
-		if res, err := gen.cache.GetInt(astr); err != nil {
-			// msg = fmt.Sprintf("Error looking for %s in cache: %s",
-			// 	astr, err.Error())
-			// gen.log.Println(msg)
-		} else if res != 0 {
+		if known, err = gen.cache.hasKey(astr); err != nil {
+			// If the key does not exist, an error is returned.
+			// It's annoying bc it makes it harder to distinguish
+			// between "the key does not exist in this database"
+			// and "the disk on which our database lives just had a
+			// headcrash"
+			//
+			// gen.log.Printf("[ERROR] Cannot look for %q in host cache: %s\n",
+			// 	astr,
+			// 	err.Error())
+		} else if known {
 			continue MAIN_LOOP
-		} else {
-			gen.cache.SetInt(astr, 1) // nolint: errcheck
-			gen.cache.Commit()        // nolint: errcheck
+		} else if err = gen.cache.addKey(astr); err != nil {
+			gen.log.Printf("[ERROR] Cannot add %q to host cache: %s\n",
+				astr,
+				err.Error())
 		}
 
 		if namelist, err = net.LookupAddr(astr); err != nil {
