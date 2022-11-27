@@ -1,5 +1,5 @@
 # -*- mode: org; fill-column: 78; -*-
-# Time-stamp: <2022-11-26 18:54:45 krylon>
+# Time-stamp: <2022-11-27 03:58:26 krylon>
 #
 #+TAGS: optimize(o) refactor(r) bug(b) feature(f) architecture(a)
 #+TAGS: web(w) database(d) javascript(j)
@@ -11,15 +11,15 @@
 * Guang
 ** Clocktable
    #+BEGIN: clocktable :scope file :maxlevel 20
-   #+CAPTION: Clock summary at [2022-11-26 Sa 18:54]
+   #+CAPTION: Clock summary at [2022-11-27 So 03:58]
    | Headline                           | Time       |          |          |         |          |          |
    |------------------------------------+------------+----------+----------+---------+----------+----------|
-   | *Total time*                       | *4d 11:39* |          |          |         |          |          |
+   | *Total time*                       | *4d 20:41* |          |          |         |          |          |
    |------------------------------------+------------+----------+----------+---------+----------+----------|
-   | Guang                              | 4d 11:39   |          |          |         |          |          |
-   | \_  Components                     |            | 4d 11:39 |          |         |          |          |
-   | \_    Database                     |            |          |    11:30 |         |          |          |
-   | \_      Cache for Generator        |            |          |          |   10:32 |          |          |
+   | Guang                              | 4d 20:41   |          |          |         |          |          |
+   | \_  Components                     |            | 4d 20:41 |          |         |          |          |
+   | \_    Database                     |            |          |    20:32 |         |          |          |
+   | \_      Cache for Generator        |            |          |          |   19:34 |          |          |
    | \_      SQLite                     |            |          |          |    0:44 |          |          |
    | \_      Pool                       |            |          |          |    0:11 |          |          |
    | \_      Major cleanup [2/2]        |            |          |          |    0:03 |          |          |
@@ -44,6 +44,7 @@
 *** Database
 **** TODO Cache for Generator
       :LOGBOOK:
+      CLOCK: [2022-11-26 Sa 18:56]--[2022-11-27 So 03:58] =>  9:02
       CLOCK: [2022-11-25 Fr 20:14]--[2022-11-26 Sa 03:09] =>  6:55
       CLOCK: [2022-11-24 Do 22:05]--[2022-11-25 Fr 01:42] =>  3:37
       :END:
