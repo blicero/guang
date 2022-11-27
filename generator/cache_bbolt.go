@@ -2,11 +2,12 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 25. 11. 2022 by Benjamin Walkenhorst
 // (c) 2022 Benjamin Walkenhorst
-// Time-stamp: <2022-11-26 02:02:13 krylon>
+// Time-stamp: <2022-11-27 00:21:12 krylon>
 
 package generator
 
 import (
+	"fmt"
 	"log"
 	"sync"
 	"time"
@@ -26,13 +27,15 @@ type bboltCache struct {
 	cache *bbolt.DB
 }
 
-func openBoltCache(path string) (*bboltCache, error) {
+func openBoltCache(path string) (cache, error) { // nolint: unused
 	var (
 		err    error
 		exists bool
 		opt    bbolt.Options
 		c      = &bboltCache{path: path}
 	)
+
+	path = path + ".blt"
 
 	openLock.Lock()
 	defer openLock.Unlock()
@@ -84,14 +87,50 @@ func openBoltCache(path string) (*bboltCache, error) {
 	return c, nil
 } // func openBoltCache(path string) (*bboltCache, error)
 
-func (c *bboltCache) hasKey(s string) (bool, error) {
+func (c *bboltCache) HasKey(s string) (bool, error) {
 	var (
 		err    error
 		exists bool
 	)
 
+	err = c.cache.View(func(tx *bbolt.Tx) error {
+		var (
+			x      error
+			bucket *bbolt.Bucket
+		)
+
+		if bucket = tx.Bucket(bs("ip")); bucket == nil {
+			return fmt.Errorf("Did not find bucket 'ip' in cache, to check address %q",
+				s)
+		} else if r := bucket.Get(bs(s)); r != nil {
+			exists = true
+		}
+
+		return x
+	})
+
 	return exists, err
-} // func (c *bboltCache) hasKey(s string) (bool, error)
+} // func (c *bboltCache) HasKey(s string) (bool, error)
+
+func (c *bboltCache) AddKey(s string) error {
+	return c.cache.Update(func(tx *bbolt.Tx) error {
+		var (
+			x error
+			b *bbolt.Bucket
+		)
+
+		if b = tx.Bucket(bs("ip")); b == nil {
+			x = fmt.Errorf("Did not find Bucket 'ip' to add key %q",
+				s)
+		} else if x = b.Put(bs(s), bs("1")); x != nil {
+			c.log.Printf("[ERROR] Cannot add IP %q to host cache: %s\n",
+				s,
+				x.Error())
+		}
+
+		return x
+	})
+} // func (c *bboltCache) AddKey(s string) error
 
 func bs(s string) []byte {
 	return []byte(s)

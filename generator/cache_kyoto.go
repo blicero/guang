@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 24. 11. 2022 by Benjamin Walkenhorst
 // (c) 2022 Benjamin Walkenhorst
-// Time-stamp: <2022-11-25 01:38:06 krylon>
+// Time-stamp: <2022-11-27 00:20:45 krylon>
 
 package generator
 
@@ -19,11 +19,13 @@ type kyotoCache struct { // nolint: unused
 	cache *kc.DB
 }
 
-func openKyotoCache(path string) (*kyotoCache, error) { // nolint: unused
+func openKyotoCache(path string) (cache, error) { // nolint: unused
 	var (
 		err     error
 		kyCache = &kyotoCache{path: path}
 	)
+
+	path = path + ".kc"
 
 	if kyCache.log, err = common.GetLogger("Generator/Cache"); err != nil {
 		return nil, err
@@ -37,7 +39,7 @@ func openKyotoCache(path string) (*kyotoCache, error) { // nolint: unused
 	return kyCache, nil
 } // func openKyotoCache(path string) (*kyotoCache, error)
 
-func (c *kyotoCache) hasKey(s string) (bool, error) { // nolint: unused
+func (c *kyotoCache) HasKey(s string) (bool, error) { // nolint: unused
 	var (
 		err error
 		res bool
@@ -52,9 +54,9 @@ func (c *kyotoCache) hasKey(s string) (bool, error) { // nolint: unused
 	res = cnt != 0
 
 	return res, err
-} // func (c *kyotoCache) hasKey(s string) (bool, error)
+} // func (c *kyotoCache) HasKey(s string) (bool, error)
 
-func (c *kyotoCache) addKey(s string) error { // nolint: unused
+func (c *kyotoCache) AddKey(s string) error { // nolint: unused
 	var (
 		err error
 	)
@@ -68,4 +70,4 @@ func (c *kyotoCache) addKey(s string) error { // nolint: unused
 	}
 
 	return err
-} // func (c *kyotoCache) addKey(s string) error
+} // func (c *kyotoCache) AddKey(s string) error

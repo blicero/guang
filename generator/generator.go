@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 23. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2022-11-25 21:34:28 krylon>
+// Time-stamp: <2022-11-26 23:52:07 krylon>
 //
 // IIRC, throughput never was much of an issue with this part of the program.
 // But if it were, there are a few tricks on could pull here.
@@ -25,6 +25,13 @@ import (
 	"github.com/blicero/guang/common"
 	"github.com/blicero/guang/data"
 )
+
+var storage = map[string]cacheOpener{
+	"kyoto": openKyotoCache,
+	"bolt":  openBoltCache,
+}
+
+var backendName = "kyoto"
 
 // HostGenerator generates random Hosts
 type HostGenerator struct {
@@ -54,13 +61,15 @@ func CreateGenerator(workerCnt int) (*HostGenerator, error) {
 		workerCnt: workerCnt,
 	}
 
+	fn := storage[backendName]
+
 	if gen.log, err = common.GetLogger("Generator"); err != nil {
 		fmt.Printf("Error getting Logger instance for host generator: %s\n",
 			err.Error())
 		return nil, err
 		//} else if err = gen.cache.Open(HOST_CACHE_PATH, cabinet.KCOWRITER|cabinet.KCOCREATE|cabinet.KCOAUTOTRAN|cabinet.KCOAUTOSYNC); err != nil {
 		// } else if gen.cache, err = kc.Open(common.HostCachePath, kc.WRITE); err != nil {
-	} else if gen.cache, err = openKyotoCache(common.HostCachePath); err != nil {
+	} else if gen.cache, err = fn(common.HostCachePath); err != nil {
 		msg = fmt.Sprintf("Error opening Host cache at %s: %s",
 			common.HostCachePath, err.Error())
 		gen.log.Println(msg)
@@ -161,7 +170,7 @@ MAIN_LOOP:
 
 		astr = addr.String()
 
-		if known, err = gen.cache.hasKey(astr); err != nil {
+		if known, err = gen.cache.HasKey(astr); err != nil {
 			// If the key does not exist, an error is returned.
 			// It's annoying bc it makes it harder to distinguish
 			// between "the key does not exist in this database"
@@ -173,7 +182,7 @@ MAIN_LOOP:
 			// 	err.Error())
 		} else if known {
 			continue MAIN_LOOP
-		} else if err = gen.cache.addKey(astr); err != nil {
+		} else if err = gen.cache.AddKey(astr); err != nil {
 			gen.log.Printf("[ERROR] Cannot add %q to host cache: %s\n",
 				astr,
 				err.Error())
