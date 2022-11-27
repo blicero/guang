@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 23. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2022-11-09 20:13:57 krylon>
+// Time-stamp: <2022-11-27 00:25:09 krylon>
 
 // Package common provides constants, variables and functions used
 // throughout the application.
@@ -36,7 +36,7 @@ import (
 // their status.
 const (
 	Debug                    = true
-	Version                  = "0.3.0"
+	Version                  = "0.4.0"
 	AppName                  = "Guang"
 	TimestampFormat          = "2006-01-02 15:04:05"
 	TimestampFormatMinute    = "2006-01-02 15:04"
@@ -80,7 +80,7 @@ var (
 	BaseDir       = filepath.Join(os.Getenv("HOME"), "guang.d")
 	LogPath       = filepath.Join(BaseDir, "guang.log")
 	DbPath        = filepath.Join(BaseDir, "guang.db")
-	HostCachePath = filepath.Join(BaseDir, "ip_cache.kch")
+	HostCachePath = filepath.Join(BaseDir, "ip_cache")
 	XfrDbgPath    = filepath.Join(BaseDir, "xfr")
 )
 
