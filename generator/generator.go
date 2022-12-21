@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 23. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2022-11-26 23:52:07 krylon>
+// Time-stamp: <2022-12-20 20:46:19 krylon>
 //
 // IIRC, throughput never was much of an issue with this part of the program.
 // But if it were, there are a few tricks on could pull here.
@@ -31,7 +31,7 @@ var storage = map[string]cacheOpener{
 	"bolt":  openBoltCache,
 }
 
-var backendName = "kyoto"
+var backendName = "bolt"
 
 // HostGenerator generates random Hosts
 type HostGenerator struct {
@@ -67,8 +67,6 @@ func CreateGenerator(workerCnt int) (*HostGenerator, error) {
 		fmt.Printf("Error getting Logger instance for host generator: %s\n",
 			err.Error())
 		return nil, err
-		//} else if err = gen.cache.Open(HOST_CACHE_PATH, cabinet.KCOWRITER|cabinet.KCOCREATE|cabinet.KCOAUTOTRAN|cabinet.KCOAUTOSYNC); err != nil {
-		// } else if gen.cache, err = kc.Open(common.HostCachePath, kc.WRITE); err != nil {
 	} else if gen.cache, err = fn(common.HostCachePath); err != nil {
 		msg = fmt.Sprintf("Error opening Host cache at %s: %s",
 			common.HostCachePath, err.Error())

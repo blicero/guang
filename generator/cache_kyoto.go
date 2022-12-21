@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 24. 11. 2022 by Benjamin Walkenhorst
 // (c) 2022 Benjamin Walkenhorst
-// Time-stamp: <2022-11-27 00:20:45 krylon>
+// Time-stamp: <2022-12-20 19:48:11 krylon>
 
 package generator
 
@@ -13,19 +13,17 @@ import (
 	"github.com/fsouza/gokabinet/kc"
 )
 
-type kyotoCache struct { // nolint: unused
+type kyotoCache struct {
 	path  string
 	log   *log.Logger
 	cache *kc.DB
 }
 
-func openKyotoCache(path string) (cache, error) { // nolint: unused
+func openKyotoCache(path string) (cache, error) {
 	var (
 		err     error
 		kyCache = &kyotoCache{path: path}
 	)
-
-	path = path + ".kc"
 
 	if kyCache.log, err = common.GetLogger("Generator/Cache"); err != nil {
 		return nil, err
@@ -39,7 +37,7 @@ func openKyotoCache(path string) (cache, error) { // nolint: unused
 	return kyCache, nil
 } // func openKyotoCache(path string) (*kyotoCache, error)
 
-func (c *kyotoCache) HasKey(s string) (bool, error) { // nolint: unused
+func (c *kyotoCache) HasKey(s string) (bool, error) {
 	var (
 		err error
 		res bool
@@ -56,7 +54,7 @@ func (c *kyotoCache) HasKey(s string) (bool, error) { // nolint: unused
 	return res, err
 } // func (c *kyotoCache) HasKey(s string) (bool, error)
 
-func (c *kyotoCache) AddKey(s string) error { // nolint: unused
+func (c *kyotoCache) AddKey(s string) error {
 	var (
 		err error
 	)

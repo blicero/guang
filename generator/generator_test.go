@@ -2,13 +2,12 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 24. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2022-10-30 21:15:13 krylon>
+// Time-stamp: <2022-12-20 19:50:04 krylon>
 
 package generator
 
 import (
 	"fmt"
-	"math/rand"
 	"testing"
 	"time"
 
@@ -18,11 +17,10 @@ import (
 var gen *HostGenerator
 
 func TestCreateGenerator(t *testing.T) {
-	var rng *rand.Rand = rand.New(rand.NewSource(time.Now().Unix()))
-
-	var testPath string = fmt.Sprintf("/tmp/guang_test_%08x",
-		rng.Int31())
-	var err error
+	var (
+		testPath = time.Now().Format("/tmp/guang_test_generator_2006_01_02__15_04_05")
+		err      error
+	)
 
 	fmt.Printf("Setting BASE_DIR to %s\n", testPath)
 	common.SetBaseDir(testPath)
@@ -37,6 +35,10 @@ func TestCreateGenerator(t *testing.T) {
 } // func TestCreateGenerator(t *testing.T)
 
 func TestReceiveHosts(t *testing.T) {
+	if gen == nil {
+		t.SkipNow()
+	}
+
 	var host = <-gen.HostQueue
 
 	if common.Debug {

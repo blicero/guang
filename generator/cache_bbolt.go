@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 25. 11. 2022 by Benjamin Walkenhorst
 // (c) 2022 Benjamin Walkenhorst
-// Time-stamp: <2022-11-27 00:21:12 krylon>
+// Time-stamp: <2022-12-16 18:35:37 krylon>
 
 package generator
 
@@ -35,7 +35,8 @@ func openBoltCache(path string) (cache, error) { // nolint: unused
 		c      = &bboltCache{path: path}
 	)
 
-	path = path + ".blt"
+	// path = path + ".blt"
+	// common.HostCachePath = path
 
 	openLock.Lock()
 	defer openLock.Unlock()
