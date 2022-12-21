@@ -1,5 +1,5 @@
 # -*- mode: org; fill-column: 78; -*-
-# Time-stamp: <2022-11-27 03:58:26 krylon>
+# Time-stamp: <2022-12-21 20:59:41 krylon>
 #
 #+TAGS: optimize(o) refactor(r) bug(b) feature(f) architecture(a)
 #+TAGS: web(w) database(d) javascript(j)
@@ -11,29 +11,29 @@
 * Guang
 ** Clocktable
    #+BEGIN: clocktable :scope file :maxlevel 20
-   #+CAPTION: Clock summary at [2022-11-27 So 03:58]
-   | Headline                           | Time       |          |          |         |          |          |
-   |------------------------------------+------------+----------+----------+---------+----------+----------|
-   | *Total time*                       | *4d 20:41* |          |          |         |          |          |
-   |------------------------------------+------------+----------+----------+---------+----------+----------|
-   | Guang                              | 4d 20:41   |          |          |         |          |          |
-   | \_  Components                     |            | 4d 20:41 |          |         |          |          |
-   | \_    Database                     |            |          |    20:32 |         |          |          |
-   | \_      Cache for Generator        |            |          |          |   19:34 |          |          |
-   | \_      SQLite                     |            |          |          |    0:44 |          |          |
-   | \_      Pool                       |            |          |          |    0:11 |          |          |
-   | \_      Major cleanup [2/2]        |            |          |          |    0:03 |          |          |
-   | \_        Package                  |            |          |          |         |     0:03 |          |
-   | \_    Web interface [6/6]          |            |          | 3d 13:44 |         |          |          |
-   | \_      Major overhaul [5/5]       |            |          |          | 3d 9:29 |          |          |
-   | \_        Live updates             |            |          |          |         |  1d 8:10 |          |
-   | \_        Knobs and Switches [2/2] |            |          |          |         | 1d 21:11 |          |
-   | \_          UI                     |            |          |          |         |          | 1d 21:11 |
-   | \_        Bootstrap and friends    |            |          |          |         |     4:08 |          |
-   | \_      Embed                      |            |          |          |    4:15 |          |          |
-   | \_    Refactoring [2/2]            |            |          |    10:25 |         |          |          |
-   | \_      Packages                   |            |          |          |    7:38 |          |          |
-   | \_      Linter                     |            |          |          |    2:47 |          |          |
+   #+CAPTION: Clock summary at [2022-12-21 Mi 20:59]
+   | Headline                           | Time       |          |          |          |          |          |
+   |------------------------------------+------------+----------+----------+----------+----------+----------|
+   | *Total time*                       | *5d 23:29* |          |          |          |          |          |
+   |------------------------------------+------------+----------+----------+----------+----------+----------|
+   | Guang                              | 5d 23:29   |          |          |          |          |          |
+   | \_  Components                     |            | 5d 23:29 |          |          |          |          |
+   | \_    Database                     |            |          | 1d 23:20 |          |          |          |
+   | \_      Cache for Generator        |            |          |          | 1d 22:22 |          |          |
+   | \_      SQLite                     |            |          |          |     0:44 |          |          |
+   | \_      Pool                       |            |          |          |     0:11 |          |          |
+   | \_      Major cleanup [2/2]        |            |          |          |     0:03 |          |          |
+   | \_        Package                  |            |          |          |          |     0:03 |          |
+   | \_    Web interface [6/6]          |            |          | 3d 13:44 |          |          |          |
+   | \_      Major overhaul [5/5]       |            |          |          |  3d 9:29 |          |          |
+   | \_        Live updates             |            |          |          |          |  1d 8:10 |          |
+   | \_        Knobs and Switches [2/2] |            |          |          |          | 1d 21:11 |          |
+   | \_          UI                     |            |          |          |          |          | 1d 21:11 |
+   | \_        Bootstrap and friends    |            |          |          |          |     4:08 |          |
+   | \_      Embed                      |            |          |          |     4:15 |          |          |
+   | \_    Refactoring [2/2]            |            |          | 10:25    |          |          |          |
+   | \_      Packages                   |            |          |          |     7:38 |          |          |
+   | \_      Linter                     |            |          |          |     2:47 |          |          |
    #+END:
 ** Diary
 *** [2022-10-26 Mi 15:56]
@@ -44,6 +44,7 @@
 *** Database
 **** TODO Cache for Generator
       :LOGBOOK:
+      CLOCK: [2022-12-20 Di 18:09]--[2022-12-21 Mi 20:57] => 26:48
       CLOCK: [2022-11-26 Sa 18:56]--[2022-11-27 So 03:58] =>  9:02
       CLOCK: [2022-11-25 Fr 20:14]--[2022-11-26 Sa 03:09] =>  6:55
       CLOCK: [2022-11-24 Do 22:05]--[2022-11-25 Fr 01:42] =>  3:37
