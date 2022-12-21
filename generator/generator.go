@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 23. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2022-12-20 20:46:19 krylon>
+// Time-stamp: <2022-12-21 21:13:32 krylon>
 //
 // IIRC, throughput never was much of an issue with this part of the program.
 // But if it were, there are a few tricks on could pull here.
@@ -27,8 +27,8 @@ import (
 )
 
 var storage = map[string]cacheOpener{
-	"kyoto": openKyotoCache,
-	"bolt":  openBoltCache,
+	// "kyoto": openKyotoCache,
+	"bolt": openBoltCache,
 }
 
 var backendName = "bolt"

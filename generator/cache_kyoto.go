@@ -2,7 +2,9 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 24. 11. 2022 by Benjamin Walkenhorst
 // (c) 2022 Benjamin Walkenhorst
-// Time-stamp: <2022-12-20 19:48:11 krylon>
+// Time-stamp: <2022-12-21 21:13:12 krylon>
+
+// +build ignore
 
 package generator
 
