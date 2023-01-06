@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 05. 02. 2016 by Benjamin Walkenhorst
 // (c) 2016 Benjamin Walkenhorst
-// Time-stamp: <2022-10-31 19:20:47 krylon>
+// Time-stamp: <2023-01-04 18:23:30 krylon>
 
 package backend
 
@@ -57,7 +57,7 @@ var targets []scanTarget = []scanTarget{
 			Added:   time.Now(),
 		},
 
-		Ports: []uint16{22, 5900},
+		Ports: []uint16{22},
 	},
 
 	scanTarget{
