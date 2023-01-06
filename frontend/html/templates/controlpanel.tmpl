@@ -1,80 +1,165 @@
 {{ define "controlpanel" }}
 {{/* Created on 08. 11. 2022 */}}
-{{/* Time-stamp: <2022-11-24 19:32:30 krylon> */}}
-<div id="controlpanel" class="container-fluid">
+{{/* Time-stamp: <2023-01-06 00:24:59 krylon> */}}
+<div id="controlpanel" class="container container-fluid">
   <script src="/static/controlpanel.js"></script>
   <script>
    $(document).ready(loadWorkerCount)
   </script>
-  <table class="table horizontal caption-top">
-    <tr>
-      <th>
-        Generators
-      </th>
-      <td>
-        <div id="cnt_gen" class="counter">
-          ?
-        </div>
-      </td>
-      <td>
-        <button class="btn btn-light pushbutton"
-                onclick="workerSpawn('Generator');">
-          <img src="/static/icons8-plus-math-60.png" width=32" height="32" />
-        </button>
-        &nbsp;
-        <button class="btn btn-light pushbutton"
-                onclick="workerStop('Generator');">
-          <img src="/static/icons8-minus-48.png" width=32" height="32" />
-        </button>
-      </td>
-      <td>
-        <input type="number" min="1" max="100" id="amt_gen" value="1" />
-      </td>
-    </tr>
-    <tr>
-      <th>XFR</th>
-      <td>
-        <div id="cnt_xfr" class="counter">
-          ?
-        </div>
-      </td>
-      <td>
-        <button class="btn btn-light pushbutton"
-                onclick="workerSpawn('XFR');">
-          <img src="/static/icons8-plus-math-60.png" width=32" height="32" />
-        </button>
-        &nbsp;
-        <button class="btn btn-light pushbutton"
-                onclick="workerStop('XFR');">
-          <img src="/static/icons8-minus-48.png" width=32" height="32" />
-        </button>
-      </td>
-      <td>
-        <input type="number" min="1" max="100" id="amt_xfr" value="1" />
-      </td>
-    </tr>
-    <tr>
-      <th>Scanners</th>
-      <td>
-        <div id="cnt_scan" class="counter">
-          ?
-        </div>
-      </td>
-      <td>
-        <button class="btn btn-light pushbutton"
-                onclick="workerSpawn('Scanner');">
-          <img src="/static/icons8-plus-math-60.png" width=32" height="32" />
-        </button>
-        &nbsp;
-        <button class="btn btn-light pushbutton"
-                onclick="workerStop('Scanner');">
-          <img src="/static/icons8-minus-48.png" width=32" height="32" />
-        </button>
-      </td>
-      <td>
-        <input type="number" min="1" max="100" id="amt_scan" value="1" />
-      </td>
-    </tr>
-  </table>
+  <div class="row">
+    <div class="col">
+      <table class="table horizontal caption-top">
+        <thead>
+          <caption>
+            Current state of Guang
+          </caption>
+        </thead>
+        <tbody>
+          <tr>
+            <th>Host generators</th>
+            <td id="cnt_gen">{{.HostGenCnt}}</td>
+            <td>
+              <button class="btn btn-light pushbutton"
+                      onclick="workerSpawn('Generator');">
+                <img src="/static/icons8-plus-math-60.png" width=32" height="32" />
+              </button>
+              &nbsp;
+              <button class="btn btn-light pushbutton"
+                      onclick="workerStop('Generator');">
+                <img src="/static/icons8-minus-48.png" width=32" height="32" />
+              </button>
+            </td>
+            <td>
+              <input type="number" min="1" max="100" id="amt_gen" value="1" />
+            </td>
+          </tr>
+
+          <tr>
+            <th>XFR workers</th>
+            <td id="cnt_xfr">{{.XFRCnt}}</td>
+            <td>
+              <button class="btn btn-light pushbutton"
+                      onclick="workerSpawn('XFR');">
+                <img src="/static/icons8-plus-math-60.png" width=32" height="32" />
+              </button>
+              &nbsp;
+              <button class="btn btn-light pushbutton"
+                      onclick="workerStop('XFR');">
+                <img src="/static/icons8-minus-48.png" width=32" height="32" />
+              </button>
+            </td>
+            <td>
+              <input type="number" min="1" max="100" id="amt_xfr" value="1" />
+            </td>
+          </tr>
+
+          <tr>
+            <th>Scanners</th>
+            <td id="cnt_scan">{{.ScanCnt}}</td>
+          </tr>
+
+          <tr>
+            <th>Hosts in database</th>
+            <td>{{.HostCnt}}</td>
+            <td>
+              <button class="btn btn-light pushbutton"
+                      onclick="workerSpawn('Scanner');">
+                <img src="/static/icons8-plus-math-60.png" width=32" height="32" />
+              </button>
+              &nbsp;
+              <button class="btn btn-light pushbutton"
+                      onclick="workerStop('Scanner');">
+                <img src="/static/icons8-minus-48.png" width=32" height="32" />
+              </button>
+            </td>
+            <td>
+              <input type="number" min="1" max="100" id="amt_scan" value="1" />
+            </td>
+          </tr>
+
+          <tr>
+            <th>Ports successfully scanned</th>
+            <td>{{.PortReplyCnt}}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    {{/*
+    <div class="col">
+      <table class="container-md table horizontal caption-top">
+        <tbody>
+          <tr>
+            <th>
+              Generators
+            </th>
+            <td>
+              <div id="cnt_gen" class="counter">
+                ?
+              </div>
+            </td>
+            <td>
+              <button class="btn btn-light pushbutton"
+                      onclick="workerSpawn('Generator');">
+                <img src="/static/icons8-plus-math-60.png" width=32" height="32" />
+              </button>
+              &nbsp;
+              <button class="btn btn-light pushbutton"
+                      onclick="workerStop('Generator');">
+                <img src="/static/icons8-minus-48.png" width=32" height="32" />
+              </button>
+            </td>
+            <td>
+              <input type="number" min="1" max="100" id="amt_gen" value="1" />
+            </td>
+          </tr>
+          <tr>
+            <th>XFR</th>
+            <td>
+              <div id="cnt_xfr" class="counter">
+                ?
+              </div>
+            </td>
+            <td>
+              <button class="btn btn-light pushbutton"
+                      onclick="workerSpawn('XFR');">
+                <img src="/static/icons8-plus-math-60.png" width=32" height="32" />
+              </button>
+              &nbsp;
+              <button class="btn btn-light pushbutton"
+                      onclick="workerStop('XFR');">
+                <img src="/static/icons8-minus-48.png" width=32" height="32" />
+              </button>
+            </td>
+            <td>
+              <input type="number" min="1" max="100" id="amt_xfr" value="1" />
+            </td>
+          </tr>
+          <tr>
+            <th>Scanners</th>
+            <td>
+              <div id="cnt_scan" class="counter">
+                ?
+              </div>
+            </td>
+            <td>
+              <button class="btn btn-light pushbutton"
+                      onclick="workerSpawn('Scanner');">
+                <img src="/static/icons8-plus-math-60.png" width=32" height="32" />
+              </button>
+              &nbsp;
+              <button class="btn btn-light pushbutton"
+                      onclick="workerStop('Scanner');">
+                <img src="/static/icons8-minus-48.png" width=32" height="32" />
+              </button>
+            </td>
+            <td>
+              <input type="number" min="1" max="100" id="amt_scan" value="1" />
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    */}}
+  </div>
 </div>
 {{ end }}

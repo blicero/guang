@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 06. 02. 2016 by Benjamin Walkenhorst
 // (c) 2016 Benjamin Walkenhorst
-// Time-stamp: <2022-11-23 22:42:31 krylon>
+// Time-stamp: <2023-01-06 17:52:53 krylon>
 
 package frontend
 
@@ -248,11 +248,28 @@ func (srv *WebFrontend) handleByPort(w http.ResponseWriter, request *http.Reques
 		return
 	} else {
 		tmplData = tmplDataByPort{
-			Debug:      common.Debug,
-			Title:      "Hosts by Port",
-			Facilities: facility.All(),
-			Error:      make([]string, 0),
-			Count:      len(dbRes),
+			tmplDataIndex: tmplDataIndex{
+				Debug:      common.Debug,
+				Title:      "Hosts by Port",
+				Facilities: facility.All(),
+				Error:      make([]string, 0),
+				HostGenCnt: srv.nexus.GetGeneratorCount(),
+				ScanCnt:    srv.nexus.GetScannerCount(),
+				XFRCnt:     srv.nexus.GetXFRCount(),
+			},
+			Count: len(dbRes),
+		}
+
+		if tmplData.HostCnt, err = db.HostGetCount(); err != nil {
+			msg = fmt.Sprintf("Error getting number of hosts: %s", err.Error())
+			srv.log.Println(msg)
+			srv.sendErrorMessage(w, msg)
+			return
+		} else if tmplData.PortReplyCnt, err = db.PortGetReplyCount(); err != nil {
+			msg = fmt.Sprintf("Error getting number of scanned ports: %s", err.Error())
+			srv.log.Println(msg)
+			srv.sendErrorMessage(w, msg)
+			return
 		}
 
 		if common.Debug {
@@ -300,11 +317,15 @@ func (srv *WebFrontend) handleByHost(w http.ResponseWriter, request *http.Reques
 	defer srv.dbPool.Put(db)
 
 	data = tmplDataByHost{
-		Title:      "Scanned Ports by Host",
-		Debug:      common.Debug,
-		Facilities: facility.All(),
-		Error:      make([]string, 0),
-		Count:      len(data.Hosts),
+		tmplDataIndex: tmplDataIndex{
+			Title:      "Scanned Ports by Host",
+			Debug:      common.Debug,
+			Facilities: facility.All(),
+			Error:      make([]string, 0),
+			HostGenCnt: srv.nexus.GetGeneratorCount(),
+			ScanCnt:    srv.nexus.GetScannerCount(),
+			XFRCnt:     srv.nexus.GetXFRCount(),
+		},
 	}
 
 	if data.Hosts, err = db.HostGetByHostReport(); err != nil {
@@ -313,7 +334,19 @@ func (srv *WebFrontend) handleByHost(w http.ResponseWriter, request *http.Reques
 		srv.log.Println(msg)
 		srv.sendErrorMessage(w, msg)
 		return
+	} else if data.HostCnt, err = db.HostGetCount(); err != nil {
+		msg = fmt.Sprintf("Error getting number of hosts: %s", err.Error())
+		srv.log.Println(msg)
+		srv.sendErrorMessage(w, msg)
+		return
+	} else if data.PortReplyCnt, err = db.PortGetReplyCount(); err != nil {
+		msg = fmt.Sprintf("Error getting number of scanned ports: %s", err.Error())
+		srv.log.Println(msg)
+		srv.sendErrorMessage(w, msg)
+		return
 	}
+
+	data.Count = len(data.Hosts)
 
 	if tmpl = srv.tmpl.Lookup("by_host"); tmpl == nil {
 		msg = "Error: Template 'by_host' was not found!"

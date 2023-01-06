@@ -1,6 +1,6 @@
 {{define "index"}}
 {{/* -*- mode: web; coding: utf-8; -*- */}}
-{{/* Time-stamp: <2022-11-23 20:00:19 krylon> */}}
+{{/* Time-stamp: <2023-01-04 22:00:23 krylon> */}}
 <!DOCTYPE html>
 <html>
   {{ template "head" . }}
@@ -27,34 +27,6 @@
     {{ template "menu" }}
 
     {{ template "controlpanel" . }}
-
-    Current state of Guang:
-    <table class="horizontal">
-      <tr>
-        <th>Host generators</th>
-        <td>{{.HostGenCnt}}</td>
-      </tr>
-
-      <tr>
-        <th>XFR workers</th>
-        <td>{{.XFRCnt}}</td>
-      </tr>
-
-      <tr>
-        <th>Scanners</th>
-        <td>{{.ScanCnt}}</td>
-      </tr>
-
-      <tr>
-        <th>Hosts in database</th>
-        <td>{{.HostCnt}}</td>
-      </tr>
-
-      <tr>
-        <th>Ports successfully scanned</th>
-        <td>{{.PortReplyCnt}}</td>
-      </tr>
-    </table>
 
     {{template "footer"}}
   </body>

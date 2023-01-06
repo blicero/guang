@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 31. 10. 2022 by Benjamin Walkenhorst
 // (c) 2022 Benjamin Walkenhorst
-// Time-stamp: <2022-11-13 17:06:47 krylon>
+// Time-stamp: <2023-01-04 20:51:22 krylon>
 
 package frontend
 
@@ -28,18 +28,10 @@ type reportInfoPort struct {
 	Results []data.ScanResult
 }
 
-// type host_scan_result struct {
-// 	Host  *data.Host
-// 	Ports []data.ScanResult
-// }
-
 type tmplDataByPort struct {
-	Debug      bool
-	Title      string
-	Error      []string
-	Facilities []facility.Facility
-	Count      int
-	Ports      map[uint16]reportInfoPort
+	tmplDataIndex
+	Count int
+	Ports map[uint16]reportInfoPort
 }
 
 // Donnerstag, 18. 08. 2016, 21:10
@@ -49,10 +41,7 @@ type tmplDataByPort struct {
 // Oder? Ich könnte eine Methode schreiben, die den Host anhand der ID zurück
 // gibt? In den Rohdaten aus der Datenbank steht der ja drin.
 type tmplDataByHost struct {
-	Debug      bool
-	Title      string
-	Error      []string
-	Facilities []facility.Facility
-	Count      int
-	Hosts      []data.HostWithPorts
+	tmplDataIndex
+	Count int
+	Hosts []data.HostWithPorts
 }
