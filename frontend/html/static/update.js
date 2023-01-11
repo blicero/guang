@@ -1,4 +1,4 @@
-// Time-stamp: <2022-11-08 18:18:29 krylon>
+// Time-stamp: <2023-01-10 20:16:09 krylon>
 
 'use strict;'
 
@@ -50,13 +50,16 @@ function update_results() {
                                       const cntNew = cntOld + cntTotal
                                       cell.innerText = cntNew
                                   }
+                              } else {
+                                  appendMsg(res.Message)
                               }
                           },
                           'json'
                          ).fail((reply, status, text) => {
                              const msg = `Failed to load update: ${status} -- ${reply} -- ${text}`
                              console.log(msg)
-                             alert(msg)
+                             // alert(msg)
+                             appendMsg(msg)
                          })
 
     } finally {
@@ -74,7 +77,9 @@ function updateIntervalSet (val) {
         settings.update.interval = val
         saveSetting('update', 'interval', val)
     } else {
-        console.log(`Invalid argument: ${val} is not an integer`)
+        const errMsg = `Invalid argument: ${val} is not an integer`
+        console.log(errMsg)
+        appendMsg(errMsg)
     }
 } // function updateIntervalSet ()
 

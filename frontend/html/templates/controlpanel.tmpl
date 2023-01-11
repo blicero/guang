@@ -1,6 +1,6 @@
 {{ define "controlpanel" }}
 {{/* Created on 08. 11. 2022 */}}
-{{/* Time-stamp: <2023-01-06 00:24:59 krylon> */}}
+{{/* Time-stamp: <2023-01-07 20:41:27 krylon> */}}
 <div id="controlpanel" class="container container-fluid">
   <script src="/static/controlpanel.js"></script>
   <script>
@@ -56,11 +56,6 @@
           <tr>
             <th>Scanners</th>
             <td id="cnt_scan">{{.ScanCnt}}</td>
-          </tr>
-
-          <tr>
-            <th>Hosts in database</th>
-            <td>{{.HostCnt}}</td>
             <td>
               <button class="btn btn-light pushbutton"
                       onclick="workerSpawn('Scanner');">
@@ -75,6 +70,11 @@
             <td>
               <input type="number" min="1" max="100" id="amt_scan" value="1" />
             </td>
+          </tr>
+
+          <tr>
+            <th>Hosts in database</th>
+            <td>{{.HostCnt}}</td>
           </tr>
 
           <tr>

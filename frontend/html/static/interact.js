@@ -1,4 +1,4 @@
-// Time-stamp: <2022-11-07 19:30:13 krylon>
+// Time-stamp: <2023-01-11 20:30:53 krylon>
 // -*- mode: javascript; coding: utf-8; -*-
 // Copyright 2015 Benjamin Walkenhorst <krylon@gmx.net>
 
@@ -114,3 +114,29 @@ function beaconToggle () {
         beaconDiv.classList.remove('error')
     }
 } // function beaconToggle()
+
+const htmlEscape = (str) => {
+    const lookup = {
+        '&': "&amp;",
+        '"': "&quot;",
+        '\'': "&apos;",
+        '<': "&lt;",
+        '>': "&gt;"
+    }
+    return str.replace( /[&"'<>]/g, c => lookup[c] )
+}
+
+const appendMsg = (msg) => {
+    const msgbox = $('#msglist')[0]
+    const row = `<tr>
+<td>${timeStampString(new Date())}</td>
+<td>${htmlEscape(msg)}</td>
+</tr>`
+
+    msgbox.innerHTML += row
+}
+
+// const trimMsgBox = (cnt) => {
+//     let box = $('#msglist')[0]
+//     box.children
+// }

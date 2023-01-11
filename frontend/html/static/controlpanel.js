@@ -1,6 +1,6 @@
 // /home/krylon/go/src/github.com/blicero/guang/frontend/html/static/controlpanel.js
 // -*- mode: javascript; coding: utf-8; -*-
-// Time-stamp: <2022-11-24 20:10:37 krylon>
+// Time-stamp: <2023-01-10 20:14:53 krylon>
 // Copyright 2022 Benjamin Walkenhorst
 
 'use strict'
@@ -34,14 +34,16 @@ function workerSpawn(fac) {
                               // Update panel?
                               $(counterID)[0].innerHTML = res.NewCnt
                           } else {
-                              alert(res.Message)
+                              // alert(res.Message)
+                              appendMsg(res.Message)
                           }
                       },
                       'json'
                      ).fail((reply, status, txt) => {
                          const msg = `Failed to load update: ${status} -- ${reply} -- ${txt}`
                          console.log(msg)
-                         alert(msg)
+                         //alert(msg)
+                         appendMsg(msg)
                      })
 } // function spawn(fac)
 
@@ -59,14 +61,16 @@ function workerStop(fac) {
                 // Update panel
                 $(counterID)[0].innerHTML = res.NewCnt
             } else {
-                alert(res.Message)
+                // alert(res.Message)
+                appendMsg(res.Message)
             }
         },
         'json'
     ).fail((reply, status, txt) => {
         const msg = `Failed to load update: ${status} -- ${reply} -- ${txt}`
         console.log(msg)
-        alert(msg)
+        // alert(msg)
+        appendMsg(msg)
     })
 } // function stop(fac)
 
@@ -85,14 +89,16 @@ function loadWorkerCount() {
                 } else {
                     const msg = `${res.Timestamp} - Error requesting worker count: ${res.Message}`
                     console.log(msg)
-                    alert(msg)
+                    // alert(msg)
+                    appendMsg(msg)
                 }
             },
             'json'
         ).fail((reply, status, txt) => {
             const msg = `Failed to load worker count: ${status} -- ${reply} -- ${txt}`
             console.log(msg)
-            alert(msg)
+            // alert(msg)
+            appendMsg(msg)
         })
     } finally {
         window.setTimeout(loadWorkerCount, 2500)
