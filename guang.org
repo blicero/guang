@@ -1,5 +1,5 @@
 # -*- mode: org; fill-column: 78; -*-
-# Time-stamp: <2022-12-21 20:59:41 krylon>
+# Time-stamp: <2023-01-11 20:35:31 krylon>
 #
 #+TAGS: optimize(o) refactor(r) bug(b) feature(f) architecture(a)
 #+TAGS: web(w) database(d) javascript(j)
@@ -11,38 +11,51 @@
 * Guang
 ** Clocktable
    #+BEGIN: clocktable :scope file :maxlevel 20
-   #+CAPTION: Clock summary at [2022-12-21 Mi 20:59]
-   | Headline                           | Time       |          |          |          |          |          |
-   |------------------------------------+------------+----------+----------+----------+----------+----------|
-   | *Total time*                       | *5d 23:29* |          |          |          |          |          |
-   |------------------------------------+------------+----------+----------+----------+----------+----------|
-   | Guang                              | 5d 23:29   |          |          |          |          |          |
-   | \_  Components                     |            | 5d 23:29 |          |          |          |          |
-   | \_    Database                     |            |          | 1d 23:20 |          |          |          |
-   | \_      Cache for Generator        |            |          |          | 1d 22:22 |          |          |
-   | \_      SQLite                     |            |          |          |     0:44 |          |          |
-   | \_      Pool                       |            |          |          |     0:11 |          |          |
-   | \_      Major cleanup [2/2]        |            |          |          |     0:03 |          |          |
-   | \_        Package                  |            |          |          |          |     0:03 |          |
-   | \_    Web interface [6/6]          |            |          | 3d 13:44 |          |          |          |
-   | \_      Major overhaul [5/5]       |            |          |          |  3d 9:29 |          |          |
-   | \_        Live updates             |            |          |          |          |  1d 8:10 |          |
-   | \_        Knobs and Switches [2/2] |            |          |          |          | 1d 21:11 |          |
-   | \_          UI                     |            |          |          |          |          | 1d 21:11 |
-   | \_        Bootstrap and friends    |            |          |          |          |     4:08 |          |
-   | \_      Embed                      |            |          |          |     4:15 |          |          |
-   | \_    Refactoring [2/2]            |            |          | 10:25    |          |          |          |
-   | \_      Packages                   |            |          |          |     7:38 |          |          |
-   | \_      Linter                     |            |          |          |     2:47 |          |          |
+   #+CAPTION: Clock summary at [2023-01-11 Mi 20:35]
+   | Headline                           | Time       |         |          |          |          |          |
+   |------------------------------------+------------+---------+----------+----------+----------+----------|
+   | *Total time*                       | *6d 14:14* |         |          |          |          |          |
+   |------------------------------------+------------+---------+----------+----------+----------+----------|
+   | Guang                              | 6d 14:14   |         |          |          |          |          |
+   | \_  Components [9/10]              |            | 6d 3:46 |          |          |          |          |
+   | \_    Database [3/3]               |            |         | 1d 23:17 |          |          |          |
+   | \_      Cache for Generator        |            |         |          | 1d 22:22 |          |          |
+   | \_      SQLite                     |            |         |          |     0:44 |          |          |
+   | \_      Pool                       |            |         |          |     0:11 |          |          |
+   | \_    Web interface [6/7]          |            |         | 4d 4:29  |          |          |          |
+   | \_      Beautify [0/2]             |            |         |          |    14:45 |          |          |
+   | \_        Messages                 |            |         |          |          |     4:51 |          |
+   | \_        Control Panel            |            |         |          |          |     9:54 |          |
+   | \_      Major overhaul [5/5]       |            |         |          |  3d 9:29 |          |          |
+   | \_        Live updates             |            |         |          |          |  1d 8:10 |          |
+   | \_        Knobs and Switches [2/2] |            |         |          |          | 1d 21:11 |          |
+   | \_          UI                     |            |         |          |          |          | 1d 21:11 |
+   | \_        Bootstrap and friends    |            |         |          |          |     4:08 |          |
+   | \_      Embed                      |            |         |          |     4:15 |          |          |
+   | \_  Major cleanup [2/2]            |            |    0:03 |          |          |          |          |
+   | \_        Package                  |            |         |          |          |     0:03 |          |
+   | \_  Analysis [0/2]                 |            |   10:25 |          |          |          |          |
+   | \_    Refactoring [2/2]            |            |         | 10:25    |          |          |          |
+   | \_      Packages                   |            |         |          |     7:38 |          |          |
+   | \_      Linter                     |            |         |          |     2:47 |          |          |
    #+END:
 ** Diary
 *** [2022-10-26 Mi 15:56]
     I haven't touched this code in a pretty long time, before I can move on,
     I'm going to reorganize it so it conforms to the layout I used in my more
     recent projects, plus the web interface is going to need *a lot* of work.
-** Components
-*** Database
-**** TODO Cache for Generator
+** Components [9/10]
+   :PROPERTIES:
+   :COOKIE_DATA: todo recursive
+   :VISIBILITY: children
+   :END:
+*** Database [3/3]
+    :PROPERTIES:
+    :COOKIE_DATA: todo recursive
+    :VISIBILITY: children
+    :END:
+**** DONE Cache for Generator
+      CLOSED: [2022-12-22 Do 02:08]
       :LOGBOOK:
       CLOCK: [2022-12-20 Di 18:09]--[2022-12-21 Mi 20:57] => 26:48
       CLOCK: [2022-11-26 Sa 18:56]--[2022-11-27 So 03:58] =>  9:02
@@ -72,22 +85,41 @@
      CLOCK: [2022-10-31 Mo 19:38]--[2022-10-31 Mo 19:49] =>  0:11
      :END:
      The web frontend still uses a sync.Pool. Let's fix that.
-**** Major cleanup [2/2]                                           :refactor:
-     I need to fix/refactor a couple of things.
-***** DONE Package
-      CLOSED: [2022-10-27 Do 19:45]
-      :LOGBOOK:
-      CLOCK: [2022-10-27 Do 19:41]--[2022-10-27 Do 19:44] =>  0:03
-      :END:
-      I need to move the database into a separate package
-***** DONE Names
-      CLOSED: [2022-10-31 Mo 19:57]
-      I need to change a bunch of names.
-*** Web interface [6/6]
+*** Web interface [6/7]
     :PROPERTIES:
     :COOKIE_DATA: todo recursive
     :VISIBILITY: children
     :END:
+**** TODO Beautify [0/2]
+    :PROPERTIES:
+    :COOKIE_DATA: todo recursive
+    :VISIBILITY: children
+    :END:
+     While bootstrap makes it reasonably easy to make the interface not look
+     completely crappy, it still looks fairly crappy. I should do at least a
+     little about that, if nothing else, I may learn something about web
+     development. Well, HTML/CSS anyway.
+***** TODO Messages
+      :LOGBOOK:
+      CLOCK: [2023-01-11 Mi 20:00]--[2023-01-11 Mi 20:35] =>  0:35
+      CLOCK: [2023-01-10 Di 19:14]--[2023-01-10 Di 20:56] =>  1:42
+      CLOCK: [2023-01-09 Mo 18:07]--[2023-01-09 Mo 20:07] =>  2:00
+      CLOCK: [2023-01-09 Mo 18:06]--[2023-01-09 Mo 18:07] =>  0:01
+      CLOCK: [2023-01-06 Fr 17:54]--[2023-01-06 Fr 18:27] =>  0:33
+      :END:
+      I want a dedicated area for displaying messages, like a console.
+
+      [2023-01-11 Mi 20:34]
+      First, very rough version works. Needs a fair bit of work to make it
+      pretty, but for now it is sufficient.
+***** TODO Control Panel
+      :LOGBOOK:
+      CLOCK: [2023-01-05 Do 19:05]--[2023-01-06 Fr 00:32] =>  5:27
+      CLOCK: [2023-01-05 Do 11:58]--[2023-01-05 Do 12:12] =>  0:14
+      CLOCK: [2023-01-04 Mi 19:38]--[2023-01-04 Mi 22:10] =>  2:32
+      CLOCK: [2023-01-04 Mi 17:29]--[2023-01-04 Mi 19:10] =>  1:41
+      :END:
+      
 **** Major overhaul [5/5]
      The web interface is in dire need of a makeover. I'm not a very
      proficient web developer, but I was even less so when I first wrote this
@@ -160,6 +192,39 @@
      I use a Perl script to roll all of my assets into a Go variable, which
      became unneccessary when Go gained go:embed. Still need to make a few
      adjustments to make that step, then I can remove the script.
+
+** Major cleanup [2/2]                                             :refactor:
+     I need to fix/refactor a couple of things.
+***** DONE Package
+      CLOSED: [2022-10-27 Do 19:45]
+      :LOGBOOK:
+      CLOCK: [2022-10-27 Do 19:41]--[2022-10-27 Do 19:44] =>  0:03
+      :END:
+      I need to move the database into a separate package
+***** DONE Names
+      CLOSED: [2022-10-31 Mo 19:57]
+      I need to change a bunch of names.
+** Analysis [0/2]                                                   :feature: 
+    :PROPERTIES:
+    :COOKIE_DATA: todo recursive
+    :VISIBILITY: children
+    :END:
+    [2023-01-03 Di] Now that we have most of the major outstanding issues
+    resolved, it would be nice to look into the reason I theoretically started
+    this project in the first place, namely to perform some analyses on the
+    data we collect.
+*** TODO OS detection
+     I already did some preliminary work to detect a host's operating system.
+*** TODO Detect interesting hosts
+     This could, for starters, mean to detect hosts running exotic operating
+     systems. In a prior iteration of this program I had managed to find one
+     IBM mainframe running z/OS and one host running OpenVMS. Sometimes,
+     interesting devices can be found where it's not clear what OS they are
+     running at all. Also, outdated operating systems, such as the odd Windows
+     XP machine, or RHEL 6 or something.
+     In the longer run, it might be interesting to correlate the versions of
+     services and the OS with CVE entries to see if we can find
+     vulnerabilities.
 *** Refactoring [2/2]                                              :refactor:
 **** DONE Packages
      CLOSED: [2022-10-31 Mo 19:57]
