@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 06. 02. 2016 by Benjamin Walkenhorst
 // (c) 2016 Benjamin Walkenhorst
-// Time-stamp: <2023-01-06 17:52:53 krylon>
+// Time-stamp: <2023-03-18 22:40:01 krylon>
 
 package frontend
 
@@ -26,6 +26,7 @@ import (
 	"github.com/blicero/guang/common"
 	"github.com/blicero/guang/data"
 	"github.com/blicero/guang/database"
+	"github.com/blicero/krylib"
 
 	"github.com/gorilla/mux"
 	"github.com/muesli/cache2go"
@@ -258,6 +259,7 @@ func (srv *WebFrontend) handleByPort(w http.ResponseWriter, request *http.Reques
 				XFRCnt:     srv.nexus.GetXFRCount(),
 			},
 			Count: len(dbRes),
+			Hosts: make(map[krylib.ID]data.Host),
 		}
 
 		if tmplData.HostCnt, err = db.HostGetCount(); err != nil {
@@ -288,6 +290,35 @@ func (srv *WebFrontend) handleByPort(w http.ResponseWriter, request *http.Reques
 			info := results[res.Port]
 			info.Results = append(info.Results, res)
 			results[res.Port] = info
+
+			var ok bool
+
+			if _, ok = tmplData.Hosts[res.Host.ID]; !ok {
+				tmplData.Hosts[res.Host.ID] = res.Host
+			}
+		}
+
+		var me *backend.MetaEngine
+
+		if me, err = backend.OpenMetaEngine("GeoLite2-Country.mmdb"); err != nil {
+			msg = fmt.Sprintf("Cannot create MetaEngine: %s\n",
+				err.Error())
+			srv.log.Printf("[ERROR] %s\n", msg)
+			srv.sendErrorMessage(w, msg)
+			return
+		}
+
+		for id, h := range tmplData.Hosts {
+			var cc string
+
+			if cc, err = me.LookupCountry(&h); err != nil {
+				srv.log.Printf("[ERROR] Cannot find country for Host %s: %s\n",
+					h.Address,
+					err.Error())
+			} else {
+				h.Location = cc
+				tmplData.Hosts[id] = h
+			}
 		}
 
 		tmplData.Ports = results

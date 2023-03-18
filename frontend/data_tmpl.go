@@ -2,13 +2,14 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 31. 10. 2022 by Benjamin Walkenhorst
 // (c) 2022 Benjamin Walkenhorst
-// Time-stamp: <2023-01-04 20:51:22 krylon>
+// Time-stamp: <2023-03-18 22:09:54 krylon>
 
 package frontend
 
 import (
 	"github.com/blicero/guang/backend/facility"
 	"github.com/blicero/guang/data"
+	"github.com/blicero/krylib"
 )
 
 type tmplDataIndex struct {
@@ -31,6 +32,7 @@ type reportInfoPort struct {
 type tmplDataByPort struct {
 	tmplDataIndex
 	Count int
+	Hosts map[krylib.ID]data.Host
 	Ports map[uint16]reportInfoPort
 }
 

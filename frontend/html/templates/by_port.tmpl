@@ -1,6 +1,6 @@
 {{define "by_port"}}
 {{/* -*- mode: web; coding: utf-8; -*- */}}
-{{/* Time-stamp: <2023-01-06 18:18:33 krylon> */}}
+{{/* Time-stamp: <2023-03-18 23:20:58 krylon> */}}
 <!DOCTYPE html>
 <html>
   {{ template "head" . }}
@@ -129,6 +129,8 @@
       </table>
     </details>
 
+    {{ $hosts := .Hosts }}
+
     {{ range .Ports }}
     <div id="content_port_{{.Port}}" class="port_results">
       <hr />
@@ -138,6 +140,7 @@
           <caption><a id="port_{{.Port}}">Port {{ .Port }}</a></caption>
           <tr>
             <th>Host</th>
+            <th>Location</th>
             <th>Stamp</th>
             <th>Reply</th>
           </tr>
@@ -146,8 +149,10 @@
         <tbody id="tbody_{{.Port}}">
           {{$row_class := cycle "even" "odd"}}
           {{ range .Results }}
+          {{ $host := index $hosts .Host.ID }}
           <tr class="{{$row_class.Next}} port_{{ .Port }}">
             <td>{{.HostName}} ({{.Address}})</td>
+            <td>{{ $host.Location }}</td>
             <td>{{fmt_time .Stamp}}</td>
             <td><pre>{{html .ReplyString}}</pre></td>
           </tr>
