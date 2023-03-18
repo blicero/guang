@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 20. 08. 2016 by Benjamin Walkenhorst
 // (c) 2016 Benjamin Walkenhorst
-// Time-stamp: <2022-10-31 19:02:38 krylon>
+// Time-stamp: <2023-03-18 19:30:43 krylon>
 //
 // Sonntag, 21. 08. 2016, 18:25
 // Looking up locations seems to work reasonably well. Whether or not the
@@ -31,38 +31,38 @@ const (
 	geoIPCountryPath = "GeoLite2-Country.mmdb"
 )
 
-var osPatterns map[string][]*regexp.Regexp = map[string][]*regexp.Regexp{
-	"Windows": []*regexp.Regexp{
+var osPatterns = map[string][]*regexp.Regexp{
+	"Windows": {
 		regexp.MustCompile("Microsoft"),
 		regexp.MustCompile("Windows"),
 	},
-	"Debian": []*regexp.Regexp{
+	"Debian": {
 		regexp.MustCompile("(?i)Debian"),
 		regexp.MustCompile("(?i)[.]deb"),
 	},
-	"Ubuntu": []*regexp.Regexp{
+	"Ubuntu": {
 		regexp.MustCompile("(?i)ubuntu"),
 	},
-	"CentOS": []*regexp.Regexp{
+	"CentOS": {
 		regexp.MustCompile("CentOS"),
 	},
-	"Red Hat Enterprise Linux": []*regexp.Regexp{
+	"Red Hat Enterprise Linux": {
 		regexp.MustCompile(`(?i)rhel\d`),
 		regexp.MustCompile("(?i)Red ?Hat"),
 	},
-	"FreeBSD": []*regexp.Regexp{
+	"FreeBSD": {
 		regexp.MustCompile("(?i)FreeBSD"),
 	},
-	"OpenBSD": []*regexp.Regexp{
+	"OpenBSD": {
 		regexp.MustCompile("(?i)OpenBSD"),
 	},
-	"DragonflyBSD": []*regexp.Regexp{
+	"DragonflyBSD": {
 		regexp.MustCompile("Dragonfly"),
 	},
-	"NetBSD": []*regexp.Regexp{
+	"NetBSD": {
 		regexp.MustCompile("(?i)netbsd"),
 	},
-	"Linux": []*regexp.Regexp{
+	"Linux": {
 		regexp.MustCompile("(?i)Linux"),
 	},
 }
