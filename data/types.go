@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 23. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2022-11-09 22:08:20 krylon>
+// Time-stamp: <2023-03-18 21:58:50 krylon>
 
 // Package data provides data types used throughout the application.
 package data
@@ -36,11 +36,13 @@ const (
 
 // Host is a host somewhere on the Internet.
 type Host struct {
-	ID      krylib.ID
-	Source  HostSource
-	Address net.IP
-	Name    string
-	Added   time.Time
+	ID       krylib.ID
+	Source   HostSource
+	Address  net.IP
+	Name     string
+	Added    time.Time
+	OS       string
+	Location string
 }
 
 // Port is a TCP/UDP port that was scanned on a given host.
