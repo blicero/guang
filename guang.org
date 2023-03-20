@@ -1,5 +1,5 @@
 # -*- mode: org; fill-column: 78; -*-
-# Time-stamp: <2023-03-18 23:32:57 krylon>
+# Time-stamp: <2023-03-20 20:16:18 krylon>
 #
 #+TAGS: optimize(o) refactor(r) bug(b) feature(f) architecture(a)
 #+TAGS: web(w) database(d) javascript(j)
@@ -11,12 +11,12 @@
 * Guang
 ** Clocktable
    #+BEGIN: clocktable :scope file :maxlevel 20
-   #+CAPTION: Clock summary at [2023-03-18 Sa 23:32]
+   #+CAPTION: Clock summary at [2023-03-20 Mo 20:16]
    | Headline                           | Time       |         |          |          |          |          |
    |------------------------------------+------------+---------+----------+----------+----------+----------|
-   | *Total time*                       | *6d 16:01* |         |          |          |          |          |
+   | *Total time*                       | *6d 20:07* |         |          |          |          |          |
    |------------------------------------+------------+---------+----------+----------+----------+----------|
-   | Guang                              | 6d 16:01   |         |          |          |          |          |
+   | Guang                              | 6d 20:07   |         |          |          |          |          |
    | \_  Components [9/10]              |            | 6d 3:46 |          |          |          |          |
    | \_    Database [3/3]               |            |         | 1d 23:17 |          |          |          |
    | \_      Cache for Generator        |            |         |          | 1d 22:22 |          |          |
@@ -34,7 +34,7 @@
    | \_      Embed                      |            |         |          |     4:15 |          |          |
    | \_  Major cleanup [2/2]            |            |    0:03 |          |          |          |          |
    | \_        Package                  |            |         |          |          |     0:03 |          |
-   | \_  Analysis [0/2]                 |            |   12:12 |          |          |          |          |
+   | \_  Analysis [0/2]                 |            |   16:18 |          |          |          |          |
    | \_    OS detection                 |            |         |     1:47 |          |          |          |
    | \_    Refactoring [2/2]            |            |         |    10:25 |          |          |          |
    | \_      Packages                   |            |         |          |     7:38 |          |          |
@@ -210,6 +210,9 @@
     :COOKIE_DATA: todo recursive
     :VISIBILITY: children
     :END:
+    :LOGBOOK:
+    CLOCK: [2023-03-20 Mo 16:09]--[2023-03-20 Mo 20:15] =>  4:06
+    :END:
     [2023-01-03 Di] Now that we have most of the major outstanding issues
     resolved, it would be nice to look into the reason I theoretically started
     this project in the first place, namely to perform some analyses on the
@@ -220,6 +223,9 @@
     CLOCK: [2023-03-18 Sa 18:50]--[2023-03-18 Sa 19:02] =>  0:12
     :END:
     I already did some preliminary work to detect a host's operating system.
+
+    [2023-03-20 Mo 20:15] Seems to work now, I still need to polish it
+    someone, as performance is probably dreadful.
 *** TODO Detect interesting hosts
      This could, for starters, mean to detect hosts running exotic operating
      systems. In a prior iteration of this program I had managed to find one
