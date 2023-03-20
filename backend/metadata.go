@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 20. 08. 2016 by Benjamin Walkenhorst
 // (c) 2016 Benjamin Walkenhorst
-// Time-stamp: <2023-03-18 19:30:43 krylon>
+// Time-stamp: <2023-03-20 19:57:58 krylon>
 //
 // Sonntag, 21. 08. 2016, 18:25
 // Looking up locations seems to work reasonably well. Whether or not the
@@ -21,7 +21,6 @@ import (
 
 	"github.com/blicero/guang/common"
 	"github.com/blicero/guang/data"
-	"github.com/blicero/krylib"
 
 	"github.com/oschwald/geoip2-golang"
 )
@@ -30,6 +29,21 @@ const (
 	geoIPCityPath    = "GeoLite2-City.mmdb"
 	geoIPCountryPath = "GeoLite2-Country.mmdb"
 )
+
+var osList = []string{
+	"Windows",
+	"Ubuntu",
+	"Debian",
+	"CentOS",
+	"Red Hat",
+	"Fedora",
+	"FreeBSD",
+	"NetBSD",
+	"OpenBSD",
+	"DragonflyBSD",
+	"RouterOS",
+	"Linux",
+}
 
 var osPatterns = map[string][]*regexp.Regexp{
 	"Windows": {
@@ -44,11 +58,15 @@ var osPatterns = map[string][]*regexp.Regexp{
 		regexp.MustCompile("(?i)ubuntu"),
 	},
 	"CentOS": {
-		regexp.MustCompile("CentOS"),
+		regexp.MustCompile("(?i)CentOS"),
 	},
-	"Red Hat Enterprise Linux": {
-		regexp.MustCompile(`(?i)rhel\d`),
+	"Red Hat": {
+		regexp.MustCompile(`(?i)rhel\d+`),
 		regexp.MustCompile("(?i)Red ?Hat"),
+		regexp.MustCompile(`(?i)[.]el\d+[.]`),
+	},
+	"Fedora": {
+		regexp.MustCompile("(?i)fedora"),
 	},
 	"FreeBSD": {
 		regexp.MustCompile("(?i)FreeBSD"),
@@ -60,7 +78,10 @@ var osPatterns = map[string][]*regexp.Regexp{
 		regexp.MustCompile("Dragonfly"),
 	},
 	"NetBSD": {
-		regexp.MustCompile("(?i)netbsd"),
+		regexp.MustCompile("(?i)NetBSD"),
+	},
+	"RouterOS": {
+		regexp.MustCompile("(?i)RouterOS"),
 	},
 	"Linux": {
 		regexp.MustCompile("(?i)Linux"),
@@ -69,31 +90,43 @@ var osPatterns = map[string][]*regexp.Regexp{
 
 // MetaEngine processes metadata on Hosts.
 type MetaEngine struct {
-	geodb *geoip2.Reader
-	log   *log.Logger
+	citydb    *geoip2.Reader
+	countrydb *geoip2.Reader
+	log       *log.Logger
 } // type MetaEngine struct
 
 // OpenMetaEngine creates a new MetaEngine.
-func OpenMetaEngine(path string) (*MetaEngine, error) {
+func OpenMetaEngine(prefix string) (*MetaEngine, error) {
 	var eng *MetaEngine = new(MetaEngine)
 	var err error
-	var msg, dbPath string
+	var msg, countrydbPath, citydbPath string
 
-	if ex, _ := krylib.Fexists(path); ex {
-		dbPath = path
-	} else {
-		dbPath = filepath.Join(common.BaseDir, geoIPCityPath)
-	}
+	// if ex, _ := krylib.Fexists(prefix); ex {
+	// 	countrydbPath = prefix
+	// } else {
+	// 	countrydbPath = filepath.Join(common.BaseDir, geoIPCityPath)
+	// }
+
+	countrydbPath = filepath.Join(common.BaseDir, geoIPCountryPath)
+	citydbPath = filepath.Join(common.BaseDir, geoIPCityPath)
 
 	if eng.log, err = common.GetLogger("MetaEngine"); err != nil {
 		return nil, err
-	} else if eng.geodb, err = geoip2.Open(dbPath); err != nil {
-		msg = fmt.Sprintf("Error opening GeoIP database: %s", err.Error())
+	} else if eng.countrydb, err = geoip2.Open(countrydbPath); err != nil {
+		msg = fmt.Sprintf("Error opening GeoIP database %s: %s",
+			countrydbPath,
+			err.Error())
 		eng.log.Println(msg)
 		return nil, errors.New(msg)
-	} else if eng.geodb == nil {
+	} else if eng.countrydb == nil {
 		msg = "Opening GeoIP database did not return an error, but the geoip2.Reader was nil!"
 		eng.log.Println(msg)
+		return nil, errors.New(msg)
+	} else if eng.citydb, err = geoip2.Open(citydbPath); err != nil {
+		msg = fmt.Sprintf("Cannot open GeoIP database %s: %s",
+			citydbPath,
+			err.Error())
+		eng.log.Printf("[ERROR] %s\n", msg)
 		return nil, errors.New(msg)
 	} else {
 		return eng, nil
@@ -102,7 +135,7 @@ func OpenMetaEngine(path string) (*MetaEngine, error) {
 
 // Close closes the MetaEngine.
 func (m *MetaEngine) Close() {
-	m.geodb.Close()
+	m.countrydb.Close()
 } // func (m *MetaEngine) Close()
 
 // LookupCountry attempts to determine what county a Host is located in.
@@ -110,7 +143,7 @@ func (m *MetaEngine) LookupCountry(h *data.Host) (string, error) {
 	var err error
 	var country *geoip2.Country
 
-	if country, err = m.geodb.Country(h.Address); err != nil {
+	if country, err = m.countrydb.Country(h.Address); err != nil {
 		return "", err
 	}
 
@@ -122,7 +155,7 @@ func (m *MetaEngine) LookupCity(h *data.Host) (string, error) {
 	var err error
 	var city *geoip2.City
 
-	if city, err = m.geodb.City(h.Address); err != nil {
+	if city, err = m.citydb.City(h.Address); err != nil {
 		return "", err
 	}
 
@@ -135,10 +168,12 @@ func (m *MetaEngine) LookupOperatingSystem(h *data.HostWithPorts) string {
 
 PORT:
 	for _, port := range h.Ports {
-		for os, patterns := range osPatterns {
+		//for os, patterns := range osPatterns {
+		for _, osname := range osList {
+			patterns := osPatterns[osname]
 			for _, pattern := range patterns {
 				if port.Reply != nil && pattern.MatchString(*port.Reply) {
-					results[os]++
+					results[osname]++
 					continue PORT
 				}
 			}

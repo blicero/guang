@@ -1,6 +1,6 @@
 {{define "by_port"}}
 {{/* -*- mode: web; coding: utf-8; -*- */}}
-{{/* Time-stamp: <2023-03-18 23:20:58 krylon> */}}
+{{/* Time-stamp: <2023-03-20 19:19:12 krylon> */}}
 <!DOCTYPE html>
 <html>
   {{ template "head" . }}
@@ -141,6 +141,7 @@
           <tr>
             <th>Host</th>
             <th>Location</th>
+            <th>OS</th>
             <th>Stamp</th>
             <th>Reply</th>
           </tr>
@@ -153,6 +154,7 @@
           <tr class="{{$row_class.Next}} port_{{ .Port }}">
             <td>{{.HostName}} ({{.Address}})</td>
             <td>{{ $host.Location }}</td>
+            <td>{{ $host.OS }}</td>
             <td>{{fmt_time .Stamp}}</td>
             <td><pre>{{html .ReplyString}}</pre></td>
           </tr>

@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 06. 02. 2016 by Benjamin Walkenhorst
 // (c) 2016 Benjamin Walkenhorst
-// Time-stamp: <2023-03-18 22:40:01 krylon>
+// Time-stamp: <2023-03-20 19:21:35 krylon>
 
 package frontend
 
@@ -309,14 +309,41 @@ func (srv *WebFrontend) handleByPort(w http.ResponseWriter, request *http.Reques
 		}
 
 		for id, h := range tmplData.Hosts {
-			var cc string
+			var (
+				city, country string
+				withPorts     = data.HostWithPorts{Host: h}
+			)
 
-			if cc, err = me.LookupCountry(&h); err != nil {
-				srv.log.Printf("[ERROR] Cannot find country for Host %s: %s\n",
+			if withPorts.Ports, err = db.PortGetByHost(id); err != nil {
+				srv.log.Printf("[ERROR] Cannot get open ports for Host %s (%s): %s\n",
+					h.Name,
 					h.Address,
 					err.Error())
 			} else {
-				h.Location = cc
+				var operatingSystem = me.LookupOperatingSystem(&withPorts)
+				if operatingSystem != "Unknown" {
+					h.OS = operatingSystem
+				}
+			}
+
+			if country, err = me.LookupCountry(&h); err != nil {
+				srv.log.Printf("[ERROR] Cannot find country for Host %s: %s\n",
+					h.Address,
+					err.Error())
+			} else if city, err = me.LookupCity(&h); err != nil {
+				srv.log.Printf("[ERROR] Cannot find city for Host %s: %s\n",
+					h.Address,
+					err.Error())
+			} else {
+				var loc string
+				if len(city) > 0 {
+					loc = fmt.Sprintf("%s, %s",
+						city,
+						country)
+				} else {
+					loc = country
+				}
+				h.Location = loc
 				tmplData.Hosts[id] = h
 			}
 		}

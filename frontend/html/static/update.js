@@ -1,4 +1,4 @@
-// Time-stamp: <2023-01-10 20:16:09 krylon>
+// Time-stamp: <2023-03-20 19:37:14 krylon>
 
 'use strict;'
 
@@ -35,6 +35,8 @@ function update_results() {
                                           const row = `<tr>
                  <td>${r.Host.Name} (${r.Host.Address})</td>
                  <td>${r.Stamp}</td>
+                 <td></td>
+                 <td></td>
                  <td><pre>${r.Reply}</pre></td>
                  </tr>`
 
