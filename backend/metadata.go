@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 20. 08. 2016 by Benjamin Walkenhorst
 // (c) 2016 Benjamin Walkenhorst
-// Time-stamp: <2023-03-20 19:57:58 krylon>
+// Time-stamp: <2023-03-21 01:17:14 krylon>
 //
 // Sonntag, 21. 08. 2016, 18:25
 // Looking up locations seems to work reasonably well. Whether or not the
@@ -37,6 +37,7 @@ var osList = []string{
 	"CentOS",
 	"Red Hat",
 	"Fedora",
+	"Yocto",
 	"FreeBSD",
 	"NetBSD",
 	"OpenBSD",
@@ -67,6 +68,9 @@ var osPatterns = map[string][]*regexp.Regexp{
 	},
 	"Fedora": {
 		regexp.MustCompile("(?i)fedora"),
+	},
+	"Yocto Linux": {
+		regexp.MustCompile("(?i)yocto"),
 	},
 	"FreeBSD": {
 		regexp.MustCompile("(?i)FreeBSD"),
