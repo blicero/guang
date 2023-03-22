@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 28. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2022-11-24 00:42:49 krylon>
+// Time-stamp: <2023-03-22 22:10:03 krylon>
 //
 // Freitag, 08. 01. 2016, 22:10
 // I kinda feel like I'm not going to write a comprehensive test suite for this
@@ -646,9 +646,13 @@ func scanSNMP(host *data.Host, port uint16) (*data.ScanResult, error) {
 		return nil, err
 	}
 
-	result := new(data.ScanResult)
-	result.Host = *host
-	result.Port = port
+	result := &data.ScanResult{
+		Stamp: time.Now(),
+		Host:  *host,
+		Port:  port,
+	}
+	// result.Host = *host
+	// result.Port = port
 	var resStr string
 	success := false
 
@@ -669,7 +673,6 @@ func scanSNMP(host *data.Host, port uint16) (*data.ScanResult, error) {
 	if success {
 		result.Reply = new(string)
 		*result.Reply = resStr
-		//return result, nil
 	}
 
 	return result, nil
