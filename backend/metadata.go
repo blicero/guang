@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 20. 08. 2016 by Benjamin Walkenhorst
 // (c) 2016 Benjamin Walkenhorst
-// Time-stamp: <2023-03-21 01:17:14 krylon>
+// Time-stamp: <2023-03-26 17:17:15 krylon>
 //
 // Sonntag, 21. 08. 2016, 18:25
 // Looking up locations seems to work reasonably well. Whether or not the
@@ -44,6 +44,9 @@ var osList = []string{
 	"DragonflyBSD",
 	"RouterOS",
 	"Linux",
+	"JUNOS",
+	"Cisco IOS",
+	"SonicOS",
 }
 
 var osPatterns = map[string][]*regexp.Regexp{
@@ -89,6 +92,17 @@ var osPatterns = map[string][]*regexp.Regexp{
 	},
 	"Linux": {
 		regexp.MustCompile("(?i)Linux"),
+	},
+	"JUNOS": {
+		regexp.MustCompile("(?i:JUNOS|Juniper)"),
+	},
+	"Cisco IOS": {
+		regexp.MustCompile("(?i)Cisco IOS Software"),
+		regexp.MustCompile("(?i)Cisco Systems"),
+	},
+	"SonicOS": {
+		regexp.MustCompile("(?i)SonicOS"),
+		regexp.MustCompile("(?i)SonicWALL"),
 	},
 }
 

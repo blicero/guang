@@ -1,5 +1,5 @@
 # -*- mode: org; fill-column: 78; -*-
-# Time-stamp: <2023-03-20 20:16:18 krylon>
+# Time-stamp: <2023-03-26 15:46:28 krylon>
 #
 #+TAGS: optimize(o) refactor(r) bug(b) feature(f) architecture(a)
 #+TAGS: web(w) database(d) javascript(j)
@@ -223,7 +223,6 @@
     CLOCK: [2023-03-18 Sa 18:50]--[2023-03-18 Sa 19:02] =>  0:12
     :END:
     I already did some preliminary work to detect a host's operating system.
-
     [2023-03-20 Mo 20:15] Seems to work now, I still need to polish it
     someone, as performance is probably dreadful.
 *** TODO Detect interesting hosts
