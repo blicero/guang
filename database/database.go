@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 23. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2022-11-07 19:27:14 krylon>
+// Time-stamp: <2023-03-27 11:16:19 krylon>
 //
 // Samstag, 20. 08. 2016, 21:27
 // Ich würde für Hosts gern a) anhand der Antworten, die ich erhalte, das
@@ -119,8 +119,8 @@ PREPARE_QUERY:
 			time.Sleep(retryDelay)
 			goto PREPARE_QUERY
 		} else {
-			msg = fmt.Sprintf("Error preparing query %s: %s",
-				dbQueries[qid], err.Error())
+			msg = fmt.Sprintf("Error preparing query %s %s\n\n%s\n",
+				qid, err.Error(), dbQueries[qid])
 			db.log.Println(msg)
 			return nil, errors.New(msg)
 		}
@@ -384,20 +384,97 @@ EXEC_QUERY:
 	return nil, nil
 } // func (db *HostDB) HostGetByID(id krylib.ID) (*Host, error)
 
-// HostGetRandom fetches up to <max> randomly chosen hosts from the database.
-func (db *HostDB) HostGetRandom(max int) ([]data.Host, error) {
+// HostGetAll returns ALL hosts from the database.
+func (db *HostDB) HostGetAll() ([]data.Host, error) {
+	const qid query.ID = query.HostGetAll
 	var err error
 	var msg string
 	var stmt *sql.Stmt
 	var hosts []data.Host
 
 GET_QUERY:
-	if stmt, err = db.getStatement(query.HostGetRandom); err != nil {
+	if stmt, err = db.getStatement(qid); err != nil {
 		if db.worthARetry(err) {
 			time.Sleep(retryDelay)
 			goto GET_QUERY
 		} else {
-			msg = fmt.Sprintf("Error getting query STMT_HOST_GET_RANDOM: %s",
+			msg = fmt.Sprintf("Error getting query %s: %s",
+				qid,
+				err.Error())
+			db.log.Println(msg)
+		}
+	} else if db.tx != nil {
+		stmt = db.tx.Stmt(stmt)
+	}
+
+	var rows *sql.Rows
+
+EXEC_QUERY:
+	if rows, err = stmt.Query(); err != nil {
+		if db.worthARetry(err) {
+			time.Sleep(retryDelay)
+			goto EXEC_QUERY
+		} else {
+			msg = fmt.Sprintf("Error querying all hosts: %s",
+				err.Error())
+			db.log.Println(msg)
+			return nil, errors.New(msg)
+		}
+	} else {
+		defer rows.Close()
+	}
+
+	hosts = make([]data.Host, 0)
+
+	for rows.Next() {
+		var id, stamp, source int64
+		var host data.Host
+		var addrStr string
+
+	SCAN_ROW:
+		err = rows.Scan(
+			&id,
+			&addrStr,
+			&host.Name,
+			&source,
+			&stamp)
+		if err != nil {
+			if db.worthARetry(err) {
+				time.Sleep(retryDelay)
+				goto SCAN_ROW
+			} else {
+				msg = fmt.Sprintf("Error scanning row: %s", err.Error())
+				db.log.Println(msg)
+				return nil, errors.New(msg)
+			}
+		} else {
+			host.ID = krylib.ID(id)
+			host.Source = data.HostSource(source)
+			host.Address = net.ParseIP(addrStr)
+			host.Added = time.Unix(stamp, 0)
+			hosts = append(hosts, host)
+		}
+	}
+
+	return hosts, nil
+} // func (db *HostDB) HostGetAll() ([]data.Host, error)
+
+// HostGetRandom fetches up to <max> randomly chosen hosts from the database.
+func (db *HostDB) HostGetRandom(max int) ([]data.Host, error) {
+	const qid query.ID = query.HostGetRandom
+	var err error
+	var msg string
+	var stmt *sql.Stmt
+	var hosts []data.Host
+
+GET_QUERY:
+	if stmt, err = db.getStatement(qid); err != nil {
+		if db.worthARetry(err) {
+			time.Sleep(retryDelay)
+			goto GET_QUERY
+		} else {
+			msg = fmt.Sprintf("Error getting query %s: %s",
+				qid,
 				err.Error())
 			db.log.Println(msg)
 		}
@@ -990,6 +1067,7 @@ EXEC_QUERY:
 	return result, nil
 } // func (db *HostDB) PortGetOpen() ([]ScanResult, error)
 
+// PortGetRecent returns all scanned ports that were scanned since the given time.
 func (db *HostDB) PortGetRecent(ref time.Time) ([]data.ScanResult, error) {
 	const qid = query.PortGetRecent
 	var (
@@ -1007,7 +1085,7 @@ GET_QUERY:
 			time.Sleep(retryDelay)
 			goto GET_QUERY
 		} else {
-			msg = fmt.Sprintf("Error getting query STMT_PORT_GET_OPEN: %s", err.Error())
+			msg = fmt.Sprintf("Error getting query %s: %s", qid, err.Error())
 			db.log.Println(msg)
 			return nil, errors.New(msg)
 		}

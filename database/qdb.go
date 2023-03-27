@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 03. 11. 2022 by Benjamin Walkenhorst
 // (c) 2022 Benjamin Walkenhorst
-// Time-stamp: <2022-11-03 00:48:57 krylon>
+// Time-stamp: <2023-03-27 11:17:50 krylon>
 
 package database
 
@@ -14,6 +14,7 @@ INSERT INTO host (addr, name, source, add_stamp)
           VALUES (   ?,    ?,      ?,         ?)
 `,
 	query.HostGetByID: "SELECT addr, name, source, add_stamp FROM host WHERE id = ?",
+	query.HostGetAll:  "SELECT id, addr, name, source, add_stamp FROM host",
 	query.HostGetRandom: `
 SELECT id,
        addr,
@@ -32,12 +33,12 @@ SELECT
   P.host_id,
   P.port,
   P.timestamp,
-  P.reply
-  H.adddr,
+  P.reply,
+  H.addr,
   H.name
 FROM port P
-INNER JOIN host H ON port.host_id = host.id
-WHERE port.reply IS NOT NULL
+INNER JOIN host h ON p.host_id = h.id
+WHERE p.reply IS NOT NULL
 `,
 	query.PortAdd: `
 INSERT INTO port (host_id, port, timestamp, reply)

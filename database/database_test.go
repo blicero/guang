@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 25. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2022-10-30 20:58:35 krylon>
+// Time-stamp: <2023-03-27 11:14:51 krylon>
 
 package database
 
@@ -58,7 +58,24 @@ func TestCreateDatabase(t *testing.T) {
 	}
 } // func TestCreateDatabase(t *testing.T)
 
+func TestQueries(t *testing.T) {
+	if db == nil {
+		t.SkipNow()
+	}
+
+	var err error
+
+	for id := range dbQueries {
+		if _, err = db.getStatement(id); err != nil {
+			t.Errorf("Failed to prepare query %s", id)
+		}
+	}
+} // func TestQueries(t *testing.T)
+
 func TestAddHosts(t *testing.T) {
+	if db == nil {
+		t.SkipNow()
+	}
 	var err error
 
 	if err = db.Begin(); err != nil {
@@ -83,6 +100,9 @@ func TestAddHosts(t *testing.T) {
 } // func TestAddHosts(t *testing.T)
 
 func TestGetHosts(t *testing.T) {
+	if db == nil {
+		t.SkipNow()
+	}
 	var err error
 	var host *data.Host
 
@@ -103,6 +123,9 @@ func TestGetHosts(t *testing.T) {
 var xfrClient *data.XFR
 
 func TestAddXFR(t *testing.T) {
+	if db == nil {
+		t.SkipNow()
+	}
 	var err error
 	xfrClient = &data.XFR{
 		ID:     krylib.INVALID_ID,
@@ -119,6 +142,9 @@ func TestAddXFR(t *testing.T) {
 } // func TestAddXFR(t *testing.T)
 
 func TestFinishXFR(t *testing.T) {
+	if db == nil {
+		t.SkipNow()
+	}
 	var err error
 	if err = db.XfrFinish(xfrClient, xfrstatus.Success); err != nil {
 		t.Fatalf("Error finishing XFR: %s", err.Error())
@@ -126,6 +152,9 @@ func TestFinishXFR(t *testing.T) {
 } // func TestFinishXFR(t *testing.T)
 
 func TestPortAdd(t *testing.T) {
+	if db == nil {
+		t.SkipNow()
+	}
 	var err error
 	var testReply string = "Wer das liest, ist doof."
 	var res data.ScanResult = data.ScanResult{
@@ -141,6 +170,9 @@ func TestPortAdd(t *testing.T) {
 } // func TestPortAdd(t *testing.T)
 
 func TestPortCnt(t *testing.T) {
+	if db == nil {
+		t.SkipNow()
+	}
 	var err error
 	var cnt int64
 
