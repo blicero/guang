@@ -1,5 +1,5 @@
 # -*- mode: org; fill-column: 78; -*-
-# Time-stamp: <2023-03-28 11:35:36 krylon>
+# Time-stamp: <2023-03-29 23:13:53 krylon>
 #
 #+TAGS: optimize(o) refactor(r) bug(b) feature(f) architecture(a)
 #+TAGS: web(w) database(d) javascript(j)
@@ -11,12 +11,12 @@
 * Guang
 ** Clocktable
    #+BEGIN: clocktable :scope file :maxlevel 20
-   #+CAPTION: Clock summary at [2023-03-28 Di 11:35]
+   #+CAPTION: Clock summary at [2023-03-29 Mi 23:13]
    | Headline                           | Time       |         |          |          |          |          |
    |------------------------------------+------------+---------+----------+----------+----------+----------|
-   | *Total time*                       | *6d 21:26* |         |          |          |          |          |
+   | *Total time*                       | *6d 23:12* |         |          |          |          |          |
    |------------------------------------+------------+---------+----------+----------+----------+----------|
-   | Guang                              | 6d 21:26   |         |          |          |          |          |
+   | Guang                              | 6d 23:12   |         |          |          |          |          |
    | \_  Components [9/10]              |            | 6d 3:46 |          |          |          |          |
    | \_    Database [3/3]               |            |         | 1d 23:17 |          |          |          |
    | \_      Cache for Generator        |            |         |          | 1d 22:22 |          |          |
@@ -34,8 +34,8 @@
    | \_      Embed                      |            |         |          |     4:15 |          |          |
    | \_  Major cleanup [2/2]            |            |    0:03 |          |          |          |          |
    | \_        Package                  |            |         |          |          |     0:03 |          |
-   | \_  Analysis [0/2]                 |            |   17:37 |          |          |          |          |
-   | \_    OS detection                 |            |         |     3:06 |          |          |          |
+   | \_  Analysis [0/2]                 |            |   19:23 |          |          |          |          |
+   | \_    OS detection                 |            |         |     4:52 |          |          |          |
    | \_    Refactoring [2/2]            |            |         |    10:25 |          |          |          |
    | \_      Packages                   |            |         |          |     7:38 |          |          |
    | \_      Linter                     |            |         |          |     2:47 |          |          |
@@ -219,6 +219,7 @@
     data we collect.
 *** TODO OS detection
     :LOGBOOK:
+    CLOCK: [2023-03-29 Mi 18:27]--[2023-03-29 Mi 20:13] =>  1:46
     CLOCK: [2023-03-27 Mo 18:16]--[2023-03-27 Mo 19:35] =>  1:19
     CLOCK: [2023-03-18 Sa 21:57]--[2023-03-18 Sa 23:32] =>  1:35
     CLOCK: [2023-03-18 Sa 18:50]--[2023-03-18 Sa 19:02] =>  0:12
