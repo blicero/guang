@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 27. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2022-11-24 18:49:03 krylon>
+// Time-stamp: <2023-03-29 19:24:53 krylon>
 
 package main
 
@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"time"
 
 	"github.com/blicero/guang/backend"
 	"github.com/blicero/guang/common"
@@ -162,13 +161,7 @@ func main() {
 		}
 	}
 
-	if port == 0 {
-		// Once I got the web frontend more or less working, I am going to run
-		// the web server here.
-		for {
-			time.Sleep(time.Second * 10)
-		}
-	} else if nexus, err = backend.CreateNexus(gen, scanner, xfrClient); err != nil {
+	if nexus, err = backend.CreateNexus(gen, scanner, xfrClient); err != nil {
 		fmt.Printf("Error creating Nexus: %s\n", err.Error())
 		os.Exit(1)
 	} else {
