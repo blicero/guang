@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 12. 02. 2016 by Benjamin Walkenhorst
 // (c) 2016 Benjamin Walkenhorst
-// Time-stamp: <2022-11-24 00:44:40 krylon>
+// Time-stamp: <2023-03-29 19:54:17 krylon>
 
 package backend
 
@@ -12,6 +12,7 @@ import (
 	"github.com/blicero/guang/backend/facility"
 	"github.com/blicero/guang/common"
 	"github.com/blicero/guang/data"
+	"github.com/blicero/guang/database"
 	"github.com/blicero/guang/generator"
 	"github.com/blicero/guang/xfr"
 )
@@ -122,3 +123,25 @@ func (nx *Nexus) WorkerCount(f facility.Facility) int {
 		return 0
 	}
 } // func (nx *Nexus) WorkerCount(f facility.Facility) int64
+
+func (nx *Nexus) UpdateMetadata() {
+	var (
+		err  error
+		db   *database.HostDB
+		meta *MetaEngine
+	)
+
+	if db, err = database.OpenDB(common.DbPath); err != nil {
+		nx.log.Printf("[ERROR] Cannot open database %s: %s\n",
+			common.DbPath,
+			err.Error())
+		return
+	}
+
+	defer db.Close()
+
+	if meta, err = OpenMetaEngine("bla"); err != nil {
+	}
+
+	defer meta.Close()
+} // func (nx *Nexus) UpdateMetadata()
