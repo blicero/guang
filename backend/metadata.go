@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 20. 08. 2016 by Benjamin Walkenhorst
 // (c) 2016 Benjamin Walkenhorst
-// Time-stamp: <2023-03-26 17:17:15 krylon>
+// Time-stamp: <2023-04-05 11:33:30 krylon>
 //
 // Sonntag, 21. 08. 2016, 18:25
 // Looking up locations seems to work reasonably well. Whether or not the
@@ -21,6 +21,7 @@ import (
 
 	"github.com/blicero/guang/common"
 	"github.com/blicero/guang/data"
+	"github.com/blicero/guang/database"
 
 	"github.com/oschwald/geoip2-golang"
 )
@@ -211,3 +212,53 @@ PORT:
 
 	return os
 } // func (m *MetaEngine) LookupOperatingSystem(h *HostWithPorts) string
+
+func (m *MetaEngine) UpdateMetadata() error {
+	var (
+		err     error
+		db      *database.HostDB
+		hosts   []data.Host
+		replies []data.HostWithPorts
+	)
+
+	if db, err = database.OpenDB(common.DbPath); err != nil {
+		m.log.Printf("[ERROR] Cannot open HostDB at %s: %s\n",
+			common.DbPath,
+			err.Error())
+		return err
+	}
+
+	defer db.Close() // nolint: errcheck
+
+	if hosts, err = db.HostGetAll(); err != nil {
+		m.log.Printf("[ERROR] Cannot get all hosts: %s\n",
+			err.Error())
+		return err
+	}
+
+	for _, host := range hosts {
+		var city, country, location string
+
+		if city, err = m.LookupCity(&host); err != nil {
+			m.log.Printf("[ERROR] Cannot lookup city for %s: %s\n",
+				host.Address,
+				err.Error())
+			city = ""
+		} else if country, err = m.LookupCountry(&host); err != nil {
+			m.log.Printf("[ERROR] Cannot lookup country for %s: %s\n",
+				host.Address, err.Error())
+			goto LOOKUP_OS
+		}
+
+		if city != "" {
+			location = fmt.Sprintf("%s, %s",
+				city, country)
+		} else {
+			location = country
+		}
+
+	LOOKUP_OS:
+	}
+
+	return nil
+} // func (m *MetaEngine) UpdateMetadata() error
