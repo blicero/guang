@@ -1,5 +1,5 @@
 # -*- mode: org; fill-column: 78; -*-
-# Time-stamp: <2023-03-29 23:13:53 krylon>
+# Time-stamp: <2023-04-05 11:37:55 krylon>
 #
 #+TAGS: optimize(o) refactor(r) bug(b) feature(f) architecture(a)
 #+TAGS: web(w) database(d) javascript(j)
@@ -11,34 +11,34 @@
 * Guang
 ** Clocktable
    #+BEGIN: clocktable :scope file :maxlevel 20
-   #+CAPTION: Clock summary at [2023-03-29 Mi 23:13]
-   | Headline                           | Time       |         |          |          |          |          |
-   |------------------------------------+------------+---------+----------+----------+----------+----------|
-   | *Total time*                       | *6d 23:12* |         |          |          |          |          |
-   |------------------------------------+------------+---------+----------+----------+----------+----------|
-   | Guang                              | 6d 23:12   |         |          |          |          |          |
-   | \_  Components [9/10]              |            | 6d 3:46 |          |          |          |          |
-   | \_    Database [3/3]               |            |         | 1d 23:17 |          |          |          |
-   | \_      Cache for Generator        |            |         |          | 1d 22:22 |          |          |
-   | \_      SQLite                     |            |         |          |     0:44 |          |          |
-   | \_      Pool                       |            |         |          |     0:11 |          |          |
-   | \_    Web interface [6/7]          |            |         |  4d 4:29 |          |          |          |
-   | \_      Beautify [0/2]             |            |         |          |    14:45 |          |          |
-   | \_        Messages                 |            |         |          |          |     4:51 |          |
-   | \_        Control Panel            |            |         |          |          |     9:54 |          |
-   | \_      Major overhaul [5/5]       |            |         |          |  3d 9:29 |          |          |
-   | \_        Live updates             |            |         |          |          |  1d 8:10 |          |
-   | \_        Knobs and Switches [2/2] |            |         |          |          | 1d 21:11 |          |
-   | \_          UI                     |            |         |          |          |          | 1d 21:11 |
-   | \_        Bootstrap and friends    |            |         |          |          |     4:08 |          |
-   | \_      Embed                      |            |         |          |     4:15 |          |          |
-   | \_  Major cleanup [2/2]            |            |    0:03 |          |          |          |          |
-   | \_        Package                  |            |         |          |          |     0:03 |          |
-   | \_  Analysis [0/2]                 |            |   19:23 |          |          |          |          |
-   | \_    OS detection                 |            |         |     4:52 |          |          |          |
-   | \_    Refactoring [2/2]            |            |         |    10:25 |          |          |          |
-   | \_      Packages                   |            |         |          |     7:38 |          |          |
-   | \_      Linter                     |            |         |          |     2:47 |          |          |
+   #+CAPTION: Clock summary at [2023-04-05 Mi 11:37]
+   | Headline                           | Time      |         |          |          |          |          |
+   |------------------------------------+-----------+---------+----------+----------+----------+----------|
+   | *Total time*                       | *7d 0:18* |         |          |          |          |          |
+   |------------------------------------+-----------+---------+----------+----------+----------+----------|
+   | Guang                              | 7d 0:18   |         |          |          |          |          |
+   | \_  Components [9/10]              |           | 6d 3:46 |          |          |          |          |
+   | \_    Database [3/3]               |           |         | 1d 23:17 |          |          |          |
+   | \_      Cache for Generator        |           |         |          | 1d 22:22 |          |          |
+   | \_      SQLite                     |           |         |          |     0:44 |          |          |
+   | \_      Pool                       |           |         |          |     0:11 |          |          |
+   | \_    Web interface [6/7]          |           |         |  4d 4:29 |          |          |          |
+   | \_      Beautify [0/2]             |           |         |          |    14:45 |          |          |
+   | \_        Messages                 |           |         |          |          |     4:51 |          |
+   | \_        Control Panel            |           |         |          |          |     9:54 |          |
+   | \_      Major overhaul [5/5]       |           |         |          |  3d 9:29 |          |          |
+   | \_        Live updates             |           |         |          |          |  1d 8:10 |          |
+   | \_        Knobs and Switches [2/2] |           |         |          |          | 1d 21:11 |          |
+   | \_          UI                     |           |         |          |          |          | 1d 21:11 |
+   | \_        Bootstrap and friends    |           |         |          |          |     4:08 |          |
+   | \_      Embed                      |           |         |          |     4:15 |          |          |
+   | \_  Major cleanup [2/2]            |           |    0:03 |          |          |          |          |
+   | \_        Package                  |           |         |          |          |     0:03 |          |
+   | \_  Analysis [0/2]                 |           |   20:29 |          |          |          |          |
+   | \_    OS detection                 |           |         |     4:52 |          |          |          |
+   | \_    Refactoring [2/2]            |           |         |    10:25 |          |          |          |
+   | \_      Packages                   |           |         |          |     7:38 |          |          |
+   | \_      Linter                     |           |         |          |     2:47 |          |          |
    #+END:
 ** Diary
 *** [2022-10-26 Mi 15:56]
@@ -211,6 +211,7 @@
     :VISIBILITY: children
     :END:
     :LOGBOOK:
+    CLOCK: [2023-04-05 Mi 10:31]--[2023-04-05 Mi 11:37] =>  1:06
     CLOCK: [2023-03-20 Mo 16:09]--[2023-03-20 Mo 20:15] =>  4:06
     :END:
     [2023-01-03 Di] Now that we have most of the major outstanding issues
