@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 20. 08. 2016 by Benjamin Walkenhorst
 // (c) 2016 Benjamin Walkenhorst
-// Time-stamp: <2023-04-05 11:33:30 krylon>
+// Time-stamp: <2023-04-05 23:10:50 krylon>
 //
 // Sonntag, 21. 08. 2016, 18:25
 // Looking up locations seems to work reasonably well. Whether or not the
@@ -207,6 +207,7 @@ PORT:
 	for system, cnt := range results {
 		if cnt > hitCnt {
 			os = system
+			hitCnt = cnt
 		}
 	}
 
@@ -215,10 +216,9 @@ PORT:
 
 func (m *MetaEngine) UpdateMetadata() error {
 	var (
-		err     error
-		db      *database.HostDB
-		hosts   []data.Host
-		replies []data.HostWithPorts
+		err   error
+		db    *database.HostDB
+		hosts []data.Host
 	)
 
 	if db, err = database.OpenDB(common.DbPath); err != nil {
@@ -237,7 +237,10 @@ func (m *MetaEngine) UpdateMetadata() error {
 	}
 
 	for _, host := range hosts {
-		var city, country, location string
+		var (
+			city, country, location, os string
+			hwp                         = data.HostWithPorts{Host: host}
+		)
 
 		if city, err = m.LookupCity(&host); err != nil {
 			m.log.Printf("[ERROR] Cannot lookup city for %s: %s\n",
@@ -257,7 +260,33 @@ func (m *MetaEngine) UpdateMetadata() error {
 			location = country
 		}
 
+		if location == "" {
+			goto LOOKUP_OS
+		} else if err = db.HostSetLocation(&host, location); err != nil {
+			m.log.Printf("[ERROR] Cannot set Location for %s to %q: %s\n",
+				host.Address,
+				location,
+				err.Error())
+		}
+
 	LOOKUP_OS:
+		if hwp.Ports, err = db.PortGetByHost(host.ID); err != nil {
+			m.log.Printf("[ERROR] Failed to get scanned ports for %s: %s\n",
+				host.Address,
+				err.Error())
+			continue
+		} else if len(hwp.Ports) == 0 {
+			continue
+		}
+
+		os = m.LookupOperatingSystem(&hwp)
+
+		if err = db.HostSetOS(&host, os); err != nil {
+			m.log.Printf("[ERROR] Failed to set OS on host %s to %s: %s\n",
+				host.Address,
+				os,
+				err.Error())
+		}
 	}
 
 	return nil

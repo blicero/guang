@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 05. 02. 2016 by Benjamin Walkenhorst
 // (c) 2016 Benjamin Walkenhorst
-// Time-stamp: <2023-01-04 18:23:30 krylon>
+// Time-stamp: <2023-04-06 02:16:08 krylon>
 
 package backend
 
@@ -48,17 +48,17 @@ var targets []scanTarget = []scanTarget{
 		Ports: []uint16{22, 23, 79, 5900},
 	},
 
-	scanTarget{
-		Host: data.Host{
-			ID:      krylib.INVALID_ID,
-			Source:  data.HostSourceUser,
-			Address: net.ParseIP("10.10.0.3"),
-			Name:    "dixie.krylon.net",
-			Added:   time.Now(),
-		},
+	// scanTarget{
+	// 	Host: data.Host{
+	// 		ID:      krylib.INVALID_ID,
+	// 		Source:  data.HostSourceUser,
+	// 		Address: net.ParseIP("10.10.0.3"),
+	// 		Name:    "dixie.krylon.net",
+	// 		Added:   time.Now(),
+	// 	},
 
-		Ports: []uint16{22},
-	},
+	// 	Ports: []uint16{22},
+	// },
 
 	scanTarget{
 		Host: data.Host{

@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 03. 11. 2022 by Benjamin Walkenhorst
 // (c) 2022 Benjamin Walkenhorst
-// Time-stamp: <2023-03-27 11:17:50 krylon>
+// Time-stamp: <2023-04-03 19:38:27 krylon>
 
 package database
 
@@ -40,6 +40,8 @@ FROM port P
 INNER JOIN host h ON p.host_id = h.id
 WHERE p.reply IS NOT NULL
 `,
+	query.HostSetOS:       `UPDATE host SET os = ? WHERE id = ?`,
+	query.HostSetLocation: `UPDATE host SET location = ? WHERE id = ?`,
 	query.PortAdd: `
 INSERT INTO port (host_id, port, timestamp, reply)
           VALUES (      ?,    ?,         ?,     ?)

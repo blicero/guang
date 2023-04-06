@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 23. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2023-03-27 11:16:19 krylon>
+// Time-stamp: <2023-04-05 19:23:20 krylon>
 //
 // Samstag, 20. 08. 2016, 21:27
 // Ich würde für Hosts gern a) anhand der Antworten, die ich erhalte, das
@@ -1292,3 +1292,127 @@ EXEC_QUERY:
 
 	return res, nil
 } // func (db *HostDB) HostGetByHostReport() ([]HostWithPorts, error)
+
+// HostSetOS sets a Host's operating system.
+func (db *HostDB) HostSetOS(h *data.Host, osName string) error {
+	const qid query.ID = query.HostSetOS
+	var err error
+	var msg string
+	var stmt *sql.Stmt
+	var tx *sql.Tx
+	var adHoc bool
+
+GET_QUERY:
+	if stmt, err = db.getStatement(qid); err != nil {
+		if db.worthARetry(err) {
+			time.Sleep(retryDelay)
+			goto GET_QUERY
+		} else {
+			msg = fmt.Sprintf("Error getting query STMT_PORT_ADD: %s",
+				err.Error())
+			db.log.Println(msg)
+			return errors.New(msg)
+		}
+	} else if db.tx != nil {
+		tx = db.tx
+	} else {
+		adHoc = true
+	BEGIN_ADHOC:
+		if tx, err = db.db.Begin(); err != nil {
+			if db.worthARetry(err) {
+				time.Sleep(retryDelay)
+				goto BEGIN_ADHOC
+			} else {
+				msg = fmt.Sprintf("Error starting ad-hoc TX for adding Port: %s",
+					err.Error())
+				db.log.Println(msg)
+				return errors.New(msg)
+			}
+		}
+	}
+
+	stmt = tx.Stmt(stmt)
+
+EXEC_QUERY:
+	if _, err = stmt.Exec(osName, h.ID); err != nil {
+		if db.worthARetry(err) {
+			time.Sleep(retryDelay)
+			goto EXEC_QUERY
+		} else {
+			msg = fmt.Sprintf("Error adding ScanResult to database: %s",
+				err.Error())
+			db.log.Println(msg)
+			if adHoc {
+				tx.Rollback() // nolint: errcheck
+			}
+			return errors.New(msg)
+		}
+	} else if adHoc {
+		tx.Commit() // nolint: errcheck
+	}
+
+	h.OS = osName
+	return nil
+} // func (db *HostDB) HostSetOS(h *data.Host, osName string) error
+
+// HostSetLocation sets a Host's location.
+func (db *HostDB) HostSetLocation(h *data.Host, location string) error {
+	const qid query.ID = query.HostSetLocation
+	var err error
+	var msg string
+	var stmt *sql.Stmt
+	var tx *sql.Tx
+	var adHoc bool
+
+GET_QUERY:
+	if stmt, err = db.getStatement(qid); err != nil {
+		if db.worthARetry(err) {
+			time.Sleep(retryDelay)
+			goto GET_QUERY
+		} else {
+			msg = fmt.Sprintf("Error getting query STMT_PORT_ADD: %s",
+				err.Error())
+			db.log.Println(msg)
+			return errors.New(msg)
+		}
+	} else if db.tx != nil {
+		tx = db.tx
+	} else {
+		adHoc = true
+	BEGIN_ADHOC:
+		if tx, err = db.db.Begin(); err != nil {
+			if db.worthARetry(err) {
+				time.Sleep(retryDelay)
+				goto BEGIN_ADHOC
+			} else {
+				msg = fmt.Sprintf("Error starting ad-hoc TX for adding Port: %s",
+					err.Error())
+				db.log.Println(msg)
+				return errors.New(msg)
+			}
+		}
+	}
+
+	stmt = tx.Stmt(stmt)
+
+EXEC_QUERY:
+	if _, err = stmt.Exec(location, h.ID); err != nil {
+		if db.worthARetry(err) {
+			time.Sleep(retryDelay)
+			goto EXEC_QUERY
+		} else {
+			msg = fmt.Sprintf("Error adding ScanResult to database: %s",
+				err.Error())
+			db.log.Println(msg)
+			if adHoc {
+				tx.Rollback() // nolint: errcheck
+			}
+			return errors.New(msg)
+		}
+	} else if adHoc {
+		tx.Commit() // nolint: errcheck
+	}
+
+	h.Location = location
+	return nil
+} // func (db *HostDB) HostSetLocation(h *data.Host, location string) error

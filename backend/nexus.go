@@ -2,20 +2,23 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 12. 02. 2016 by Benjamin Walkenhorst
 // (c) 2016 Benjamin Walkenhorst
-// Time-stamp: <2023-03-29 19:54:17 krylon>
+// Time-stamp: <2023-04-06 02:11:58 krylon>
 
 package backend
 
 import (
 	"log"
+	"sync"
 
 	"github.com/blicero/guang/backend/facility"
 	"github.com/blicero/guang/common"
 	"github.com/blicero/guang/data"
-	"github.com/blicero/guang/database"
 	"github.com/blicero/guang/generator"
 	"github.com/blicero/guang/xfr"
 )
+
+// FIXME Increase after debugging!!!
+// const metaInterval = time.Minute
 
 // Nexus aggregates the various pieces that comprise the backend.
 type Nexus struct {
@@ -23,6 +26,7 @@ type Nexus struct {
 	scanner   *Scanner
 	xfr       *xfr.Client
 	log       *log.Logger
+	lock      sync.RWMutex
 }
 
 // CreateNexus creates a new Nexus instance with the given components.
@@ -127,21 +131,25 @@ func (nx *Nexus) WorkerCount(f facility.Facility) int {
 func (nx *Nexus) UpdateMetadata() {
 	var (
 		err  error
-		db   *database.HostDB
 		meta *MetaEngine
 	)
 
-	if db, err = database.OpenDB(common.DbPath); err != nil {
-		nx.log.Printf("[ERROR] Cannot open database %s: %s\n",
-			common.DbPath,
-			err.Error())
+	if !nx.lock.TryLock() {
+		nx.log.Println("[INFO] Metadata update is already running.")
+		return
+	}
+	defer nx.lock.Unlock()
+
+	nx.log.Printf("[INFO] Updating OS and location for hosts.\n")
+
+	if meta, err = OpenMetaEngine("bla"); err != nil {
+		nx.log.Printf("[ERROR] Cannot open MetaEngine: %s\n", err.Error())
 		return
 	}
 
-	defer db.Close()
-
-	if meta, err = OpenMetaEngine("bla"); err != nil {
-	}
-
 	defer meta.Close()
+
+	if err = meta.UpdateMetadata(); err != nil {
+		nx.log.Printf("[ERROR] Failed to update metadata: %s\n", err.Error())
+	}
 } // func (nx *Nexus) UpdateMetadata()

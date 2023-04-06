@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 27. 10. 2022 by Benjamin Walkenhorst
 // (c) 2022 Benjamin Walkenhorst
-// Time-stamp: <2023-03-27 10:32:59 krylon>
+// Time-stamp: <2023-04-03 19:37:24 krylon>
 
 // Package query provides symbolic constants for the various
 // database queries/operations.
@@ -22,6 +22,8 @@ const (
 	HostGetCnt
 	HostExists
 	HostPortByPort
+	HostSetOS
+	HostSetLocation
 	PortAdd
 	PortGetByHost
 	PortGetReplyCnt
