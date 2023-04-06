@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 06. 02. 2016 by Benjamin Walkenhorst
 // (c) 2016 Benjamin Walkenhorst
-// Time-stamp: <2023-03-20 19:21:35 krylon>
+// Time-stamp: <2023-04-06 02:11:11 krylon>
 
 package frontend
 
@@ -97,6 +97,7 @@ func CreateFrontend(addr string, port uint16, nexus *backend.Nexus) (*WebFronten
 	frontend.router.HandleFunc("/ajax/spawn_worker/{facility:(?:\\d+)}/{cnt:(?:\\d+$)}", frontend.handleWorkerSpawn)
 	frontend.router.HandleFunc("/ajax/stop_worker/{facility:(?:\\d+)}/{cnt:(?:\\d+$)}", frontend.handleWorkerStop)
 	frontend.router.HandleFunc("/ajax/worker_count", frontend.handleWorkerCount)
+	frontend.router.HandleFunc("/ajax/update_metadata", frontend.handleUpdateMetadata)
 
 	frontend.tmpl = template.New("").Funcs(funcmap)
 

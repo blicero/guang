@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 03. 11. 2022 by Benjamin Walkenhorst
 // (c) 2022 Benjamin Walkenhorst
-// Time-stamp: <2022-11-23 22:59:34 krylon>
+// Time-stamp: <2023-04-06 01:44:21 krylon>
 
 package frontend
 
@@ -300,3 +300,32 @@ func (srv *WebFrontend) handleWorkerCount(w http.ResponseWriter, r *http.Request
 	w.WriteHeader(200)
 	w.Write(outbuf) // nolint: errcheck
 } // func (srv *WebFrontend) handleWorkerCount(w http.ResponseWriter, r *http.Request)
+
+func (srv *WebFrontend) handleUpdateMetadata(w http.ResponseWriter, r *http.Request) {
+	srv.log.Printf("[TRACE] Handling request for %s\n", r.RequestURI)
+	go srv.nexus.UpdateMetadata()
+	var (
+		err    error
+		outbuf []byte
+		res    = ajaxData{
+			Status:    true,
+			Timestamp: time.Now(),
+			Message:   "Success",
+		}
+	)
+
+	if outbuf, err = ffjson.Marshal(&res); err != nil {
+		res.Message = fmt.Sprintf("Error serializing Response to %s: %s",
+			r.RemoteAddr,
+			err.Error())
+		srv.log.Printf("[ERROR] %s\n", res.Message)
+	} else {
+		defer ffjson.Pool(outbuf)
+	}
+
+	w.Header().Set("Content-Length", strconv.FormatInt(int64(len(outbuf)), 10))
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Cache-Control", cacheControl)
+	w.WriteHeader(200)
+	w.Write(outbuf) // nolint: errcheck
+} // func (srv *WebFrontend) handleUpdateMetadata(w http.ResponseWriter, r *http.Request)
