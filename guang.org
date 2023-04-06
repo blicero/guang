@@ -1,5 +1,5 @@
 # -*- mode: org; fill-column: 78; -*-
-# Time-stamp: <2023-04-05 11:37:55 krylon>
+# Time-stamp: <2023-04-06 02:20:29 krylon>
 #
 #+TAGS: optimize(o) refactor(r) bug(b) feature(f) architecture(a)
 #+TAGS: web(w) database(d) javascript(j)
@@ -11,12 +11,12 @@
 * Guang
 ** Clocktable
    #+BEGIN: clocktable :scope file :maxlevel 20
-   #+CAPTION: Clock summary at [2023-04-05 Mi 11:37]
+   #+CAPTION: Clock summary at [2023-04-06 Do 02:20]
    | Headline                           | Time      |         |          |          |          |          |
    |------------------------------------+-----------+---------+----------+----------+----------+----------|
-   | *Total time*                       | *7d 0:18* |         |          |          |          |          |
+   | *Total time*                       | *7d 7:20* |         |          |          |          |          |
    |------------------------------------+-----------+---------+----------+----------+----------+----------|
-   | Guang                              | 7d 0:18   |         |          |          |          |          |
+   | Guang                              | 7d 7:20   |         |          |          |          |          |
    | \_  Components [9/10]              |           | 6d 3:46 |          |          |          |          |
    | \_    Database [3/3]               |           |         | 1d 23:17 |          |          |          |
    | \_      Cache for Generator        |           |         |          | 1d 22:22 |          |          |
@@ -32,9 +32,9 @@
    | \_          UI                     |           |         |          |          |          | 1d 21:11 |
    | \_        Bootstrap and friends    |           |         |          |          |     4:08 |          |
    | \_      Embed                      |           |         |          |     4:15 |          |          |
-   | \_  Major cleanup [2/2]            |           |    0:03 |          |          |          |          |
+   | \_  Major cleanup [2/2]            |           | 0:03    |          |          |          |          |
    | \_        Package                  |           |         |          |          |     0:03 |          |
-   | \_  Analysis [0/2]                 |           |   20:29 |          |          |          |          |
+   | \_  Analysis [0/2]                 |           | 1d 3:31 |          |          |          |          |
    | \_    OS detection                 |           |         |     4:52 |          |          |          |
    | \_    Refactoring [2/2]            |           |         |    10:25 |          |          |          |
    | \_      Packages                   |           |         |          |     7:38 |          |          |
@@ -211,6 +211,7 @@
     :VISIBILITY: children
     :END:
     :LOGBOOK:
+    CLOCK: [2023-04-05 Mi 19:18]--[2023-04-06 Do 02:20] =>  7:02
     CLOCK: [2023-04-05 Mi 10:31]--[2023-04-05 Mi 11:37] =>  1:06
     CLOCK: [2023-03-20 Mo 16:09]--[2023-03-20 Mo 20:15] =>  4:06
     :END:
