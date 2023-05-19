@@ -1,4 +1,4 @@
-// Time-stamp: <2023-01-11 20:30:53 krylon>
+// Time-stamp: <2023-05-19 15:51:14 krylon>
 // -*- mode: javascript; coding: utf-8; -*-
 // Copyright 2015 Benjamin Walkenhorst <krylon@gmx.net>
 
@@ -140,3 +140,17 @@ const appendMsg = (msg) => {
 //     let box = $('#msglist')[0]
 //     box.children
 // }
+
+const updateMeta = () => {
+    const req = $.get('/ajax/update_metadata',
+                      {},
+                      (response) => {
+                          const msg = 'Update of metadata started'
+                          appendMsg(msg)
+                      },
+                      'json'
+                     ).fail(() => {
+                         const msg = 'Error starting metadata update'
+                         appendMsg(msg)
+                     })
+}
