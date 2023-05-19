@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 23. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2023-04-05 19:23:20 krylon>
+// Time-stamp: <2023-05-19 16:44:23 krylon>
 //
 // Samstag, 20. 08. 2016, 21:27
 // Ich würde für Hosts gern a) anhand der Antworten, die ich erhalte, das
@@ -369,7 +369,7 @@ EXEC_QUERY:
 		var addr string
 		var stamp int64
 
-		if err = rows.Scan(&addr, &host.Name, &host.Source, &stamp); err != nil {
+		if err = rows.Scan(&addr, &host.Name, &host.Location, &host.OS, &host.Source, &stamp); err != nil {
 			msg = fmt.Sprintf("Error scanning Host from row: %s",
 				err.Error())
 			db.log.Println(msg)
@@ -436,6 +436,8 @@ EXEC_QUERY:
 			&id,
 			&addrStr,
 			&host.Name,
+			&host.Location,
+			&host.OS,
 			&source,
 			&stamp)
 		if err != nil {
@@ -512,6 +514,8 @@ EXEC_QUERY:
 			&id,
 			&addrStr,
 			&host.Name,
+			&host.Location,
+			&host.OS,
 			&source,
 			&stamp)
 		if err != nil {

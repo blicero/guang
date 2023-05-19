@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 03. 11. 2022 by Benjamin Walkenhorst
 // (c) 2022 Benjamin Walkenhorst
-// Time-stamp: <2023-04-03 19:38:27 krylon>
+// Time-stamp: <2023-05-19 16:47:32 krylon>
 
 package database
 
@@ -13,12 +13,14 @@ var dbQueries map[query.ID]string = map[query.ID]string{
 INSERT INTO host (addr, name, source, add_stamp)
           VALUES (   ?,    ?,      ?,         ?)
 `,
-	query.HostGetByID: "SELECT addr, name, source, add_stamp FROM host WHERE id = ?",
-	query.HostGetAll:  "SELECT id, addr, name, source, add_stamp FROM host",
+	query.HostGetByID: "SELECT addr, name, COALESCE(location, ''), COALESCE(os, ''), source, add_stamp FROM host WHERE id = ?",
+	query.HostGetAll:  "SELECT id, addr, COALESCE(location, ''), COALESCE(os, ''), name, source, add_stamp FROM host",
 	query.HostGetRandom: `
 SELECT id,
        addr,
        name,
+       COALESCE(location, ''),
+       COALESCE(os, ''),
        source,
        add_stamp
 FROM host
@@ -35,7 +37,9 @@ SELECT
   P.timestamp,
   P.reply,
   H.addr,
-  H.name
+  H.name,
+  COALESCE(H.location, ''),
+  COALESCE(H.os, '')
 FROM port P
 INNER JOIN host h ON p.host_id = h.id
 WHERE p.reply IS NOT NULL
