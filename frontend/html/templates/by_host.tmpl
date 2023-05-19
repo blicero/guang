@@ -1,6 +1,6 @@
 {{ define "by_host" }}
 {{/* -*- mode: web; coding: utf-8; -*- */}}
-{{/* Time-stamp: <2022-11-23 20:00:36 krylon> */}}
+{{/* Time-stamp: <2023-05-19 15:36:16 krylon> */}}
 <!DOCTYPE html>
 <html>
   {{ template "head" . }}
@@ -35,8 +35,8 @@
         <tr>
           <td>{{ .Host.Address }}</td>
           <td>{{ .Host.Name }}</td>
-          <td></td>
-          <td></td>
+          <td>{{ .Host.Location }}</td>
+          <td> {{ .Host.OS }}</td>
           <td>
             <ol>
             {{ range .Ports }}
