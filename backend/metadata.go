@@ -2,7 +2,7 @@
 // -*- mode: go; coding: utf-8; -*-
 // Created on 20. 08. 2016 by Benjamin Walkenhorst
 // (c) 2016 Benjamin Walkenhorst
-// Time-stamp: <2023-04-05 23:10:50 krylon>
+// Time-stamp: <2024-05-30 00:03:13 krylon>
 //
 // Sonntag, 21. 08. 2016, 18:25
 // Looking up locations seems to work reasonably well. Whether or not the
@@ -214,6 +214,7 @@ PORT:
 	return os
 } // func (m *MetaEngine) LookupOperatingSystem(h *HostWithPorts) string
 
+// UpdateMetadata refreshes the location and OS metadata for all hosts.
 func (m *MetaEngine) UpdateMetadata() error {
 	var (
 		err   error

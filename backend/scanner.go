@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 28. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2023-03-22 22:10:03 krylon>
+// Time-stamp: <2024-05-30 00:07:46 krylon>
 //
 // Freitag, 08. 01. 2016, 22:10
 // I kinda feel like I'm not going to write a comprehensive test suite for this
@@ -185,6 +185,7 @@ func (sc *Scanner) Stop() {
 	sc.lock.Unlock()
 } // func (sc *Scanner) Stop()
 
+// Count returns the number of active workers
 func (sc *Scanner) Count() int {
 	sc.lock.RLock()
 	var cnt = sc.started
@@ -603,7 +604,9 @@ func scanDNS(host *data.Host, port uint16) (*data.ScanResult, error) {
 } // func scan_dns(host *Host, port uint16) (*ScanResult, error)
 
 func scanHTTP(host *data.Host, port uint16) (*data.ScanResult, error) {
-	if common.Debug {
+	if host == nil {
+		return nil, errors.New("Host is nil")
+	} else if common.Debug {
 		fmt.Printf("Scanning %s:%d using HTTP scanner.\n", host.Address.String(), port)
 	}
 

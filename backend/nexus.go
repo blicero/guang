@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 12. 02. 2016 by Benjamin Walkenhorst
 // (c) 2016 Benjamin Walkenhorst
-// Time-stamp: <2023-04-06 02:11:58 krylon>
+// Time-stamp: <2024-05-30 00:05:54 krylon>
 
 package backend
 
@@ -65,6 +65,7 @@ func (nx *Nexus) GetXFRCount() int {
 	return nx.xfr.Count()
 } // func (nx *Nexus) GetXFRCount() int
 
+// SpawnWorker spawns <n> new workers in the specified facility.
 func (nx *Nexus) SpawnWorker(f facility.Facility, n int) {
 	var c chan data.ControlMessage
 
@@ -86,6 +87,7 @@ func (nx *Nexus) SpawnWorker(f facility.Facility, n int) {
 	}
 } // func (nx *Nexus) SpawnWorker(f facility.Facility, n int)
 
+// StopWorker stops <n> workers in the specified facility.
 func (nx *Nexus) StopWorker(f facility.Facility, n int) {
 	var c chan data.ControlMessage
 
@@ -115,6 +117,7 @@ func (nx *Nexus) StopWorker(f facility.Facility, n int) {
 		f)
 } // func (nx *Nexus) StopWorker(f facility.Facility, n int)
 
+// WorkerCount returns the number of active workers in the given facility.
 func (nx *Nexus) WorkerCount(f facility.Facility) int {
 	switch f {
 	case facility.Generator:
@@ -128,6 +131,7 @@ func (nx *Nexus) WorkerCount(f facility.Facility) int {
 	}
 } // func (nx *Nexus) WorkerCount(f facility.Facility) int64
 
+// UpdateMetadata triggers an update of the metadata for all hosts.
 func (nx *Nexus) UpdateMetadata() {
 	var (
 		err  error
