@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 05. 02. 2016 by Benjamin Walkenhorst
 // (c) 2016 Benjamin Walkenhorst
-// Time-stamp: <2024-06-03 18:56:27 krylon>
+// Time-stamp: <2024-06-03 18:57:16 krylon>
 
 package backend
 
@@ -24,7 +24,7 @@ type scanTarget struct {
 // It is a little sparse for now, but I want it to work first.
 // I can easily add more targets later.
 var targets []scanTarget = []scanTarget{
-	scanTarget{
+	{
 		Host: data.Host{
 			ID:      krylib.INVALID_ID,
 			Source:  data.HostSourceUser,
@@ -36,7 +36,7 @@ var targets []scanTarget = []scanTarget{
 		Ports: []uint16{21, 22, 79, 80},
 	},
 
-	scanTarget{
+	{
 		Host: data.Host{
 			ID:      krylib.INVALID_ID,
 			Source:  data.HostSourceUser,
@@ -60,7 +60,7 @@ var targets []scanTarget = []scanTarget{
 	// 	Ports: []uint16{22},
 	// },
 
-	scanTarget{
+	{
 		Host: data.Host{
 			ID:      krylib.INVALID_ID,
 			Source:  data.HostSourceUser,
