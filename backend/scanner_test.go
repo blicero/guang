@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 05. 02. 2016 by Benjamin Walkenhorst
 // (c) 2016 Benjamin Walkenhorst
-// Time-stamp: <2023-04-06 02:16:08 krylon>
+// Time-stamp: <2024-06-03 18:56:27 krylon>
 
 package backend
 
@@ -40,7 +40,7 @@ var targets []scanTarget = []scanTarget{
 		Host: data.Host{
 			ID:      krylib.INVALID_ID,
 			Source:  data.HostSourceUser,
-			Address: net.ParseIP("10.10.0.7"),
+			Address: net.ParseIP("10.10.0.8"),
 			Name:    "neuromancer.krylon.net",
 			Added:   time.Now(),
 		},
