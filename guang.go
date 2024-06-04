@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 27. 12. 2015 by Benjamin Walkenhorst
 // (c) 2015 Benjamin Walkenhorst
-// Time-stamp: <2023-03-29 19:24:53 krylon>
+// Time-stamp: <2024-06-03 19:35:49 krylon>
 
 package main
 
@@ -165,7 +165,7 @@ func main() {
 		fmt.Printf("Error creating Nexus: %s\n", err.Error())
 		os.Exit(1)
 	} else {
-		webserver, err = frontend.CreateFrontend("0.0.0.0", uint16(port), nexus)
+		webserver, err = frontend.Create("0.0.0.0", uint16(port), nexus)
 		webserver.Serve()
 	}
 

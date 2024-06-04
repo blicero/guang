@@ -2,7 +2,7 @@
 // -*- coding: utf-8; mode: go; -*-
 // Created on 06. 02. 2016 by Benjamin Walkenhorst
 // (c) 2016 Benjamin Walkenhorst
-// Time-stamp: <2023-04-06 02:11:11 krylon>
+// Time-stamp: <2024-06-03 19:33:08 krylon>
 
 package frontend
 
@@ -58,8 +58,8 @@ type WebFrontend struct {
 	ckPortStamp time.Time
 }
 
-// CreateFrontend creates a new web frontend.
-func CreateFrontend(addr string, port uint16, nexus *backend.Nexus) (*WebFrontend, error) {
+// Create creates a new web frontend.
+func Create(addr string, port uint16, nexus *backend.Nexus) (*WebFrontend, error) {
 	var msg string
 	var err error
 
